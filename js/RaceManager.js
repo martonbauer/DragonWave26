@@ -439,7 +439,22 @@ export class RaceManager {
         document.getElementById('edit-id').value = racer.id;
         document.getElementById('edit-bib').value = racer.bib || '';
         document.getElementById('edit-status').value = racer.status || 'registered';
-        document.getElementById('edit-category').value = racer.category || '';
+        
+        const catSelect = document.getElementById('edit-category');
+        if (catSelect) {
+            if (catSelect.options.length <= 1) {
+                catSelect.innerHTML = '<option value="" disabled>Válassz kategóriát...</option>';
+                for (const [slug, name] of Object.entries(this.categoryMap)) {
+                    catSelect.appendChild(new Option(name, slug));
+                }
+            }
+            const exists = Array.from(catSelect.options).some(opt => opt.value === racer.category);
+            if (!exists && racer.category) {
+                catSelect.appendChild(new Option(racer.category + " (Egyedi)", racer.category));
+            }
+            catSelect.value = racer.category || '';
+        }
+        
         document.getElementById('edit-distance').value = racer.distance || '11km';
         document.getElementById('edit-email').value = racer.email || '';
         document.getElementById('edit-phone').value = racer.phone || '';
