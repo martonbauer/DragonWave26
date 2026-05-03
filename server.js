@@ -202,7 +202,7 @@ app.post('/api/register', async (req, res) => {
         const { error: rError } = await supabase.from('racers').insert({
             id: racerId, bib, category, distance, 
             is_series: is_series ? 1 : 0, 
-            email, phone, status: finalStatus
+            status: finalStatus
         });
         if (rError) throw rError;
 
@@ -736,8 +736,6 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
 
                     const { error: rError } = await supabase.from('racers').insert({ 
                         id: racerId, bib, category, distance: dist, 
-                        email: fields[5] || 'csv@imported.hu', 
-                        phone: fields[6] || '0000', 
                         status: finalStatus 
                     });
                     
