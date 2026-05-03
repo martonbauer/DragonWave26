@@ -683,15 +683,19 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                 if (isNaN(bib)) bib = await getNextBib(dist, category);
                 
                 if (bib) {
+                    let isDuplicate = false;
                     const { data: existing } = await supabase.from('racers')
                         .select('id')
                         .eq('bib', bib)
                         .eq('distance', dist)
                         .maybeSingle();
 
-                    if (existing) return 0;
+                    if (existing) {
+                        isDuplicate = true;
+                        bib = await getNextBib(dist, category);
+                        if (!bib) return { added: 0, duplicate: 0 };
+                    }
                     
-                    let isDuplicate = false;
                     const membersToInsert = [];
                     
                     for(let j=0; j<4; j++) {
@@ -713,7 +717,7 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                         }
                     }
 
-                    if (membersToInsert.length === 0) return 0;
+                    if (membersToInsert.length === 0) return { added: 0, duplicate: 0 };
 
                     const finalStatus = isDuplicate ? 'duplicate' : 'registered';
                     const racerId = Date.now().toString() + "_" + Math.floor(Math.random() * 1000);
@@ -731,19 +735,20 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                         const { error: mError } = await supabase.from('members').insert(membersToInsert);
                         if (mError) {
                             await supabase.from('racers').delete().eq('id', racerId);
-                            return 0;
+                            return { added: 0, duplicate: 0 };
                         }
-                        return 1; // Sikerült hozzáadni
+                        return { added: 1, duplicate: isDuplicate ? 1 : 0 };
                     }
                 }
             }
-            return 0;
+            return { added: 0, duplicate: 0 };
         });
 
         const results = await Promise.all(importPromises);
-        const added = results.reduce((acc, curr) => acc + curr, 0);
+        const added = results.reduce((acc, curr) => acc + (curr.added || 0), 0);
+        const duplicates = results.reduce((acc, curr) => acc + (curr.duplicate || 0), 0);
         
-        res.json({ success: true, importedCount: added });
+        res.json({ success: true, importedCount: added, duplicatesCount: duplicates });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

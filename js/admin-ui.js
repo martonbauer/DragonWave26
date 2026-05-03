@@ -124,8 +124,8 @@ export function renderAdminTable(filterType = 'all') {
         } else if (r.status === 'finished') {
             statusColor = '#00FFCC';
         } else if (r.status === 'duplicate') {
-            statusColor = '#FF4D4D'; // Piros a duplikációnak
-            tr.style.background = 'rgba(255, 77, 77, 0.1)';
+            statusColor = '#FFA500'; // Narancs
+            tr.style.background = 'rgba(255, 165, 0, 0.15)';
         }
 
         let timeStr = "00:00:00.000";
@@ -152,13 +152,16 @@ export function renderAdminTable(filterType = 'all') {
             <td data-label="Ötpróba ID">${otprobaList}</td>
             <td data-label="Kategória">${window.raceManager.formatCategoryName(r.category)}</td>
             <td data-label="Táv" style="font-weight: bold;">${r.distance || '-'}</td>
-            <td data-label="Státusz" style="color:${statusColor}">${(r.status || 'registered').toUpperCase()}</td>
+            <td data-label="Státusz" style="color:${statusColor}">${(r.status || 'registered').toUpperCase()} ${r.status === 'duplicate' ? '⚠️' : ''}</td>
             <td data-label="Időeredmény" class="time" ${dataStartAttr}>${timeStr}</td>
             <td data-label="Megjelent" style="text-align:center;">${checkInHtml}</td>
             <td data-label="Barion" style="text-align:center;">${paidHtml}</td>
             <td data-label="Művelet" style="white-space: nowrap; text-align:center;">
                 <button class="action-btn edit" onclick="window.raceManager.openEditModal('${r.id}')" style="background:var(--accent-secondary); padding: 5px 8px; font-size: 1rem; border-radius: 6px; margin-right: 5px;" title="Szerkesztés">✏️</button>
                 <button class="action-btn delete" onclick="window.raceManager.deleteRacer('${r.id}', ${r.bib || 'null'})" style="background:#dc3545; padding: 5px 8px; font-size: 1rem; border-radius: 6px; margin-right: 5px;" title="Törlés">🗑️</button>
+                ${r.status === 'duplicate' ? `
+                <button class="action-btn" onclick="if(confirm('Biztosan érvényesíted a nevezést?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'registered').then(() => renderAdminTable(window.currentTableFilter))" style="background:#5BB226; color:white; padding: 5px 8px; font-size: 0.8rem; border-radius: 6px; font-weight:bold;" title="Érvényesítés">✅ ÉRVÉNYESÍT</button>
+                ` : ''}
                 ${r.status === 'running' ? `
                 <button class="action-btn" onclick="if(confirm('Biztosan DNF (Feladta) státuszba teszed?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'dnf').then(() => renderAdminTable(window.currentTableFilter))" style="background:#FFA500; color:black; padding: 5px 8px; font-size: 0.8rem; border-radius: 6px; margin-right: 5px; font-weight:bold;" title="Feladta">DNF</button>
                 <button class="action-btn" onclick="if(confirm('Biztosan DSQ (Kizárva) státuszba teszed?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'dsq').then(() => renderAdminTable(window.currentTableFilter))" style="background:#800080; color:white; padding: 5px 8px; font-size: 0.8rem; border-radius: 6px; font-weight:bold;" title="Kizárva">DSQ</button>
@@ -653,8 +656,12 @@ export function renderAdminCategoryDetail(distId, catId) {
             statusColor = 'var(--accent-primary)';
             tr.className = "status-running";
             dataStartAttr = `data-start="${r.start_time || 0}"`;
+        } else if (r.status === 'finished') {
+            statusColor = '#00FFCC';
+        } else if (r.status === 'duplicate') {
+            statusColor = '#FFA500';
+            tr.style.background = 'rgba(255, 165, 0, 0.15)';
         }
-        if (r.status === 'finished') statusColor = '#00FFCC';
 
         let timeStr = "00:00:00.000";
         if (r.status === 'running') {
@@ -678,14 +685,17 @@ export function renderAdminCategoryDetail(distId, catId) {
             <td data-label="Egység Tagjai">${memberList}</td>
             <td data-label="Ötpróba ID">${otprobaList}</td>
             <td data-label="Kategória">${rm.formatCategoryName(r.category)}</td>
-            <td data-label="Státusz" style="color:${statusColor}">${(r.status || 'registered').toUpperCase()}</td>
+            <td data-label="Státusz" style="color:${statusColor}">${(r.status || 'registered').toUpperCase()} ${r.status === 'duplicate' ? '⚠️' : ''}</td>
             <td data-label="Időeredmény" class="time" ${dataStartAttr}>${timeStr}</td>
             <td data-label="Megjelent" style="text-align:center;">${checkInHtml}</td>
             <td data-label="Barion" style="text-align:center;">${paidHtml}</td>
             <td data-label="Művelet" style="white-space: nowrap; text-align: center;">
-                <div style="display: flex; gap: 8px; justify-content: center;">
+                <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                     <button class="action-btn edit" style="margin:0; padding: 6px 12px; font-size: 0.75rem;" onclick="window.raceManager.openEditModal('${r.id}')">Szerkesztés</button>
                     <button class="action-btn delete" style="margin:0; padding: 6px 12px; font-size: 0.75rem;" onclick="window.raceManager.deleteRacer('${r.id}', ${r.bib || 'null'})">Törlés</button>
+                    ${r.status === 'duplicate' ? `
+                    <button class="action-btn" onclick="if(confirm('Biztosan érvényesíted a nevezést?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'registered').then(() => window.renderAdminCategoryDetail('${distId}', '${catId}'))" style="background:#5BB226; color:white; padding: 6px 12px; font-size: 0.75rem; border-radius: 6px; font-weight:bold; margin:0;" title="Érvényesítés">✅ ÉRVÉNYESÍT</button>
+                    ` : ''}
                 </div>
             </td>
         `;

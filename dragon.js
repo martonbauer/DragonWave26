@@ -504,7 +504,11 @@ window.uploadCsv = async () => {
             });
             const result = await response.json();
             if (response.ok) {
-                showToast(`Sikeres importálás: ${result.importedCount} versenyző`, "success");
+                let msg = `Sikeres importálás: ${result.importedCount} versenyző`;
+                if (result.duplicatesCount > 0) {
+                    msg += ` (${result.duplicatesCount} ütközés: Admin jóváhagyás szükséges)`;
+                }
+                showToast(msg, "success");
                 await window.raceManager.loadData();
                 window.raceManager.renderUI();
                 fileInput.value = '';
