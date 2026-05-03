@@ -458,9 +458,18 @@ export class RaceManager {
                     if (parts.length === 3) birth = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
                 }
                 row.innerHTML = `
-                    <input type="text" class="edit-m-name" value="${m.name || ''}" placeholder="Név">
-                    <input type="text" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="edit-m-birth" placeholder="ÉÉÉÉ.HH.NN." value="${birth}">
-                    <input type="text" class="edit-m-otproba" value="${m.otproba_id || ''}" placeholder="5P ID">
+                    <div style="display: flex; flex-direction: column;">
+                        <label style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 2px;">Név</label>
+                        <input type="text" class="edit-m-name" value="${m.name || ''}" placeholder="Név">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 2px;">Szül. dátum</label>
+                        <input type="text" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="edit-m-birth" placeholder="ÉÉÉÉ.HH.NN." value="${birth}">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label style="font-size: 0.7rem; color: var(--accent-primary); margin-bottom: 2px;">5Próba ID</label>
+                        <input type="text" class="edit-m-otproba" value="${m.otproba_id || ''}" placeholder="Nincs">
+                    </div>
                 `;
                 container.appendChild(row);
             });
