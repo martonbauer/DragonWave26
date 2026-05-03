@@ -671,8 +671,12 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
     try {
         // Párhuzamos feldolgozás indítása minden sorra (kivéve a fejlécet)
         const importPromises = lines.slice(1).map(async (line) => {
-            const fields = line.split(';').map(s => s.trim());
-            if (fields.length >= 8) {
+            if (!line.trim()) return 0;
+            const delim = line.includes(';') ? ';' : ',';
+            const fields = line.split(delim).map(s => s.trim());
+            
+            // Az első névnek kötelezőnek kell lennie
+            if (fields.length >= 8 && fields[1]) {
                 const category = normalizeCategoryToSlug(fields[7]);
                 const dist = (fields[12] || '11km').replace(/\s+/g, '').toLowerCase();
                 let bib = parseInt(fields[0]);
@@ -709,6 +713,8 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                         }
                     }
 
+                    if (membersToInsert.length === 0) return 0;
+
                     const finalStatus = isDuplicate ? 'duplicate' : 'registered';
                     const racerId = Date.now().toString() + "_" + Math.floor(Math.random() * 1000);
                     
@@ -722,8 +728,6 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                     });
                     
                     if (!rError) {
-                        if (membersToInsert.length === 0) return 1;
-                        
                         const { error: mError } = await supabase.from('members').insert(membersToInsert);
                         if (mError) {
                             await supabase.from('racers').delete().eq('id', racerId);
