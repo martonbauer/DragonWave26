@@ -657,7 +657,7 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
             });
         }
 
-        res.json({ success: true });
+        res.json({ success: true, warning: (members && isDuplicate) ? "A szerkesztés mentve, de az adatok egyeznek egy már létező nevezéssel, ezért a státusz DUPLICATE maradt!" : null });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -765,7 +765,11 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                     }
 
                     if (hasHardConflict || membersToInsert.length === 0) {
-                        results.push({ added: 0, duplicate: 0 });
+                        results.push({ 
+                            added: 0, 
+                            duplicate: 0,
+                            log: hasHardConflict ? `❌ Kihagyva: ${membersToInsert.length > 0 ? membersToInsert[0].name : 'Ismeretlen'} - Az 5Próba azonosító egy másik névhez tartozik!` : null
+                        });
                         continue;
                     }
 
@@ -785,7 +789,11 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                             await supabase.from('racers').delete().eq('id', racerId);
                             results.push({ added: 0, duplicate: 0 });
                         } else {
-                            results.push({ added: 1, duplicate: isDuplicate ? 1 : 0 });
+                            results.push({ 
+                                added: 1, 
+                                duplicate: isDuplicate ? 1 : 0,
+                                log: isDuplicate ? `⚠️ Duplikáció: ${membersToInsert[0].name} (Egyezés egy már létező nevezéssel)` : null
+                            });
                         }
                         continue;
                     } else {
@@ -798,8 +806,9 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
 
         const added = results.reduce((acc, curr) => acc + (curr.added || 0), 0);
         const duplicates = results.reduce((acc, curr) => acc + (curr.duplicate || 0), 0);
+        const logs = results.map(r => r.log).filter(l => l);
         
-        res.json({ success: true, importedCount: added, duplicatesCount: duplicates });
+        res.json({ success: true, importedCount: added, duplicatesCount: duplicates, logs });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

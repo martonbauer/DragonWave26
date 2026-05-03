@@ -510,13 +510,19 @@ export class RaceManager {
         try {
             const response = await apiCall(`racer/${id}`, 'PUT', data, this.adminPassword);
             if (!response) return;
+            
+            const result = await response.json();
+            
             if (response.ok) {
-                showToast("Sikeres mentés!", "success");
+                if (result.warning) {
+                    showToast(result.warning, "warning");
+                } else {
+                    showToast("Sikeres mentés!", "success");
+                }
                 this.closeEditModal();
                 await this.refreshUI();
             } else {
-                const err = await response.json();
-                showToast(err.error || "Hiba a mentés során!", "error");
+                showToast(result.error || "Hiba a mentés során!", "error");
             }
         } catch (err) {
             showToast("Hiba a szerver kapcsolatban!", "error");

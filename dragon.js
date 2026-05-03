@@ -509,6 +509,11 @@ window.uploadCsv = async () => {
                     msg += ` (${result.duplicatesCount} ütközés: Admin jóváhagyás szükséges)`;
                 }
                 showToast(msg, "success");
+                
+                if (result.logs && result.logs.length > 0) {
+                    alert("Importálási napló:\n\n" + result.logs.join("\n"));
+                }
+                
                 await window.raceManager.loadData();
                 window.raceManager.renderUI();
                 fileInput.value = '';

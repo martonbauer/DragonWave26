@@ -28,7 +28,8 @@ export function showToast(message, type = 'info') {
     const bgColors = { 
         'success': 'rgba(0, 255, 136, 0.9)', 
         'error': 'rgba(255, 0, 60, 0.9)', 
-        'info': 'rgba(0, 240, 255, 0.9)' 
+        'info': 'rgba(0, 240, 255, 0.9)',
+        'warning': 'rgba(255, 165, 0, 0.9)'
     };
     
     toast.style.background = bgColors[type] || 'rgba(50,50,50,0.9)';
