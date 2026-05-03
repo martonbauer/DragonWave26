@@ -1188,13 +1188,15 @@ export function renderTeamManager() {
     dragonRacers.forEach(r => {
         if (r.members) {
             r.members.forEach(m => {
-                allDragonMembers.push({ 
-                    ...m, 
-                    racerBib: r.bib, 
-                    racerStatus: r.status, 
-                    racerId: r.id, 
-                    teamSize: r.members.length 
-                });
+                if (m.otproba_id !== 'CSAPATNEV') {
+                    allDragonMembers.push({ 
+                        ...m, 
+                        racerBib: r.bib, 
+                        racerStatus: r.status, 
+                        racerId: r.id, 
+                        teamSize: r.members.length 
+                    });
+                }
             });
         }
     });
