@@ -595,11 +595,34 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
             const { data: existing } = await supabase.from('racers').select('id').eq('bib', bib).neq('id', id).maybeSingle();
             if (existing) return res.status(400).json({ error: `A #${bib} rajtszám már foglalt egy másik versenyzőnél!` });
         }
+
+        let isDuplicate = false;
+        if (members && members.length > 0) {
+            for (const m of members) {
+                const otp = m.otproba_id ? m.otproba_id.trim() : '';
+                if (otp.length > 0 && otp.toLowerCase() !== 'nincs') {
+                    const { data } = await supabase.from('members').select('id').eq('otproba_id', otp).neq('racer_id', id).limit(1);
+                    if (data && data.length > 0) { isDuplicate = true; break; }
+                }
+                if (!isDuplicate && m.name && m.birth_date) {
+                    const { data } = await supabase.from('members').select('id').ilike('name', m.name.trim()).eq('birth_date', m.birth_date.trim()).neq('racer_id', id).limit(1);
+                    if (data && data.length > 0) { isDuplicate = true; break; }
+                }
+            }
+        }
+
         const updateData = {};
         if (bib !== undefined) updateData.bib = bib;
         if (category !== undefined) updateData.category = category;
         if (distance !== undefined) updateData.distance = distance;
-        if (status !== undefined) updateData.status = status;
+        
+        if (status !== undefined) {
+            // Ha szerkesztésből jövünk (members array küldve van) és duplikáció van, akkor kényszerítjük a duplicate státuszt
+            updateData.status = (members && isDuplicate) ? 'duplicate' : status;
+        } else if (members && isDuplicate) {
+            updateData.status = 'duplicate';
+        }
+
         if (email !== undefined) updateData.email = email;
         if (phone !== undefined) updateData.phone = phone;
         if (is_series !== undefined) updateData.is_series = is_series ? 1 : 0;
