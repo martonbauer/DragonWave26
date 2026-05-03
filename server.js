@@ -669,9 +669,13 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
     const lines = csvData.trim().split('\n');
     let added = 0;
     try {
-        // Párhuzamos feldolgozás indítása minden sorra (kivéve a fejlécet)
-        const importPromises = lines.slice(1).map(async (line) => {
-            if (!line.trim()) return 0;
+        const results = [];
+        // Szekvenciális feldolgozás, hogy a rajtszám generálás ne akadjon össze
+        for (const line of lines.slice(1)) {
+            if (!line.trim()) {
+                results.push({ added: 0, duplicate: 0 });
+                continue;
+            }
             const delim = line.includes(';') ? ';' : ',';
             const fields = line.split(delim).map(s => s.trim());
             
@@ -693,7 +697,10 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                     if (existing) {
                         isDuplicate = true;
                         bib = await getNextBib(dist, category);
-                        if (!bib) return { added: 0, duplicate: 0 };
+                        if (!bib) {
+                            results.push({ added: 0, duplicate: 0 });
+                            continue;
+                        }
                     }
                     
                     const membersToInsert = [];
@@ -717,7 +724,10 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                         }
                     }
 
-                    if (membersToInsert.length === 0) return { added: 0, duplicate: 0 };
+                    if (membersToInsert.length === 0) {
+                        results.push({ added: 0, duplicate: 0 });
+                        continue;
+                    }
 
                     const finalStatus = isDuplicate ? 'duplicate' : 'registered';
                     const racerId = Date.now().toString() + "_" + Math.floor(Math.random() * 1000);
@@ -735,16 +745,19 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                         const { error: mError } = await supabase.from('members').insert(membersToInsert);
                         if (mError) {
                             await supabase.from('racers').delete().eq('id', racerId);
-                            return { added: 0, duplicate: 0 };
+                            results.push({ added: 0, duplicate: 0 });
+                        } else {
+                            results.push({ added: 1, duplicate: isDuplicate ? 1 : 0 });
                         }
-                        return { added: 1, duplicate: isDuplicate ? 1 : 0 };
+                        continue;
+                    } else {
+                        console.error('Racer insert error:', rError); // log to see if there's a constraint issue
                     }
                 }
             }
-            return { added: 0, duplicate: 0 };
-        });
+            results.push({ added: 0, duplicate: 0 });
+        }
 
-        const results = await Promise.all(importPromises);
         const added = results.reduce((acc, curr) => acc + (curr.added || 0), 0);
         const duplicates = results.reduce((acc, curr) => acc + (curr.duplicate || 0), 0);
         
