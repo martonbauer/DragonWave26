@@ -182,8 +182,13 @@ app.post('/api/register', async (req, res) => {
                 // 1. Ellenőrzés Ötpróba ID alapján
                 const otp = m.otproba_id ? m.otproba_id.trim() : '';
                 if (otp.length > 0 && otp.toLowerCase() !== 'nincs') {
-                    const { data } = await supabase.from('members').select('id').eq('otproba_id', otp).limit(1);
-                    if (data && data.length > 0) { isDuplicate = true; break; }
+                    const { data } = await supabase.from('members').select('id, name').eq('otproba_id', otp).limit(1);
+                    if (data && data.length > 0) { 
+                        if (data[0].name.toLowerCase().trim() !== m.name.toLowerCase().trim()) {
+                            return res.status(400).json({ error: `Hiba: Az '${otp}' 5Próba azonosító már foglalt egy másik versenyző (${data[0].name}) által!` });
+                        }
+                        isDuplicate = true; break; 
+                    }
                 }
                 // 2. Ellenőrzés Név + Születési dátum alapján
                 if (!isDuplicate && m.name && m.birth_date) {
@@ -601,8 +606,13 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
             for (const m of members) {
                 const otp = m.otproba_id ? m.otproba_id.trim() : '';
                 if (otp.length > 0 && otp.toLowerCase() !== 'nincs') {
-                    const { data } = await supabase.from('members').select('id').eq('otproba_id', otp).neq('racer_id', id).limit(1);
-                    if (data && data.length > 0) { isDuplicate = true; break; }
+                    const { data } = await supabase.from('members').select('id, name').eq('otproba_id', otp).neq('racer_id', id).limit(1);
+                    if (data && data.length > 0) { 
+                        if (data[0].name.toLowerCase().trim() !== m.name.toLowerCase().trim()) {
+                            return res.status(400).json({ error: `Hiba: Az '${otp}' 5Próba azonosító már foglalt egy másik versenyző (${data[0].name}) által!` });
+                        }
+                        isDuplicate = true; break; 
+                    }
                 }
                 if (!isDuplicate && m.name && m.birth_date) {
                     const { data } = await supabase.from('members').select('id').ilike('name', m.name.trim()).eq('birth_date', m.birth_date.trim()).neq('racer_id', id).limit(1);
@@ -727,6 +737,7 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                     }
                     
                     const membersToInsert = [];
+                    let hasHardConflict = false;
                     
                     for(let j=0; j<4; j++) {
                         if(fields[j+1]) {
@@ -737,8 +748,14 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                             membersToInsert.push({ racer_id: "", name: mName, birth_date: mBirth, otproba_id: mOtp });
                             
                             if (mOtp.length > 0 && mOtp.toLowerCase() !== 'nincs') {
-                                const { data } = await supabase.from('members').select('id').eq('otproba_id', mOtp).limit(1);
-                                if (data && data.length > 0) isDuplicate = true;
+                                const { data } = await supabase.from('members').select('id, name').eq('otproba_id', mOtp).limit(1);
+                                if (data && data.length > 0) {
+                                    if (data[0].name.toLowerCase().trim() !== mName.toLowerCase().trim()) {
+                                        hasHardConflict = true;
+                                        break;
+                                    }
+                                    isDuplicate = true;
+                                }
                             }
                             if (!isDuplicate && mName && mBirth) {
                                 const { data } = await supabase.from('members').select('id').ilike('name', mName).eq('birth_date', mBirth).limit(1);
@@ -747,7 +764,7 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                         }
                     }
 
-                    if (membersToInsert.length === 0) {
+                    if (hasHardConflict || membersToInsert.length === 0) {
                         results.push({ added: 0, duplicate: 0 });
                         continue;
                     }
