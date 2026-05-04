@@ -700,7 +700,7 @@
                                 </select>
                             </div>
                             
-                            <div style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+                            <div id="new-team-inputs-container" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
                                 <div style="flex: 2; min-width: 200px;">
                                     <label>Új Csapat Rajtszáma (opcionális)</label>
                                     <input type="number" id="new-team-bib" placeholder="Pl. 900" style="margin-bottom:0;">
@@ -709,7 +709,9 @@
                                     <label>Csapat Név</label>
                                     <input type="text" id="new-team-name" placeholder="Pl. sarkanyhajozz.hu" style="margin-bottom:0;">
                                 </div>
-                                <button onclick="window.createDragonTeam()" class="btn-primary" style="flex: 1; min-width: 200px; padding: 12px 30px; margin-bottom:0;">EGYSÉG MENTÉSE</button>
+                            </div>
+                            <div style="margin-bottom: 20px;">
+                                <button id="btn-submit-dragon-team" onclick="window.createDragonTeam()" class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem; margin-bottom:0;">ÚJ EGYSÉG LÉTREHOZÁSA</button>
                             </div>
 
                             <div class="table-responsive">

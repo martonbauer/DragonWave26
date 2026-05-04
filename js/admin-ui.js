@@ -1258,15 +1258,30 @@ window.renderTeamManager = renderTeamManager;
 window.selectExistingDragonTeam = (val) => {
     const bibInput = document.getElementById('new-team-bib');
     const nameInput = document.getElementById('new-team-name');
+    const inputsContainer = document.getElementById('new-team-inputs-container');
+    const submitBtn = document.getElementById('btn-submit-dragon-team');
+    
     if (val) {
         try {
             const data = JSON.parse(val);
             if (bibInput) bibInput.value = data.bib || '';
             if (nameInput) nameInput.value = data.name || '';
+            
+            if (inputsContainer) inputsContainer.style.display = 'none';
+            if (submitBtn) {
+                submitBtn.innerHTML = `BEOSZTÁS A(Z) "${data.name}" CSAPATBA`;
+                submitBtn.style.background = '#28a745';
+            }
         } catch(e) {}
     } else {
         if (bibInput) bibInput.value = '';
         if (nameInput) nameInput.value = '';
+        
+        if (inputsContainer) inputsContainer.style.display = 'flex';
+        if (submitBtn) {
+            submitBtn.innerHTML = 'ÚJ EGYSÉG LÉTREHOZÁSA';
+            submitBtn.style.background = 'var(--accent-primary)';
+        }
     }
 };
 
@@ -1298,10 +1313,11 @@ window.createDragonTeam = async () => {
         const result = await response.json();
         if (response.ok) {
             showToast(`Sikeres csapatépítés! #${result.bib || bib} egység feldolgozva.`, "success");
-            if (bibInput) bibInput.value = '';
-            if (nameInput) nameInput.value = '';
             const teamSelect = document.getElementById('existing-dragon-teams-select');
-            if (teamSelect) teamSelect.value = '';
+            if (teamSelect) {
+                teamSelect.value = '';
+                window.selectExistingDragonTeam('');
+            }
             await window.raceManager.loadData();
             renderTeamManager();
             window.renderAdminTable();
