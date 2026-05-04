@@ -87,11 +87,11 @@ export function renderAdminTable(filterType = 'all') {
         racers = racers.filter(r => r.distance === '22km');
     } else if (filterType === '11km') {
         // 11km-esek, kivéve a sárkányhajó kategóriát
-        racers = racers.filter(r => r.distance === '11km' && !r.category.includes('sarkany'));
+        racers = racers.filter(r => r.distance === '11km' && !(/s[aá]rk[aá]ny/i.test(r.category || '')));
     } else if (filterType === '4km') {
         racers = racers.filter(r => r.distance === '4km');
     } else if (filterType === 'sarkany') {
-        racers = racers.filter(r => r.category.includes('sarkany'));
+        racers = racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
     } else if (filterType === 'running') {
         racers = racers.filter(r => r.status === 'running');
     }
@@ -252,7 +252,7 @@ export function renderAdminControlButtons() {
             ['11km', '22km', '4km'].forEach(dist => {
                 const key = `${catId}_${dist}`;
                 const isSup = catId.includes('sup');
-                const isSarkany = catId.includes('sarkany');
+                const isSarkany = /s[aá]rk[aá]ny/i.test(catId || '');
                 const hasDistSuffix = catId.endsWith(`_${dist}`);
                 const hasOtherDistSuffix = (dist !== '11km' && catId.endsWith('_11km')) || 
                                            (dist !== '22km' && catId.endsWith('_22km')) || 
@@ -314,7 +314,7 @@ export function exportResultsToExcel() {
         // Keressük ki az összes kategóriát ebben a távban (kivéve sárkányhajó)
         const categoriesInDist = [...new Set(
             rm.data.racers
-                .filter(r => r.distance === distId && !(r.category || '').includes('sarkany'))
+                .filter(r => r.distance === distId && !(/s[aá]rk[aá]ny/i.test(r.category || '')))
                 .map(r => r.category)
         )].sort();
 
@@ -365,7 +365,7 @@ export function exportResultsToExcel() {
     // 2. Sárkányhajó munkalap(ok) a végére
     const sarkanyCategories = [...new Set(
         rm.data.racers
-            .filter(r => (r.category || '').includes('sarkany'))
+            .filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''))
             .map(r => r.category)
     )].sort();
 
@@ -432,13 +432,13 @@ export function exportFilteredTableToExcel(filterType, specificCatId = null) {
             racers = racers.filter(r => r.distance === '22km');
             titlePrefix = "22km_Nevezettek";
         } else if (filterType === '11km') {
-            racers = racers.filter(r => r.distance === '11km' && !r.category.includes('sarkany'));
+            racers = racers.filter(r => r.distance === '11km' && !(/s[aá]rk[aá]ny/i.test(r.category || '')));
             titlePrefix = "11km_Nevezettek";
         } else if (filterType === '4km') {
             racers = racers.filter(r => r.distance === '4km');
             titlePrefix = "4km_Nevezettek";
         } else if (filterType === 'sarkany') {
-            racers = racers.filter(r => r.category.includes('sarkany'));
+            racers = racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
             titlePrefix = "Sarkanyhajo_Nevezettek";
         }
     }
@@ -947,9 +947,9 @@ export function renderResultsTable(filterType = 'all') {
 
     if (filterType !== 'all') {
         if (filterType === 'sarkany') {
-            racers = racers.filter(r => (r.category || '').includes('sarkany'));
+            racers = racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
         } else {
-            racers = racers.filter(r => r.distance === filterType && !(r.category || '').includes('sarkany'));
+            racers = racers.filter(r => r.distance === filterType && !(/s[aá]rk[aá]ny/i.test(r.category || '')));
         }
     }
 
@@ -1061,7 +1061,7 @@ export function renderResultsCategoryList() {
     });
 
     // Sárkányhajó külön szekció
-    const finishersSarkany = rm.data.racers.filter(r => (r.category || '').includes('sarkany') && r.status === 'finished');
+    const finishersSarkany = rm.data.racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || '') && r.status === 'finished');
     if (finishersSarkany.length >= 0) {
         const sarkanySection = document.createElement('div');
         sarkanySection.style = 'margin-bottom: 2.5rem;';
@@ -1076,7 +1076,7 @@ export function renderResultsCategoryList() {
         card.style = 'padding: 20px; text-align: left; align-items: flex-start; cursor: pointer; min-height: auto;';
         card.innerHTML = `
             <div style="font-size: 0.65rem; color: #FF9100; background: rgba(255, 145, 0, 0.1); padding: 3px 10px; border-radius: 10px; margin-bottom: 12px; font-weight:800; border: 1px solid rgba(255, 145, 0, 0.2);">
-                ${rm.data.racers.filter(r => (r.category || '').includes('sarkany') && r.status !== 'finished').length} NEVEZETT
+                ${rm.data.racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || '') && r.status !== 'finished').length} NEVEZETT
             </div>
             <div style="font-weight: 700; color: white;">Csapatok Összeállítása</div>
             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">Egyéni tagok csoportosítása ➔</div>
@@ -1121,7 +1121,7 @@ export function renderResultsCategoryDetail(distId, catId) {
     let finishers = [];
     if (catId === 'sarkany') {
         finishers = rm.data.racers.filter(r => {
-            if (!(r.category || '').includes('sarkany') || r.status !== 'finished') return false;
+            if (!(/s[aá]rk[aá]ny/i.test(r.category || '')) || r.status !== 'finished') return false;
             // Csak a már csapatba beosztottak jelennek meg az eredményeknél:
             const isTeam = r.id.startsWith('DRAGON_') || (r.members && r.members.length > 1);
             return isTeam;
@@ -1191,7 +1191,7 @@ export function renderTeamManager() {
 
     // Keressük ki azokat a tagokat (members), akik sárkányhajó kategóriában vannak
     // PLUSZ: akiknek a racer-je még üres vagy csak egyéni puffer
-    const dragonRacers = rm.data.racers.filter(r => (r.category || '').includes('sarkany'));
+    const dragonRacers = rm.data.racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
     
     // Gyűjtsük össze az összes tagot ezekből a racer-ekből
     let allDragonMembers = [];

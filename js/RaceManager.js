@@ -441,18 +441,24 @@ export class RaceManager {
         document.getElementById('edit-status').value = racer.status || 'registered';
         
         const catSelect = document.getElementById('edit-category');
+        const catCustom = document.getElementById('edit-category-custom');
         if (catSelect) {
-            if (catSelect.options.length <= 1) {
-                catSelect.innerHTML = '<option value="" disabled>Válassz kategóriát...</option>';
-                for (const [slug, name] of Object.entries(this.categoryMap)) {
-                    catSelect.appendChild(new Option(name, slug));
-                }
+            catSelect.innerHTML = '<option value="" disabled>Válassz kategóriát...</option>';
+            for (const [slug, name] of Object.entries(this.categoryMap)) {
+                catSelect.appendChild(new Option(name, slug));
             }
             const exists = Array.from(catSelect.options).some(opt => opt.value === racer.category);
             if (!exists && racer.category) {
                 catSelect.appendChild(new Option(racer.category + " (Egyedi)", racer.category));
             }
+            catSelect.appendChild(new Option("➕ Egyéb (kézi megadás)...", "__custom__"));
+            
             catSelect.value = racer.category || '';
+            
+            if (catCustom) {
+                catCustom.style.display = 'none';
+                catCustom.value = '';
+            }
         }
         
         document.getElementById('edit-distance').value = racer.distance || '11km';
@@ -511,10 +517,19 @@ export class RaceManager {
             birth_date: row.querySelector('.edit-m-birth').value,
             otproba_id: row.querySelector('.edit-m-otproba').value
         }));
+        let finalCategory = document.getElementById('edit-category').value;
+        if (finalCategory === '__custom__') {
+            finalCategory = document.getElementById('edit-category-custom').value.trim();
+            if (!finalCategory) {
+                showToast('Kérem adjon meg egy egyedi kategóriát!', 'error');
+                return;
+            }
+        }
+
         const data = {
             bib: document.getElementById('edit-bib').value ? parseInt(document.getElementById('edit-bib').value) : null,
             status: document.getElementById('edit-status').value,
-            category: document.getElementById('edit-category').value,
+            category: finalCategory,
             distance: document.getElementById('edit-distance').value,
             email: document.getElementById('edit-email').value,
             phone: document.getElementById('edit-phone').value,
@@ -591,11 +606,11 @@ export class RaceManager {
             if (dist === '11km' || dist === '22km' || dist === '4km') {
                 const catId = id.substring(0, id.lastIndexOf('_'));
                 const catName = this.categoryMap[catId] || catId;
-                if (catId.includes('sarkany')) return `🐉 SÁRKÁNYHAJÓ (${dist})`;
+                if (/s[aá]rk[aá]ny/i.test(catId)) return `🐉 SÁRKÁNYHAJÓ (${dist})`;
                 return `${catName} (${dist})`;
             }
         }
-        if (id.includes('sarkany')) return `🐉 SÁRKÁNYHAJÓ`;
+        if (/s[aá]rk[aá]ny/i.test(id)) return `🐉 SÁRKÁNYHAJÓ`;
         return this.categoryMap[id] || id;
     }
 
@@ -1034,7 +1049,7 @@ export class RaceManager {
         if (groupId === 'kenu_hosszu') return (cat.includes('kenu') || cat.includes('outrigger') || cat.includes('sup')) && dist === '22km';
         if (groupId === 'kenu_rovid') return (cat.includes('kenu') || cat.includes('outrigger')) && dist === '11km';
         if (groupId === 'sup_4km') return cat.includes('sup') && dist === '4km';
-        if (groupId === 'sarkanyhajo_11km') return (cat.includes('sárkányhajó') || cat.includes('sarkanyhajo')) && dist === '11km';
+        if (groupId === 'sarkanyhajo_11km') return /s[aá]rk[aá]ny/i.test(cat) && dist === '11km';
         return false;
     }
 

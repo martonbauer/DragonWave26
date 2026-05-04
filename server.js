@@ -847,7 +847,7 @@ app.post('/api/create-dragon-team', authenticateAdmin, async (req, res) => {
         if (existingRacer) {
             console.log(`[CreateDragonTeam] Using existing racer: ${existingRacer.id} (Bib: ${bib})`);
             // Ha létezik, de nem sárkányhajó, akkor hiba
-            if (!(existingRacer.category || '').includes('sarkany')) {
+            if (!(/s[aá]rk[aá]ny/i.test(existingRacer.category || ''))) {
                 return res.status(400).json({ error: `A #${bib} rajtszám vagy csapat már foglalt egy másik kategóriában!` });
             }
             if (name) {
