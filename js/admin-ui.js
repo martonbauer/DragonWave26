@@ -1201,14 +1201,24 @@ export function renderTeamManager() {
         existingTeams.forEach(team => {
             const teamMember = team.members.find(m => m.otproba_id === 'CSAPATNEV');
             const teamName = teamMember ? teamMember.name : `Ismeretlen Csapat #${team.bib}`;
-            teamSelect.appendChild(new Option(`${teamName} (#${team.bib})`, JSON.stringify({bib: team.bib, name: teamName})));
+            const opt = new Option(`${teamName} (#${team.bib})`, JSON.stringify({bib: team.bib, name: teamName}));
+            
+            const membersList = team.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.name).join(', ');
+            if (membersList) {
+                opt.title = `Tagok: ${membersList}`;
+            } else {
+                opt.title = 'Még nincsenek tagok';
+            }
+            
+            teamSelect.appendChild(opt);
         });
     }
     
     // Gyűjtsük össze az összes tagot ezekből a racer-ekből
     let allDragonMembers = [];
     dragonRacers.forEach(r => {
-        if (r.members) {
+        const isTeam = r.id.startsWith('DRAGON_') || (r.members && r.members.length > 1);
+        if (r.members && !isTeam) {
             r.members.forEach(m => {
                 if (m.otproba_id !== 'CSAPATNEV') {
                     allDragonMembers.push({ 
@@ -1230,16 +1240,14 @@ export function renderTeamManager() {
 
     allDragonMembers.forEach(m => {
         const tr = document.createElement('tr');
-        // Kiemelés, ha már van rajtszáma (azaz már egy egység része)
-        const hasTeam = m.racerId.startsWith('DRAGON_') || m.teamSize > 1;
         
         tr.innerHTML = `
             <td data-label="Kiválaszt"><input type="checkbox" class="dragon-member-check" value="${m.id}"></td>
             <td data-label="Név" style="font-weight:bold;">${m.name}</td>
             <td data-label="Szül.idő">${m.birth_date || '-'}</td>
             <td data-label="Ötpróba ID">${m.otproba_id || '-'}</td>
-            <td data-label="Aktuális Egység" style="font-size:0.8rem; color:${hasTeam ? 'var(--accent-primary)' : '#888'};">
-                ${hasTeam ? `Egység: #${m.racerBib}` : '<span style="color:#ff9800; font-weight:bold;">Egyéni jelentkező</span>'}
+            <td data-label="Aktuális Egység" style="font-size:0.8rem; color:#888;">
+                <span style="color:#ff9800; font-weight:bold;">Egyéni jelentkező</span>
             </td>
         `;
         tbody.appendChild(tr);
