@@ -693,6 +693,13 @@
                             <h3 class="card-title">🐉 Sárkányhajó Egység Összeállítása</h3>
                             <p class="card-desc">Jelölje ki az egyéni regisztráltakat, majd hozzon létre belőlük egy új hajóegységet.</p>
                             
+                            <div style="margin-bottom: 20px;">
+                                <label>Válassz meglévő csapatot (vagy hozz létre újat alább)</label>
+                                <select id="existing-dragon-teams-select" onchange="window.selectExistingDragonTeam(this.value)" style="margin-bottom: 15px; width: 100%; padding: 12px; background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--glass-border); border-radius: 8px;">
+                                    <option value="">-- Új csapat létrehozása (Töltsd ki az alsó mezőket) --</option>
+                                </select>
+                            </div>
+                            
                             <div style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
                                 <div style="flex: 2; min-width: 200px;">
                                     <label>Új Csapat Rajtszáma (opcionális)</label>
@@ -702,7 +709,7 @@
                                     <label>Csapat Név</label>
                                     <input type="text" id="new-team-name" placeholder="Pl. sarkanyhajozz.hu" style="margin-bottom:0;">
                                 </div>
-                                <button onclick="window.createDragonTeam()" class="btn-primary" style="flex: 1; min-width: 200px; padding: 12px 30px; margin-bottom:0;">EGYSÉG LÉTREHOZÁSA</button>
+                                <button onclick="window.createDragonTeam()" class="btn-primary" style="flex: 1; min-width: 200px; padding: 12px 30px; margin-bottom:0;">EGYSÉG MENTÉSE</button>
                             </div>
 
                             <div class="table-responsive">

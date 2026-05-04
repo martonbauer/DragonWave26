@@ -1193,6 +1193,18 @@ export function renderTeamManager() {
     // PLUSZ: akiknek a racer-je még üres vagy csak egyéni puffer
     const dragonRacers = rm.data.racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
     
+    // Meglévő csapatok összegyűjtése a dropdown számára
+    const existingTeams = dragonRacers.filter(r => r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV'));
+    const teamSelect = document.getElementById('existing-dragon-teams-select');
+    if (teamSelect) {
+        teamSelect.innerHTML = '<option value="">-- Új csapat létrehozása (Töltsd ki az alsó mezőket) --</option>';
+        existingTeams.forEach(team => {
+            const teamMember = team.members.find(m => m.otproba_id === 'CSAPATNEV');
+            const teamName = teamMember ? teamMember.name : `Ismeretlen Csapat #${team.bib}`;
+            teamSelect.appendChild(new Option(`${teamName} (#${team.bib})`, JSON.stringify({bib: team.bib, name: teamName})));
+        });
+    }
+    
     // Gyűjtsük össze az összes tagot ezekből a racer-ekből
     let allDragonMembers = [];
     dragonRacers.forEach(r => {
@@ -1235,6 +1247,21 @@ export function renderTeamManager() {
 }
 window.renderTeamManager = renderTeamManager;
 
+window.selectExistingDragonTeam = (val) => {
+    const bibInput = document.getElementById('new-team-bib');
+    const nameInput = document.getElementById('new-team-name');
+    if (val) {
+        try {
+            const data = JSON.parse(val);
+            if (bibInput) bibInput.value = data.bib || '';
+            if (nameInput) nameInput.value = data.name || '';
+        } catch(e) {}
+    } else {
+        if (bibInput) bibInput.value = '';
+        if (nameInput) nameInput.value = '';
+    }
+};
+
 window.selectAllDragonMembers = (checked) => {
     document.querySelectorAll('.dragon-member-check:not(:disabled)').forEach(cb => cb.checked = checked);
 };
@@ -1265,6 +1292,8 @@ window.createDragonTeam = async () => {
             showToast(`Sikeres csapatépítés! #${result.bib || bib} egység feldolgozva.`, "success");
             if (bibInput) bibInput.value = '';
             if (nameInput) nameInput.value = '';
+            const teamSelect = document.getElementById('existing-dragon-teams-select');
+            if (teamSelect) teamSelect.value = '';
             await window.raceManager.loadData();
             renderTeamManager();
             window.renderAdminTable();
