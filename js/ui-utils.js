@@ -201,8 +201,16 @@ export function formatMemberListHtml(racer) {
     const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
     const rm = racer.members.filter(m => m.otproba_id !== 'CSAPATNEV');
     let html = '';
-    if (t) html += `<div style="margin-bottom:4px; font-weight:bold; color:var(--accent-primary);">${t.name}</div>`;
-    html += rm.map(m => `<div style="margin-bottom:2px;">${m.name || '?'} <span style="font-size:0.7rem; color:#888;">(${m.birth_date || '?'})</span></div>`).join('');
+    
+    if (t) {
+        html += `<details style="cursor: pointer; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 6px;">
+                    <summary style="font-weight:bold; color:var(--accent-primary); outline: none;">${t.name} <span style="font-size: 0.8em;">▼</span></summary>
+                    <div style="margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--accent-secondary);">`;
+        html += rm.map(m => `<div style="margin-bottom:6px;"><strong>${m.name || '?'}</strong> <br><span style="font-size:0.75rem; color:#aaa;">Szül: ${m.birth_date || '?'} | 5P: ${m.otproba_id || '-'}</span></div>`).join('');
+        html += `</div></details>`;
+    } else {
+        html += rm.map(m => `<div style="margin-bottom:2px;">${m.name || '?'} <span style="font-size:0.7rem; color:#888;">(${m.birth_date || '?'})</span></div>`).join('');
+    }
     return html || (racer.name || '-');
 }
 
@@ -226,6 +234,11 @@ export function formatRacerName(racer) {
  */
 export function formatOtprobaListHtml(racer) {
     if (!racer.members || racer.members.length === 0) return racer.otproba_id || '-';
+    const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
     const rm = racer.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+    
+    if (t) {
+        return `<span style="color:#888; font-size: 0.8rem;">(Lásd a neveknél)</span>`;
+    }
     return rm.map(m => `<div style="margin-bottom:2px;">${m.otproba_id || '-'}</div>`).join('') || '-';
 }

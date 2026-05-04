@@ -657,11 +657,34 @@ export class RaceManager {
         const container = document.getElementById('members-container');
         container.innerHTML = '';
 
+        if (size > 1) {
+            // Csapatnév mező (Egység neve)
+            const teamDiv = document.createElement('div');
+            teamDiv.className = 'member-entry team-name-entry';
+            teamDiv.style = "margin-bottom: 25px; padding: 15px; border: 1px solid var(--accent-primary); border-radius: 12px; background: rgba(0, 145, 255, 0.05);";
+            teamDiv.innerHTML = `
+                <div>
+                    <label style="color: var(--accent-primary); font-weight: bold; font-size: 1.1rem;">Egység / Csapat neve</label>
+                    <input type="text" class="member-name" placeholder="Pl. Sárkányok" required maxlength="100">
+                    <input type="hidden" class="member-birth" value="1900-01-01">
+                    <input type="hidden" class="member-otproba" value="CSAPATNEV">
+                </div>
+            `;
+            container.appendChild(teamDiv);
+            
+            // Tagok felirata
+            const tagokCimke = document.createElement('h4');
+            tagokCimke.textContent = 'Az egység tagjai:';
+            tagokCimke.style = 'margin-bottom: 15px; color: #fff;';
+            container.appendChild(tagokCimke);
+        }
+
         for (let i = 1; i <= size; i++) {
             const memberDiv = document.createElement('div');
             memberDiv.className = 'member-entry';
             memberDiv.style = "margin-bottom: 25px; padding: 15px; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(255, 255, 255, 0.05);";
             memberDiv.innerHTML = `
+                <div style="margin-bottom: 10px; font-weight: bold; color: var(--accent-secondary);">${size > 1 ? i + '. Tag' : 'Versenyző'}</div>
                 <div>
                     <label>Név</label>
                     <input type="text" class="member-name" placeholder="Pl. Kiss János" required maxlength="100">
