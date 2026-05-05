@@ -694,12 +694,12 @@ form select {
 }
 
 /* Ensure dropdown options are visible and match the theme */
-form select option {
+select option {
     background-color: #122b44; /* Match --bg-primary but solid */
     color: var(--text-primary);
 }
 
-form select optgroup {
+select optgroup {
     background-color: #0a1b2d;
     color: var(--accent-primary);
     font-weight: 700;
