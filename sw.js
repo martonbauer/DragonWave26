@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dragonwave-v3';
+const CACHE_NAME = 'dragonwave-v4';
 const urlsToCache = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -21,6 +22,20 @@ self.addEventListener('install', event => {
           urlsToCache.map(url => cache.add(url).catch(e => console.warn('Failed to cache:', url)))
         );
       })
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.filter(cacheName => {
+          return cacheName.startsWith('dragonwave-') && cacheName !== CACHE_NAME;
+        }).map(cacheName => {
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
