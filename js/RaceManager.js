@@ -846,6 +846,7 @@ export class RaceManager {
                 if (field === 'checked_in' || field === 'is_paid') {
                     this.renderWaitingListCards();
                     this.renderRunningListCards();
+                    this.renderFinishedListCards();
                     if (typeof window.renderAdminTable === 'function') window.renderAdminTable();
                 }
                 
@@ -870,6 +871,7 @@ export class RaceManager {
         this.renderAdminControlButtons();
         this.renderWaitingListCards();
         this.renderRunningListCards();
+        this.renderFinishedListCards();
         this.renderNotTurnedListCards();
         this.renderLiveLog();
         if (this.adminPassword) this.loadUnassignedTimes();
@@ -890,7 +892,9 @@ export class RaceManager {
                 <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(0, 145, 255, 0.1)';" onclick="window.toggleRunningListCards(true)">
                     <span style="color: var(--accent-primary); font-size: 0.8rem;">FUTÓ:</span> <strong>${running}</strong>
                 </div>
-                <div class="stat-item"><span style="color: #00ff88; font-size: 0.8rem;">CÉLBA ÉRT:</span> <strong>${finished}</strong></div>
+                <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(0, 255, 136, 0.1)';" onclick="window.toggleFinishedListCards(true)">
+                    <span style="color: #00ff88; font-size: 0.8rem;">CÉLBA ÉRT:</span> <strong>${finished}</strong>
+                </div>
                 <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(0, 145, 255, 0.1)';" onclick="window.toggleWaitingListCards(true)">
                     <span style="color: var(--text-secondary); font-size: 0.8rem;">VÁRAKOZIK:</span> <strong>${registered}</strong>
                 </div>
@@ -1004,6 +1008,54 @@ export class RaceManager {
                                     <td style="text-align: right; font-weight: bold; color: #00ff88; font-family: 'Space Mono', monospace;" class="time" data-start="${r.start_time || 0}">${timeDisplay}</td>
                                 </tr>
                             `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        containers.forEach(item => { item.content.innerHTML = html; });
+    }
+
+    renderFinishedListCards() {
+        const containers = [
+            { content: document.getElementById('finished-list-content-starts'), card: document.getElementById('finished-list-container-starts') },
+            { content: document.getElementById('finished-list-content-live'), card: document.getElementById('finished-list-container-live') }
+        ].filter(item => item.content && item.card && !item.card.classList.contains('hidden'));
+
+        if (containers.length === 0) return;
+
+        const finishedRacers = this.data.racers.filter(r => r.status === 'finished');
+        
+        let html = '';
+        if (finishedRacers.length === 0) {
+            html = '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs célba érkezett versenyző.</div>';
+        } else {
+            html = `
+                <div class="table-responsive">
+                    <table class="results-table" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Rajtszám</th>
+                                <th>Egység Tagjai</th>
+                                <th>Kategória</th>
+                                <th>Táv</th>
+                                <th style="text-align: right;">Eredmény</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${finishedRacers.sort((a,b) => (a.total_time || 0) - (b.total_time || 0)).map(r => {
+                                const timeDisplay = formatTime(r.total_time || 0);
+                                return \`
+                                <tr class="status-finished">
+                                    <td><strong style="color: #00ff88;">#\${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
+                                    <td>\${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}</td>
+                                    <td style="font-size: 0.75rem; color: var(--text-secondary);">\${this.formatCategoryName(r.category)}</td>
+                                    <td style="font-size: 0.75rem; color: #aaa;">\${r.distance || '-'}</td>
+                                    <td style="text-align: right; font-weight: bold; color: #00ff88; font-family: 'Space Mono', monospace;">\${timeDisplay}</td>
+                                </tr>
+                            \`;
                             }).join('')}
                         </tbody>
                     </table>

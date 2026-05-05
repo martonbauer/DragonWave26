@@ -233,6 +233,14 @@
                         </div>
                         <div id="running-list-content-starts"></div>
                     </div>
+                    <!-- Beépített Célba Érkezettek Listája Kártya (Starts) -->
+                    <div class="admin-card hidden" id="finished-list-container-starts" style="margin-top: 20px; grid-column: 1 / -1; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                            <h3 class="card-title" style="margin:0;">🏁 Célba Érkezettek Névsora</h3>
+                            <button class="btn-back" onclick="window.toggleFinishedListCards(false)">Bezárás</button>
+                        </div>
+                        <div id="finished-list-content-starts"></div>
+                    </div>
                 </div>
 
                 <!-- Section 2: Élő Kontroll -->
@@ -338,6 +346,14 @@
                             <button class="btn-back" onclick="window.toggleRunningListCards(false)">Bezárás</button>
                         </div>
                         <div id="running-list-content-live"></div>
+                    </div>
+                    <!-- Beépített Célba Érkezettek Listája Kártya (Live) -->
+                    <div class="admin-card hidden" id="finished-list-container-live" style="margin-top: 20px; grid-column: 1 / -1; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                            <h3 class="card-title" style="margin:0;">🏁 Célba Érkezettek Névsora</h3>
+                            <button class="btn-back" onclick="window.toggleFinishedListCards(false)">Bezárás</button>
+                        </div>
+                        <div id="finished-list-content-live"></div>
                     </div>
                     <!-- Beépített Még Nem Fordult Listája Kártya (Live) -->
                     <div class="admin-card hidden" id="not-turned-list-container-live" style="margin-top: 20px; grid-column: 1 / -1; width: 100%;">

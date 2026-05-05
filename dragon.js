@@ -459,6 +459,25 @@ window.toggleRunningListCards = (show) => {
     }
 };
 
+window.toggleFinishedListCards = (show) => {
+    const ids = ['finished-list-container-starts', 'finished-list-container-live'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+    });
+
+    if (show && window.raceManager) {
+        window.raceManager.renderFinishedListCards();
+        const firstVisible = document.querySelector('.admin-card:not(.hidden)[id^="finished-list-container"]');
+        if (firstVisible) {
+            firstVisible.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+};
+
 window.toggleNotTurnedListCards = (show) => {
     const el = document.getElementById('not-turned-list-container-live');
     if (el) {
