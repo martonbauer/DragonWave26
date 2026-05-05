@@ -1047,15 +1047,15 @@ export class RaceManager {
                         <tbody>
                             ${finishedRacers.sort((a,b) => (a.total_time || 0) - (b.total_time || 0)).map(r => {
                                 const timeDisplay = formatTime(r.total_time || 0);
-                                return \`
+                                return `
                                 <tr class="status-finished">
-                                    <td><strong style="color: #00ff88;">#\${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>\${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}</td>
-                                    <td style="font-size: 0.75rem; color: var(--text-secondary);">\${this.formatCategoryName(r.category)}</td>
-                                    <td style="font-size: 0.75rem; color: #aaa;">\${r.distance || '-'}</td>
-                                    <td style="text-align: right; font-weight: bold; color: #00ff88; font-family: 'Space Mono', monospace;">\${timeDisplay}</td>
+                                    <td><strong style="color: #00ff88;">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
+                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}</td>
+                                    <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
+                                    <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
+                                    <td style="text-align: right; font-weight: bold; color: #00ff88; font-family: 'Space Mono', monospace;">${timeDisplay}</td>
                                 </tr>
-                            \`;
+                            `;
                             }).join('')}
                         </tbody>
                     </table>

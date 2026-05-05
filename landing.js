@@ -27,7 +27,9 @@ async function performLogin() {
     const password = document.getElementById('adminPasswordInput').value;
     
     // Using the same API as the management app
-    const API_URL = window.DRAGONWAVE_API_URL || 'http://localhost:3001/api';
+    const API_URL = (window.location.hostname === 'localhost' || window.location.protocol === 'file:')
+        ? 'http://localhost:3001/api'
+        : '/api';
     
     try {
         const response = await fetch(`${API_URL}/login`, {
@@ -37,7 +39,7 @@ async function performLogin() {
         });
 
         if (response.ok) {
-            localStorage.setItem('dragonAdminPassword', password);
+            sessionStorage.setItem('dragonAdminPassword', password);
             window.location.href = 'management.html?view=admin';
         } else {
             alert('Hibás jelszó!');
