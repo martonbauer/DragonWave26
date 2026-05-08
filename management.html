@@ -86,15 +86,15 @@
                     </div>
                 </div>
 
-                <!-- 2. Versenytáv választás -->
+                <!-- 2. Kategória típus választás -->
                 <div class="distance-section" style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <h4 style="margin-top:0; color:var(--accent-primary); font-size: 0.95rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">2. Versenytáv választása</h4>
-                    <label for="versenytav">Melyik távon indul?</label>
+                    <h4 style="margin-top:0; color:var(--accent-primary); font-size: 0.95rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">2. Kategória típus választása</h4>
+                    <label for="versenytav">Kategória típus:</label>
                     <select id="versenytav" required onchange="window.updateCategorySelect()">
-                        <option value="" disabled selected>Válassz távot...</option>
-                        <option value="11km">11 km (Rövid táv)</option>
-                        <option value="22km">22 km (Hosszú táv)</option>
-                        <option value="4km">4 km (SUP)</option>
+                        <option value="" disabled selected>Válassz kategória típust...</option>
+                        <option value="4km">4 km SUP</option>
+                        <option value="11km">Rövid táv</option>
+                        <option value="22km">Hosszú táv</option>
                     </select>
                 </div>
 
@@ -788,11 +788,11 @@
                         <input type="text" id="edit-category-custom" placeholder="Kézi kategória név/slug" style="display:none; margin-top:10px;">
                     </div>
                     <div>
-                        <label>Táv</label>
+                        <label>Kategória típus</label>
                         <select id="edit-distance">
-                            <option value="11km">11km</option>
-                            <option value="22km">22km</option>
-                            <option value="4km">4km</option>
+                            <option value="4km">4 km SUP</option>
+                            <option value="11km">Rövid táv</option>
+                            <option value="22km">Hosszú táv</option>
                         </select>
                     </div>
                 </div>
