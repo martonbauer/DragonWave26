@@ -1154,7 +1154,11 @@ export class RaceManager {
                 if (a.status === 'finished' && b.status === 'finished') return a.total_time - b.total_time;
                 return a.bib - b.bib;
             });
-            this.createResultsTable(container, this.formatCategoryName(groupKey), sortedRacers, false);
+            const distStr = sortedRacers[0].distance || '';
+            const cleanDist = distStr.replace(/km/i, '').trim();
+            const distDisplay = cleanDist ? `${cleanDist} km` : '';
+            const catTitle = distDisplay ? `${this.formatCategoryName(groupKey)} - ${distDisplay}` : this.formatCategoryName(groupKey);
+            this.createResultsTable(container, catTitle, sortedRacers, false);
         });
 
         [{ id: '22km', title: 'hosszútáv sorrend' }, { id: '11km', title: 'rövidtáv sorrend' }, { id: '4km', title: '4 km sorrend' }].forEach(dist => {

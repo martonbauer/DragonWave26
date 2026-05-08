@@ -169,11 +169,15 @@
                     // Rendezés rajtszám szerint
                     racers.sort((a,b) => (a.bib || 0) - (b.bib || 0));
                     
+                    const distStr = racers[0].distance || '';
+                    const cleanDist = distStr.replace(/km/i, '').trim();
+                    const distDisplay = cleanDist ? `${cleanDist} km` : '';
+                    
                     const catWrapper = document.createElement('div');
                     catWrapper.className = 'category-results-table';
                     catWrapper.style.marginBottom = '2rem';
                     
-                    let html = `<h4 class="category-title">${formatCategoryName(groupKey)}</h4>
+                    let html = `<h4 class="category-title">${formatCategoryName(groupKey)} ${distDisplay ? '- ' + distDisplay : ''}</h4>
                                 <table class="results-table">
                                     <thead>
                                         <tr>
