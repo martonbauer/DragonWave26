@@ -84,7 +84,12 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: '1mb' }));
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname), { extensions: ['html', 'htm'] }));
+
+// Kényelmi átirányítások (Route fallbacks for Render)
+app.get('/admin', (req, res) => res.redirect('/management.html?view=admin'));
+app.get('/management', (req, res) => res.redirect('/management.html'));
+
 app.use(rateLimiter);
 
 // --- 4.5 VALÓS IDEJŰ SZINKRONIZÁCIÓ (REALTIME MIDDLEWARE) ---
@@ -640,7 +645,9 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
         if (is_paid !== undefined) updateData.is_paid = is_paid;
 
         if (Object.keys(updateData).length > 0) {
-            await supabase.from('racers').update(updateData).eq('id', id);
+            console.log("UPDATING RACER", id, "with data:", updateData);
+            const { error: updErr } = await supabase.from('racers').update(updateData).eq('id', id);
+            if (updErr) console.error("SUPABASE UPDATE ERROR:", updErr);
         }
         if (members) {
             await supabase.from('members').delete().eq('racer_id', id);
