@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Várakozók Listája | DunakesziFutam 2026</title>
+    <title>Eddig Nevezettek | DunakesziFutam 2026</title>
     <link rel="stylesheet" href="drgon.css?v=1.0.5">
+    <link rel="stylesheet" href="landing.css">
     <style>
         body {
-            padding: 30px;
+            padding-top: 100px;
             background-color: var(--bg-primary);
             color: var(--text-primary);
         }
         .list-container {
             max-width: 1100px;
             margin: 0 auto;
+            padding: 30px;
             animation: fadeIn 0.6s ease-out;
         }
         @keyframes fadeIn {
@@ -43,21 +45,6 @@
         .stat-text { font-weight: 600; color: var(--text-secondary); }
         .stat-value { font-size: 1.2rem; color: var(--accent-primary); font-family: 'Space Mono', monospace; font-weight: 700; }
         
-        .racer-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            display: grid;
-            grid-template-columns: 80px 2fr 1.5fr 1fr;
-            align-items: center;
-            transition: all 0.2s;
-        }
-        .racer-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--accent-primary);
-        }
         .bib-badge {
             font-family: 'Space Mono', monospace;
             font-weight: 700;
@@ -65,48 +52,52 @@
             font-size: 1.1rem;
         }
         .racer-names { font-weight: 700; color: white; }
-        .racer-cat { color: var(--text-secondary); font-size: 0.9rem; }
-        .racer-dist { color: var(--accent-secondary); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; }
-
+        .category-title {
+            color: var(--accent-primary);
+            border-bottom: 1px solid var(--accent-secondary);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
         @media (max-width: 768px) {
-            .racer-card { grid-template-columns: 1fr; gap: 8px; }
             .header-box { flex-direction: column; gap: 15px; text-align: center; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Navigation -->
+    <header id="navbar" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
+        <div class="header-container">
+            <h1 class="logo-text-unified">DUNAKESZI FUTAM 2026</h1>
+            <nav class="nav-links" id="main-nav">
+                <a href="index.html" class="nav-btn">Főoldal</a>
+                <a href="management.html?view=regisztracio" class="nav-btn">Nevezés</a>
+                <a href="registered_list.html" class="nav-btn active">Eddig nevezettek</a>
+                <a href="management.html?view=eredmenyek" class="nav-btn">Eredmények</a>
+                <a href="versenykiiras.html" class="nav-btn">Versenykiírás</a>
+            </nav>
+        </div>
+    </header>
+
     <div class="list-container">
         <div class="header-box">
             <div>
-                <h1 class="logo-text-unified">Várakozók névsora</h1>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px;">Még el nem rajtolt versenyzők listája</p>
+                <h1 class="logo-text-unified">Eddig nevezettek listája</h1>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px;">A már regisztrált egységek kategóriánkénti bontásban</p>
             </div>
             <button class="btn-primary" onclick="loadData()">🔄 Lista Frissítése</button>
         </div>
 
         <div id="stat-banner" class="stat-count-banner">
-            <span class="stat-icon">⏳</span>
+            <span class="stat-icon">✅</span>
             <div>
-                <span class="stat-text">Jelenleg várólistán:</span>
+                <span class="stat-text">Összes nevezett egység:</span>
                 <span id="registered-count" class="stat-value">--</span>
-                <span class="stat-text"> egység</span>
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="results-table">
-                <thead>
-                    <tr>
-                        <th style="width: 100px;">Rajtszám</th>
-                        <th>Egység Tagjai</th>
-                        <th>Kategória</th>
-                        <th style="width: 120px;">Táv</th>
-                    </tr>
-                </thead>
-                <tbody id="registered-list-body">
-                    <tr><td colspan="4" style="text-align: center; padding: 50px;">Adatok betöltése...</td></tr>
-                </tbody>
-            </table>
+        <div id="results-tables-container">
+            <div style="text-align: center; padding: 50px;">Adatok betöltése...</div>
         </div>
     </div>
 
@@ -144,7 +135,7 @@
         function formatCategoryName(id) {
             if (!id) return '-';
             if (id.includes('sarkany')) return '🐉 Sárkányhajó';
-            return categoryMap[id] || id.replace(/_/g, ' ');
+            return categoryMap[id.split('_').slice(0,-1).join('_')] || categoryMap[id] || id.replace(/_/g, ' ');
         }
 
         async function loadData() {
@@ -153,46 +144,74 @@
                 if (!response.ok) throw new Error('Hiba a szerver válaszában');
                 const result = await response.json();
                 
-                const registered = result.racers.filter(r => r.status === 'registered');
+                // Minden versenyzőt megjelenítünk a nevezettek között
+                const registered = result.racers || [];
                 document.getElementById('registered-count').textContent = registered.length;
                 
-                const tbody = document.getElementById('registered-list-body');
-                tbody.innerHTML = '';
+                const container = document.getElementById('results-tables-container');
+                container.innerHTML = '';
                 
                 if (registered.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 50px; color: var(--text-secondary);">Jelenleg nincs várakozó versenyző. Mindenki elrajtolt! 🚀</td></tr>';
+                    container.innerHTML = '<div style="text-align: center; padding: 50px; color: var(--text-secondary);">Jelenleg nincsenek nevezők.</div>';
                     return;
                 }
 
-                registered.sort((a,b) => (a.bib || 0) - (b.bib || 0)).forEach(r => {
-                    const tr = document.createElement('tr');
-                    let names = r.name || '-';
-                    if (r.members && r.members.length > 0) {
-                        const tMem = r.members.find(m => m.otproba_id === 'CSAPATNEV');
-                        const rMems = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
-                        if (tMem) {
-                            names = rMems.length > 0 ? `<strong>${tMem.name}</strong> <span style="font-size:0.85em; color:var(--text-secondary);">(${rMems.map(m => m.name).join(', ')})</span>` : `<strong>${tMem.name}</strong>`;
-                        } else {
-                            names = rMems.map(m => m.name).join(', ');
-                        }
-                    }
+                // Csoportosítás kategória szerint
+                const catGroups = {};
+                registered.forEach(r => {
+                    const groupKey = `${r.category}_${r.distance}`;
+                    if (!catGroups[groupKey]) catGroups[groupKey] = [];
+                    catGroups[groupKey].push(r);
+                });
+
+                Object.keys(catGroups).sort().forEach(groupKey => {
+                    const racers = catGroups[groupKey];
+                    // Rendezés rajtszám szerint
+                    racers.sort((a,b) => (a.bib || 0) - (b.bib || 0));
                     
-                    tr.innerHTML = `
-                        <td><strong class="bib-badge">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                        <td><div class="racer-names">${names}</div></td>
-                        <td><div class="racer-cat">${formatCategoryName(r.category)}</div></td>
-                        <td><div class="racer-dist">${r.distance || '-'}</div></td>
-                    `;
-                    tbody.appendChild(tr);
+                    const catWrapper = document.createElement('div');
+                    catWrapper.className = 'category-results-table';
+                    catWrapper.style.marginBottom = '2rem';
+                    
+                    let html = `<h4 class="category-title">${formatCategoryName(groupKey)}</h4>
+                                <table class="results-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 100px;">Rajtszám</th>
+                                            <th>Név / Egység Tagjai</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+                    
+                    racers.forEach(r => {
+                        let names = r.name || '-';
+                        if (r.members && r.members.length > 0) {
+                            const tMem = r.members.find(m => m.otproba_id === 'CSAPATNEV');
+                            const rMems = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+                            if (tMem) {
+                                names = rMems.length > 0 ? `<strong>${tMem.name}</strong> <span style="font-size:0.85em; color:var(--text-secondary);">(${rMems.map(m => m.name).join(', ')})</span>` : `<strong>${tMem.name}</strong>`;
+                            } else {
+                                names = rMems.map(m => m.name).join(', ');
+                            }
+                        }
+                        
+                        html += `<tr>
+                                    <td><strong class="bib-badge">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
+                                    <td><div class="racer-names">${names}</div></td>
+                                 </tr>`;
+                    });
+                    
+                    html += `</tbody></table>`;
+                    catWrapper.innerHTML = html;
+                    container.appendChild(catWrapper);
                 });
             } catch (err) {
                 console.error(err);
-                document.getElementById('registered-list-body').innerHTML = '<tr><td colspan="4" style="text-align:center; color: #ff6b6b; padding: 30px;">Hiba történt az adatok lekérésekor. Ellenőrizze a hálózati kapcsolatot!</td></tr>';
+                document.getElementById('results-tables-container').innerHTML = '<div style="text-align:center; color: #ff6b6b; padding: 30px;">Hiba történt az adatok lekérésekor. Ellenőrizze a hálózati kapcsolatot!</div>';
             }
         }
 
         loadData();
-        // Auto refresh
         setInterval(loadData, 5000);
     </script>
 </body>
