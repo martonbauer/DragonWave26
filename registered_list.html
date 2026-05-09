@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="landing.css">
     <style>
         body {
-            padding-top: 100px;
             background-color: var(--bg-primary);
             color: var(--text-primary);
         }
@@ -72,6 +71,8 @@
             text-align: center;
             backdrop-filter: blur(10px);
             transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
         }
         .stat-card:hover {
             border-color: var(--accent-primary);
@@ -124,28 +125,35 @@
         </div>
     </header>
 
+    <section class="hero-small" style="background-image: url('dragonwave_2026_photo.jpg');">
+        <div class="hero-content">
+            <h1 class="hero-title">Eddig nevezettek</h1>
+            <p class="hero-subtitle">A 2026-os Dunakeszi Futam regisztrált versenyzői</p>
+        </div>
+    </section>
+
     <div class="list-container">
         <div class="header-box">
             <div>
-                <h1 class="logo-text-unified">Eddig nevezettek listája</h1>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px;">A már regisztrált egységek kategóriánkénti bontásban</p>
+                <h1 class="logo-text-unified">Nevezések listája</h1>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px;">A már regisztrált egységek távolság és kategória szerint</p>
             </div>
             <button class="btn-primary" onclick="loadData()">🔄 Lista Frissítése</button>
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card">
+            <a href="#target-22km" class="stat-card">
                 <div class="stat-label">Hosszú táv</div>
                 <div id="count-22km" class="stat-value">0</div>
-            </div>
-            <div class="stat-card">
+            </a>
+            <a href="#target-11km" class="stat-card">
                 <div class="stat-label">Rövid táv</div>
                 <div id="count-11km" class="stat-value">0</div>
-            </div>
-            <div class="stat-card">
+            </a>
+            <a href="#target-4km" class="stat-card">
                 <div class="stat-label">SUP 4 km</div>
                 <div id="count-4km" class="stat-value">0</div>
-            </div>
+            </a>
             <div class="stat-card total">
                 <div class="stat-label">Összes nevezett</div>
                 <div id="count-total" class="stat-value">0</div>
@@ -239,6 +247,8 @@
 
                 const distanceOrder = { '22km': 1, '11km': 2, '4km': 3 };
                 const distanceNames = { '11km': 'Rövid táv', '22km': 'Hosszú táv', '4km': 'SUP 4 km' };
+                const distanceTargets = { '22km': 'target-22km', '11km': 'target-11km', '4km': 'target-4km' };
+                const renderedTargets = new Set();
 
                 Object.keys(catGroups).sort((a, b) => {
                     const distA = catGroups[a][0].distance;
@@ -255,6 +265,14 @@
                     const dist = racers[0].distance;
                     const typeName = distanceNames[dist] || dist;
                     
+                    if (!renderedTargets.has(dist)) {
+                        const anchor = document.createElement('div');
+                        anchor.id = distanceTargets[dist];
+                        anchor.style.scrollMarginTop = '120px'; // Hely a navbar számára
+                        container.appendChild(anchor);
+                        renderedTargets.add(dist);
+                    }
+
                     const catWrapper = document.createElement('div');
                     catWrapper.className = 'category-results-table';
                     catWrapper.style.marginBottom = '2rem';
