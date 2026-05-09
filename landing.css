@@ -25,8 +25,8 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     background-image:
-        linear-gradient(rgba(18, 43, 68, 0.7), rgba(18, 43, 68, 0.7)),
-        url('viztukor.png');
+        linear-gradient(rgba(11, 25, 44, 0.85), rgba(11, 25, 44, 0.85)),
+        url('foldal_1.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;

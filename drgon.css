@@ -35,6 +35,10 @@
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--bg-primary);
+    background-image: linear-gradient(rgba(11, 25, 44, 0.85), rgba(11, 25, 44, 0.85)), url('foldal_1.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     color: var(--text-primary);
     margin: 0;
     padding: 0;
