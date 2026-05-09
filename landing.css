@@ -24,11 +24,7 @@ body {
     color: var(--text-main);
     line-height: 1.6;
     overflow-x: hidden;
-    background-image:
-        linear-gradient(rgba(11, 25, 44, 0.96), rgba(11, 25, 44, 0.96)),
-        url('foldal_1.png');
-    background-size: cover;
-    background-position: center;
+    background: radial-gradient(circle at top right, #162a4a, #0b192c);
     background-attachment: fixed;
 }
 
