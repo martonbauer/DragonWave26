@@ -41,28 +41,21 @@ window.loginAdmin = async () => {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            console.log('Login successful');
             window.raceManager.adminPassword = password;
             sessionStorage.setItem('dragonAdminPassword', password);
-            
-            const loginPanel = document.getElementById('admin-login-panel');
-            const dashboardPanel = document.getElementById('admin-dashboard-panel');
-            
-            if (loginPanel) loginPanel.classList.add('hidden');
-            if (dashboardPanel) dashboardPanel.classList.remove('hidden');
+            document.getElementById('admin-login-panel').classList.add('hidden');
+            document.getElementById('admin-dashboard-panel').classList.remove('hidden');
             
             // Alapértelmezett nézet beállítása
             window.showAdminLanding();
             
-            if (typeof window.renderAdminTable === 'function') window.renderAdminTable();
+            window.renderAdminTable();
             window.raceManager.renderUI();
             showToast('Sikeres belépés!', 'success');
         } else {
-            console.error('Login failed:', result.message || result.error || 'Unknown error');
-            showToast(result.message || result.error || 'Hibás jelszó!', 'error');
+            showToast(result.error || 'Hibás jelszó!', 'error');
         }
     } catch (err) {
-        console.error('Login error:', err);
         showToast("Hiba a belépés során!", "error");
     }
 };
@@ -741,15 +734,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Routing kezelése
     const handleURLRouting = () => {
-        const params = new URLSearchParams(window.location.search);
-        const view = params.get('view');
-        console.log('URL Routing triggered, view:', view);
-        if (view) {
-            setTimeout(() => {
-                console.log('Executing switchTab for:', view);
-                window.switchTab(view);
-            }, 200);
-        }
+        const view = new URLSearchParams(window.location.search).get('view');
+        if (view) setTimeout(() => window.switchTab(view), 200);
     };
     handleURLRouting();
 });

@@ -69,6 +69,11 @@
     <header id="navbar" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
         <div class="header-container">
             <h1 class="logo-text-unified">DUNAKESZI FUTAM 2026</h1>
+            <button class="mobile-menu-toggle" id="menuToggle" aria-label="Menü megnyitása">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <nav class="nav-links" id="main-nav">
                 <a href="index.html" class="nav-btn">Főoldal</a>
                 <a href="management.html?view=regisztracio" class="nav-btn">Nevezés</a>
@@ -130,7 +135,15 @@
             'kenu_4_nyitott_22km': 'Kenu-4 (nyitott)',
             'sup_noi_1_22km': 'SUP női-1',
             'sup_ferfi_1_22km': 'SUP férfi-1',
-            'sarkanyhajo_otproba': 'Sárkányhajó ötpróba'
+            'sup_noi_1_merev_39_alatt_4km': 'SUP női-1- merev deszka 39 év alatt',
+            'sup_noi_1_merev_40_felett_4km': 'SUP női-1- merev deszka 40 év felett',
+            'sup_ferfi_1_merev_39_alatt_4km': 'SUP férfi-1- merev deszka 39 év alatt',
+            'sup_ferfi_1_merev_40_felett_4km': 'SUP férfi-1- merev deszka 40 év felett',
+            'sup_noi_1_felfujhato_39_alatt_4km': 'SUP női-1- felfújható deszka 39 év alatt',
+            'sup_noi_1_felfujhato_40_felett_4km': 'SUP női-1- felfújható deszka 40 év felett',
+            'sup_ferfi_1_felfujhato_39_alatt_4km': 'SUP férfi-1- felfújható deszka 39 év alatt',
+            'sup_ferfi_1_felfujhato_40_felett_4km': 'SUP férfi-1- felfújható deszka 40 év felett',
+            'sarkanyhajo_otproba': 'Sárkányhajó'
         };
 
         function formatCategoryName(id) {
@@ -165,20 +178,29 @@
                     catGroups[groupKey].push(r);
                 });
 
-                Object.keys(catGroups).sort().forEach(groupKey => {
+                const distanceOrder = { '11km': 1, '22km': 2, '4km': 3 };
+                const distanceNames = { '11km': 'Rövid táv', '22km': 'Hosszú táv', '4km': 'SUP 4 km' };
+
+                Object.keys(catGroups).sort((a, b) => {
+                    const distA = catGroups[a][0].distance;
+                    const distB = catGroups[b][0].distance;
+                    if (distanceOrder[distA] !== distanceOrder[distB]) {
+                        return distanceOrder[distA] - distanceOrder[distB];
+                    }
+                    return a.localeCompare(b);
+                }).forEach(groupKey => {
                     const racers = catGroups[groupKey];
                     // Rendezés rajtszám szerint
                     racers.sort((a,b) => (a.bib || 0) - (b.bib || 0));
                     
-                    const distStr = racers[0].distance || '';
-                    const cleanDist = distStr.replace(/km/i, '').trim();
-                    const distDisplay = cleanDist ? `${cleanDist} km` : '';
+                    const dist = racers[0].distance;
+                    const typeName = distanceNames[dist] || dist;
                     
                     const catWrapper = document.createElement('div');
                     catWrapper.className = 'category-results-table';
                     catWrapper.style.marginBottom = '2rem';
                     
-                    let html = `<h4 class="category-title">${formatCategoryName(groupKey)} ${distDisplay ? '- ' + distDisplay : ''}</h4>
+                    let html = `<h4 class="category-title">${typeName} - ${formatCategoryName(groupKey)}</h4>
                                 <table class="results-table">
                                     <thead>
                                         <tr>
@@ -219,5 +241,6 @@
         loadData();
         setInterval(loadData, 5000);
     </script>
+    <script src="landing.js"></script>
 </body>
 </html>

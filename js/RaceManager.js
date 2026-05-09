@@ -58,12 +58,12 @@ export class RaceManager {
         };
         
         this.groupMap = {
-            'kajak_hosszu': 'Összes Hosszú Kajak (22 km)',
-            'kajak_rovid': 'Összes Rövid Kajak (11 km)',
-            'kenu_hosszu': 'Összes Hosszú Kenu (22 km)',
-            'kenu_rovid': 'Összes Rövid Kenu (11 km)',
-            'sup_4km': 'Összes SUP (4 km)',
-            'sarkanyhajo_11km': '🐉 SÁRKÁNYHAJÓ (11 km)'
+            'kajak_hosszu': 'Összes Hosszú Kajak',
+            'kajak_rovid': 'Összes Rövid Kajak',
+            'kenu_hosszu': 'Összes Hosszú Kenu',
+            'kenu_rovid': 'Összes Rövid Kenu',
+            'sup_4km': 'Összes SUP',
+            'sarkanyhajo_11km': '🐉 SÁRKÁNYHAJÓ'
         };
         this.init();
     }
@@ -600,18 +600,20 @@ export class RaceManager {
         }
         if (this.groupMap[id]) return this.groupMap[id];
         
+        if (this.categoryMap[id]) return this.categoryMap[id];
+        
         if (id.includes('_')) {
             const parts = id.split('_');
             const dist = parts[parts.length - 1];
             if (dist === '11km' || dist === '22km' || dist === '4km') {
                 const catId = id.substring(0, id.lastIndexOf('_'));
                 const catName = this.categoryMap[catId] || catId;
-                if (/s[aá]rk[aá]ny/i.test(catId)) return `🐉 SÁRKÁNYHAJÓ (${dist})`;
-                return `${catName} (${dist})`;
+                if (/s[aá]rk[aá]ny/i.test(catId)) return `🐉 SÁRKÁNYHAJÓ`;
+                return catName;
             }
         }
         if (/s[aá]rk[aá]ny/i.test(id)) return `🐉 SÁRKÁNYHAJÓ`;
-        return this.categoryMap[id] || id;
+        return id;
     }
 
     startTickLoop() {

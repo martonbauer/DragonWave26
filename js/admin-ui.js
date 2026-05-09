@@ -209,7 +209,7 @@ export function renderAdminControlButtons() {
     if (distanceContainer) {
         distanceContainer.innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
-                ${['4km', '11km', '22km'].map(dist => {
+                ${['11km', '22km', '4km'].map(dist => {
                     const isRunning = !!rm.data.categories[`DISTANCE_${dist}`];
                     return `
                         <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,228,255,0.03); padding: 10px; border-radius: var(--border-radius-md); border: 1px solid rgba(0,228,255,0.1);">
@@ -307,8 +307,8 @@ export function exportResultsToExcel() {
 
     const wb = XLSX.utils.book_new();
 
-    // 1. Munkalapok létrehozása kategóriánként, Távolság szerinti sorrendben (22km, 11km, 4km)
-    const distancePriority = ['22km', '11km', '4km'];
+    // 1. Munkalapok létrehozása kategóriánként, Távolság szerinti sorrendben (11km, 22km, 4km)
+    const distancePriority = ['11km', '22km', '4km'];
     
     distancePriority.forEach(distId => {
         // Keressük ki az összes kategóriát ebben a távban (kivéve sárkányhajó)
@@ -476,9 +476,9 @@ export function renderAdminCategoryList() {
     container.innerHTML = '';
 
     const distances = [
-        { id: '22km', title: '📏 Hosszú' },
         { id: '11km', title: '📐 Rövid' },
-        { id: '4km', title: '🛶 SUP' }
+        { id: '22km', title: '📏 Hosszú' },
+        { id: '4km', title: '🛶 SUP 4 km' }
     ];
 
     distances.forEach(dist => {

@@ -14,6 +14,11 @@ window.addEventListener('scroll', () => {
 function toggleModal(modalId, show) {
     const modal = document.getElementById(modalId);
     if (show) {
+        // If already logged in, just redirect
+        if (sessionStorage.getItem('dragonAdminPassword')) {
+            window.location.href = 'management.html?view=admin';
+            return;
+        }
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     } else {
