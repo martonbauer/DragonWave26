@@ -1314,7 +1314,13 @@ window.selectExistingDragonTeam = (val) => {
     const inputsContainer = document.getElementById('new-team-inputs-container');
     const submitBtn = document.getElementById('btn-submit-dragon-team');
     
-    if (val) {
+    if (val === 'REMOVE') {
+        if (inputsContainer) inputsContainer.style.display = 'none';
+        if (submitBtn) {
+            submitBtn.innerHTML = '❌ KIJELÖLTEK ELTÁVOLÍTÁSA A CSAPATBÓL';
+            submitBtn.style.background = '#dc3545';
+        }
+    } else if (val) {
         try {
             const data = JSON.parse(val);
             if (bibInput) bibInput.value = data.bib || '';
@@ -1348,6 +1354,41 @@ window.createDragonTeam = async () => {
     const bib = bibInput ? bibInput.value : '';
     const nameInput = document.getElementById('new-team-name');
     const name = nameInput ? nameInput.value : '';
+    const teamSelect = document.getElementById('existing-dragon-teams-select');
+    const val = teamSelect ? teamSelect.value : '';
+
+    if (val === 'REMOVE') {
+        if (selectedIds.length === 0) {
+            showToast("Válassz ki legalább egy versenyzőt az eltávolításhoz!", "error");
+            return;
+        }
+        if (!confirm("Biztosan kiveszed a kijelölt versenyzőket a jelenlegi csapatukból? (Egyéni versenyzőkké válnak)")) return;
+
+        try {
+            const response = await fetch(`${API_URL}/remove-from-dragon-team`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${window.raceManager.adminPassword}`
+                },
+                body: JSON.stringify({ memberIds: selectedIds })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                showToast(`Sikeres eltávolítás!`, "success");
+                teamSelect.value = '';
+                window.selectExistingDragonTeam('');
+                await window.raceManager.loadData();
+                renderTeamManager();
+                window.renderAdminTable();
+            } else {
+                showToast(result.error, "error");
+            }
+        } catch (err) {
+            showToast("Hiba a hálózati kapcsolatban!", "error");
+        }
+        return;
+    }
 
     if (!bib && !name) {
         showToast("Adja meg a csapat nevét vagy a rajtszámát!", "error");

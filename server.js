@@ -821,6 +821,62 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
     }
 });
 
+app.post('/api/remove-from-dragon-team', authenticateAdmin, async (req, res) => {
+    const { memberIds } = req.body;
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+        return res.status(400).json({ error: 'Nincs kijelölt versenyző!' });
+    }
+
+    try {
+        const { data: members, error: membersError } = await supabase.from('members').select('*').in('id', memberIds);
+        if (membersError) throw membersError;
+
+        let processed = 0;
+        let oldRacerIds = [];
+
+        for (const member of members) {
+            if (member.otproba_id === 'CSAPATNEV') continue; // nem vesszük ki a csapatnevet!
+
+            oldRacerIds.push(member.racer_id);
+
+            let bib = await getNextBib('11km', 'sarkanyhajo_otproba');
+            if (!bib) throw new Error('Nincs szabad rajtszám az eltávolított tagnak!');
+
+            const newRacerId = "INDIV_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+            
+            const { error: rError } = await supabase.from('racers').insert({
+                id: newRacerId, 
+                bib: parseInt(bib), 
+                category: 'sarkanyhajo_otproba', 
+                distance: '11km', 
+                status: 'registered'
+            });
+            if (rError) throw rError;
+
+            const { error: mError } = await supabase.from('members')
+                .update({ racer_id: newRacerId })
+                .eq('id', member.id);
+            if (mError) throw mError;
+            
+            processed++;
+        }
+
+        // Takarítás: töröljük azokat a régi rekordokat, amik kiürültek (már nincsenek tagjaik egyáltalán)
+        oldRacerIds = [...new Set(oldRacerIds)];
+        for (const oldId of oldRacerIds) {
+            const { data: remMembers } = await supabase.from('members').select('id').eq('racer_id', oldId).limit(1);
+            if (!remMembers || remMembers.length === 0) {
+                await supabase.from('racers').delete().eq('id', oldId);
+            }
+        }
+
+        res.json({ success: true, count: processed });
+    } catch (err) {
+        console.error("[RemoveFromDragonTeam Error]", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/create-dragon-team', authenticateAdmin, async (req, res) => {
     let { memberIds, bib, name } = req.body;
     if (!bib && !name) return res.status(400).json({ error: 'Nincs megadva se csapatnév, se rajtszám!' });
