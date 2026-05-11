@@ -728,7 +728,15 @@
                                 </div>
                             </div>
                             <div style="margin-bottom: 20px;">
-                                <button id="btn-submit-dragon-team" onclick="window.createDragonTeam()" class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem; margin-bottom:0;">ÚJ EGYSÉG LÉTREHOZÁSA</button>
+                                <button id="btn-submit-dragon-team" onclick="window.createDragonTeam()" class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem; margin-bottom:0;">ÚJ EGYSÉG LÉTREHOZÁSA / BEOSZTÁS</button>
+                            </div>
+
+                            <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                                <label style="font-weight: bold; color: var(--text-secondary);">Szűrés a listában:</label>
+                                <select id="team-builder-category-filter" onchange="window.raceManager.renderTeamManager()" style="padding: 8px; border-radius: 6px; border: 1px solid var(--accent-secondary); background: var(--bg-color); color: var(--text-primary); flex: 1;">
+                                    <option value="sarkanyhajo">Csak Sárkányhajó nevezettek</option>
+                                    <option value="all">Minden nevező (Összes kategória)</option>
+                                </select>
                             </div>
 
                             <div class="table-responsive">

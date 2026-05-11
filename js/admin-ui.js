@@ -1189,10 +1189,14 @@ export function renderTeamManager() {
     const rm = window.raceManager;
     if (!rm || !rm.data.racers) return;
 
-    // Nem szűrünk kategóriára, mindenkit megmutatunk (kérés: összes nevezőt be lehessen osztani)
     const allRacers = rm.data.racers;
     
+    // Szűrő lekérése
+    const filterSelect = document.getElementById('team-builder-category-filter');
+    const filterValue = filterSelect ? filterSelect.value : 'sarkanyhajo';
+    
     // Meglévő csapatok összegyűjtése a dropdown számára (minden olyan egység, aminek van CSAPATNEV tagja)
+    // Ezt nem szűrjük, hogy bármilyen kategóriájú csapatba be lehessen osztani!
     const existingTeams = allRacers.filter(r => r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV'));
     const teamSelect = document.getElementById('existing-dragon-teams-select');
     if (teamSelect) {
@@ -1218,6 +1222,13 @@ export function renderTeamManager() {
     // Gyűjtsük össze az összes tagot ezekből a racer-ekből
     let allMembers = [];
     allRacers.forEach(r => {
+        // Szűrés a kiválasztott érték alapján
+        if (filterValue === 'sarkanyhajo') {
+            if (!(/s[aá]rk[aá]ny/i.test(r.category || ''))) {
+                return; // Kihagyjuk, ha nem sárkányhajó kategória
+            }
+        }
+
         const hasTeamName = r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV');
         const isTeam = r.id.startsWith('DRAGON_') || hasTeamName || (r.members && r.members.length > 1);
         if (r.members) {
