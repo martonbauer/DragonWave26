@@ -431,10 +431,24 @@ export class RaceManager {
         }
     }
 
-    openEditModal(id) {
+    openEditModal(id, memberId = null) {
         if (!this.data || !this.data.racers) return;
         const racer = this.data.racers.find(r => r.id === id);
         if (!racer) return;
+
+        window.currentEditingRacer = JSON.parse(JSON.stringify(racer));
+        window.currentEditingMemberId = memberId;
+
+        const dataContainer = document.getElementById('edit-racer-data-container');
+        const titleEl = document.querySelector('#editRacerModal .card-title');
+        
+        if (memberId) {
+            if (dataContainer) dataContainer.style.display = 'none';
+            if (titleEl) titleEl.innerHTML = '✏️ Versenyző Szerkesztése';
+        } else {
+            if (dataContainer) dataContainer.style.display = 'block';
+            if (titleEl) titleEl.innerHTML = '✏️ Egység / Versenyző Szerkesztése';
+        }
 
         document.getElementById('edit-id').value = racer.id;
         document.getElementById('edit-bib').value = racer.bib || '';
@@ -470,7 +484,27 @@ export class RaceManager {
         const container = document.getElementById('edit-members-container');
         if (container) {
             container.innerHTML = '';
-            (racer.members || []).forEach(m => {
+            
+            let membersToShow = [];
+            const isTeam = racer.id.startsWith('DRAGON_') || (racer.members && racer.members.some(m => m.otproba_id === 'CSAPATNEV'));
+
+            if (memberId) {
+                // Csak az adott tagot szerkesztjük
+                membersToShow = (racer.members || []).filter(m => m.id === memberId);
+            } else if (isTeam) {
+                // Csapatot szerkesztünk: csak a csapatnév jelenjen meg (vagy adjunk hozzá egy üreset, ha nincs)
+                const teamMember = (racer.members || []).find(m => m.otproba_id === 'CSAPATNEV');
+                if (teamMember) {
+                    membersToShow = [teamMember];
+                } else {
+                    membersToShow = [{ name: '', birth_date: '1900-01-01', otproba_id: 'CSAPATNEV' }];
+                }
+            } else {
+                // Sima versenyző összes tagja
+                membersToShow = racer.members || [];
+            }
+
+            membersToShow.forEach(m => {
                 const row = document.createElement('div');
                 row.className = 'member-edit-row';
                 let birth = m.birth_date || '';
@@ -478,18 +512,21 @@ export class RaceManager {
                     const parts = birth.split('.');
                     if (parts.length === 3) birth = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
                 }
+                
+                const isTeamName = m.otproba_id === 'CSAPATNEV';
+                
                 row.innerHTML = `
                     <div style="display: flex; flex-direction: column;">
-                        <label style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 2px;">Név</label>
+                        <label style="font-size: 0.7rem; color: ${isTeamName ? 'var(--accent-primary)' : 'var(--text-secondary)'}; margin-bottom: 2px;">${isTeamName ? 'Csapat Név' : 'Név'}</label>
                         <input type="text" class="edit-m-name" value="${m.name || ''}" placeholder="Név">
                     </div>
-                    <div style="display: flex; flex-direction: column;">
+                    <div style="display: flex; flex-direction: column; ${isTeamName ? 'display: none;' : ''}">
                         <label style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 2px;">Szül. dátum</label>
                         <input type="text" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="edit-m-birth" placeholder="ÉÉÉÉ.HH.NN." value="${birth}">
                     </div>
-                    <div style="display: flex; flex-direction: column;">
+                    <div style="display: flex; flex-direction: column; ${isTeamName ? 'display: none;' : ''}">
                         <label style="font-size: 0.7rem; color: var(--accent-primary); margin-bottom: 2px;">5Próba ID</label>
-                        <input type="text" class="edit-m-otproba" value="${m.otproba_id || ''}" placeholder="Nincs">
+                        <input type="text" class="edit-m-otproba" value="${isTeamName ? 'CSAPATNEV' : (m.otproba_id || '')}" placeholder="Nincs">
                     </div>
                 `;
                 container.appendChild(row);
@@ -511,32 +548,86 @@ export class RaceManager {
 
     async saveRacer() {
         const id = document.getElementById('edit-id').value;
-        const membersRows = document.querySelectorAll('.member-edit-row');
-        const members = Array.from(membersRows).map(row => ({
-            name: row.querySelector('.edit-m-name').value,
-            birth_date: row.querySelector('.edit-m-birth').value,
-            otproba_id: row.querySelector('.edit-m-otproba').value
-        }));
-        let finalCategory = document.getElementById('edit-category').value;
-        if (finalCategory === '__custom__') {
-            finalCategory = document.getElementById('edit-category-custom').value.trim();
-            if (!finalCategory) {
-                showToast('Kérem adjon meg egy egyedi kategóriát!', 'error');
-                return;
+        const racer = window.currentEditingRacer;
+        const memberId = window.currentEditingMemberId;
+        
+        let membersToSend = [];
+
+        if (memberId) {
+            // Egy adott tagot szerkesztünk
+            const row = document.querySelector('.member-edit-row');
+            if (!row) return;
+            const updatedName = row.querySelector('.edit-m-name').value;
+            const updatedBirth = row.querySelector('.edit-m-birth').value;
+            const updatedOtp = row.querySelector('.edit-m-otproba').value;
+
+            membersToSend = (racer.members || []).map(m => {
+                if (m.id === memberId) {
+                    return { ...m, name: updatedName, birth_date: updatedBirth, otproba_id: updatedOtp };
+                }
+                return m;
+            });
+        } else {
+            const isTeam = racer.id.startsWith('DRAGON_') || (racer.members && racer.members.some(m => m.otproba_id === 'CSAPATNEV'));
+            
+            if (isTeam) {
+                // Csapatot szerkesztünk (csak a csapatnév van a formon)
+                const row = document.querySelector('.member-edit-row');
+                const updatedName = row ? row.querySelector('.edit-m-name').value : '';
+                
+                let teamMemberFound = false;
+                membersToSend = (racer.members || []).map(m => {
+                    if (m.otproba_id === 'CSAPATNEV') {
+                        teamMemberFound = true;
+                        return { ...m, name: updatedName };
+                    }
+                    return m;
+                });
+                
+                if (!teamMemberFound && updatedName) {
+                    membersToSend.push({ name: updatedName, birth_date: '1900-01-01', otproba_id: 'CSAPATNEV' });
+                }
+            } else {
+                // Sima versenyzőt szerkesztünk, a formon minden tag ott van
+                const membersRows = document.querySelectorAll('.member-edit-row');
+                membersToSend = Array.from(membersRows).map((row, index) => {
+                    const originalMember = (racer.members && racer.members[index]) ? racer.members[index] : {};
+                    return {
+                        id: originalMember.id, // Supabase allows it, if not it will ignore or fail
+                        name: row.querySelector('.edit-m-name').value,
+                        birth_date: row.querySelector('.edit-m-birth').value,
+                        otproba_id: row.querySelector('.edit-m-otproba').value
+                    };
+                });
+            }
+        }
+
+        let finalCategory = racer.category; // Megtartjuk, ha csak tagot szerkesztünk
+        if (!memberId) {
+            finalCategory = document.getElementById('edit-category').value;
+            if (finalCategory === '__custom__') {
+                finalCategory = document.getElementById('edit-category-custom').value.trim();
+                if (!finalCategory) {
+                    showToast('Kérem adjon meg egy egyedi kategóriát!', 'error');
+                    return;
+                }
             }
         }
 
         const data = {
-            bib: document.getElementById('edit-bib').value ? parseInt(document.getElementById('edit-bib').value) : null,
-            status: document.getElementById('edit-status').value,
-            category: finalCategory,
-            distance: document.getElementById('edit-distance').value,
-            email: document.getElementById('edit-email').value,
-            phone: document.getElementById('edit-phone').value,
-            is_series: document.getElementById('edit-is_series').checked,
-            is_paid: document.getElementById('edit-is_paid').value === "1",
-            members: members
+            members: membersToSend
         };
+
+        if (!memberId) {
+            data.bib = document.getElementById('edit-bib').value ? parseInt(document.getElementById('edit-bib').value) : null;
+            data.status = document.getElementById('edit-status').value;
+            data.category = finalCategory;
+            data.distance = document.getElementById('edit-distance').value;
+            data.email = document.getElementById('edit-email').value;
+            data.phone = document.getElementById('edit-phone').value;
+            data.is_series = document.getElementById('edit-is_series').checked;
+            data.is_paid = document.getElementById('edit-is_paid').value === "1";
+        }
         try {
             const response = await apiCall(`racer/${id}`, 'PUT', data, this.adminPassword);
             if (!response) return;

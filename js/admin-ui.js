@@ -1260,7 +1260,9 @@ export function renderTeamManager() {
 
         tr.innerHTML = `
             <td data-label="Kiválaszt"><input type="checkbox" class="dragon-member-check" value="${m.id}"></td>
-            <td data-label="Név" style="font-weight:bold;">${m.name}</td>
+            <td data-label="Név" style="font-weight:bold;">
+                <span style="cursor: pointer; color: var(--accent-primary); text-decoration: underline;" onclick="window.raceManager.openEditModal('${m.racerId}', '${m.id}')" title="Versenyző szerkesztése">${m.name}</span>
+            </td>
             <td data-label="Szül.idő">${m.birth_date || '-'}</td>
             <td data-label="Ötpróba ID">${m.otproba_id || '-'}</td>
             <td data-label="Aktuális Egység" style="font-size:0.8rem; color:#888;">
