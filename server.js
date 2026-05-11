@@ -822,7 +822,7 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
 });
 
 app.post('/api/remove-from-dragon-team', authenticateAdmin, async (req, res) => {
-    const { memberIds } = req.body;
+    const { memberIds, targetCategory, targetDistance } = req.body;
     if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
         return res.status(400).json({ error: 'Nincs kijelölt versenyző!' });
     }
@@ -833,22 +833,27 @@ app.post('/api/remove-from-dragon-team', authenticateAdmin, async (req, res) => 
 
         let processed = 0;
         let oldRacerIds = [];
+        let newRacerIds = [];
 
         for (const member of members) {
             if (member.otproba_id === 'CSAPATNEV') continue; // nem vesszük ki a csapatnevet!
 
             oldRacerIds.push(member.racer_id);
 
-            let bib = await getNextBib('11km', 'sarkanyhajo_otproba');
+            let newCat = targetCategory || 'sarkanyhajo_otproba';
+            let newDist = targetDistance || '11km';
+
+            let bib = await getNextBib(newDist, newCat);
             if (!bib) throw new Error('Nincs szabad rajtszám az eltávolított tagnak!');
 
             const newRacerId = "INDIV_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+            newRacerIds.push(newRacerId);
             
             const { error: rError } = await supabase.from('racers').insert({
                 id: newRacerId, 
                 bib: parseInt(bib), 
-                category: 'sarkanyhajo_otproba', 
-                distance: '11km', 
+                category: newCat, 
+                distance: newDist, 
                 status: 'registered'
             });
             if (rError) throw rError;
@@ -870,7 +875,7 @@ app.post('/api/remove-from-dragon-team', authenticateAdmin, async (req, res) => 
             }
         }
 
-        res.json({ success: true, count: processed });
+        res.json({ success: true, count: processed, newRacerIds });
     } catch (err) {
         console.error("[RemoveFromDragonTeam Error]", err);
         res.status(500).json({ error: err.message });

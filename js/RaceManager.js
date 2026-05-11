@@ -632,6 +632,8 @@ export class RaceManager {
         }
 
         let finalCategory = racer.category; // Megtartjuk, ha csak tagot szerkesztünk
+        let targetCategoryChanged = false;
+        
         if (!memberId) {
             finalCategory = document.getElementById('edit-category').value;
             if (finalCategory === '__custom__') {
@@ -640,6 +642,16 @@ export class RaceManager {
                     showToast('Kérem adjon meg egy egyedi kategóriát!', 'error');
                     return;
                 }
+            }
+        } else {
+            const catVal = document.getElementById('edit-category').value;
+            let checkCat = catVal;
+            if (catVal === '__custom__') {
+                checkCat = document.getElementById('edit-category-custom').value.trim();
+            }
+            if (checkCat && checkCat !== finalCategory) {
+                targetCategoryChanged = true;
+                finalCategory = checkCat;
             }
         }
 
@@ -664,6 +676,31 @@ export class RaceManager {
             const result = await response.json();
             
             if (response.ok) {
+                // Ha tagot szerkesztettünk, de megváltoztattuk a kategóriáját, akkor ki kell venni a csapatból
+                if (memberId && targetCategoryChanged) {
+                    const distSelect = document.getElementById('edit-distance');
+                    const targetDist = distSelect ? distSelect.value : '11km';
+                    
+                    try {
+                        await fetch(`${API_URL}/remove-from-dragon-team`, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${this.adminPassword}`
+                            },
+                            body: JSON.stringify({ 
+                                memberIds: [memberId],
+                                targetCategory: finalCategory,
+                                targetDistance: targetDist
+                            })
+                        });
+                        showToast("A versenyző kikerült a csapatból az új kategóriába!", "success");
+                    } catch (e) {
+                        console.error("Csapatból kivételi hiba kategóriaváltás miatt:", e);
+                        showToast("Sikerült a mentés, de hiba a csapatból való leválasztáskor!", "warning");
+                    }
+                }
+
                 const editDragonTeamSelect = document.getElementById('edit-dragon-team');
                 if (editDragonTeamSelect && editDragonTeamSelect.value && memberId) {
                     try {
@@ -685,11 +722,14 @@ export class RaceManager {
                         console.error("Csapat áthelyezési hiba:", e);
                         showToast("Hiba a csapatba helyezés során!", "error");
                     }
-                } else if (result.warning) {
-                    showToast(result.warning, "warning");
-                } else {
-                    showToast("Sikeres mentés!", "success");
+                } else if (!targetCategoryChanged) {
+                    if (result.warning) {
+                        showToast(result.warning, "warning");
+                    } else {
+                        showToast("Sikeres mentés!", "success");
+                    }
                 }
+                
                 this.closeEditModal();
                 await this.refreshUI();
             } else {

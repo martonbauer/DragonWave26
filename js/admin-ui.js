@@ -120,7 +120,8 @@ export function renderAdminTable(filterType = 'all') {
                 realMembers.forEach(m => {
                     displayRacers.push({
                         ...r,
-                        members: [m]
+                        members: [m],
+                        team_size_was_larger: true
                     });
                 });
             } else {
@@ -176,7 +177,7 @@ export function renderAdminTable(filterType = 'all') {
             <td data-label="Megjelent" style="text-align:center;">${checkInHtml}</td>
             <td data-label="Barion" style="text-align:center;">${paidHtml}</td>
             <td data-label="Művelet" style="white-space: nowrap; text-align:center;">
-                <button class="action-btn edit" onclick="window.raceManager.openEditModal('${r.id}')" style="background:var(--accent-secondary); padding: 5px 8px; font-size: 1rem; border-radius: 6px; margin-right: 5px;" title="Szerkesztés">✏️</button>
+                <button class="action-btn edit" onclick="window.raceManager.openEditModal('${r.id}', ${r.members && r.members.length === 1 && /s[aá]rk[aá]ny/i.test(r.category || '') && (r.id.startsWith('DRAGON_') || r.team_size_was_larger) ? `'${r.members[0].id}'` : 'null'})" style="background:var(--accent-secondary); padding: 5px 8px; font-size: 1rem; border-radius: 6px; margin-right: 5px;" title="Szerkesztés">✏️</button>
                 <button class="action-btn delete" onclick="window.raceManager.deleteRacer('${r.id}', ${r.bib || 'null'})" style="background:#dc3545; padding: 5px 8px; font-size: 1rem; border-radius: 6px; margin-right: 5px;" title="Törlés">🗑️</button>
                 ${r.status === 'duplicate' ? `
                 <button class="action-btn" onclick="if(confirm('Biztosan érvényesíted a nevezést?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'registered').then(() => renderAdminTable(window.currentTableFilter))" style="background:#5BB226; color:white; padding: 5px 8px; font-size: 0.8rem; border-radius: 6px; font-weight:bold;" title="Érvényesítés">✅ ÉRVÉNYESÍT</button>
