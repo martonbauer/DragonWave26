@@ -966,13 +966,13 @@ export function renderResultsTable(filterType = 'all') {
     
     if (thead) {
         thead.innerHTML = `
-            <th>Helyezés</th>
-            <th>Rajtszám</th>
-            <th>Egység Tagjai</th>
-            <th>Kategória</th>
-            <th>Táv</th>
-            ${showFordulo ? '<th>Forduló idő (11km)</th>' : ''}
-            <th>Időeredmény</th>
+            <th style="width: 8%">Helyezés</th>
+            <th style="width: 12%">Rajtszám</th>
+            <th style="width: ${showFordulo ? '35%' : '45%'}">Egység Tagjai</th>
+            <th style="width: 15%">Kategória</th>
+            <th style="width: 10%">Táv</th>
+            ${showFordulo ? '<th style="width: 10%">Forduló idő (11km)</th>' : ''}
+            <th style="width: 10%">Időeredmény</th>
         `;
     }
 
@@ -1148,11 +1148,11 @@ export function renderResultsCategoryDetail(distId, catId) {
     
     if (targetThead) {
         targetThead.innerHTML = `
-            <th>Helyezés</th>
-            <th>Rajtszám</th>
-            <th>Egység Tagjai</th>
-            ${distId === '22km' ? '<th>Forduló idő (11km)</th>' : ''}
-            <th>Időeredmény</th>
+            <th style="width: 10%">Helyezés</th>
+            <th style="width: 15%">Rajtszám</th>
+            <th style="width: ${distId === '22km' ? '45%' : '55%'}">Egység Tagjai</th>
+            ${distId === '22km' ? '<th style="width: 15%">Forduló idő (11km)</th>' : ''}
+            <th style="width: 15%">Időeredmény</th>
         `;
     }
 

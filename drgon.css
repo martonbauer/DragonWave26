@@ -892,7 +892,7 @@ form select:focus {
 /* Eredménytáblázatok rácsa */
 #results-tables-container {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     gap: 2rem;
     margin-bottom: 3rem;
 }
@@ -920,6 +920,7 @@ form select:focus {
 .results-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 .results-table th {
