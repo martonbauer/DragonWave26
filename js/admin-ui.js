@@ -1189,19 +1189,20 @@ export function renderTeamManager() {
     const rm = window.raceManager;
     if (!rm || !rm.data.racers) return;
 
-    // Keressük ki azokat a tagokat (members), akik sárkányhajó kategóriában vannak
-    // PLUSZ: akiknek a racer-je még üres vagy csak egyéni puffer
-    const dragonRacers = rm.data.racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
+    // Nem szűrünk kategóriára, mindenkit megmutatunk (kérés: összes nevezőt be lehessen osztani)
+    const allRacers = rm.data.racers;
     
-    // Meglévő csapatok összegyűjtése a dropdown számára
-    const existingTeams = dragonRacers.filter(r => r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV'));
+    // Meglévő csapatok összegyűjtése a dropdown számára (minden olyan egység, aminek van CSAPATNEV tagja)
+    const existingTeams = allRacers.filter(r => r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV'));
     const teamSelect = document.getElementById('existing-dragon-teams-select');
     if (teamSelect) {
         teamSelect.innerHTML = '<option value="">-- Új csapat létrehozása (Töltsd ki az alsó mezőket) --</option>';
         existingTeams.forEach(team => {
             const teamMember = team.members.find(m => m.otproba_id === 'CSAPATNEV');
             const teamName = teamMember ? teamMember.name : `Ismeretlen Csapat #${team.bib}`;
-            const opt = new Option(`${teamName} (#${team.bib})`, JSON.stringify({bib: team.bib, name: teamName}));
+            // Jelezzük a kategóriát is a legördülőben, hogy egyértelmű legyen, melyik csapat melyik kategóriában van
+            const categoryName = rm.formatCategoryName(team.category) || 'Ismeretlen kategória';
+            const opt = new Option(`${teamName} (#${team.bib} - ${categoryName})`, JSON.stringify({bib: team.bib, name: teamName}));
             
             const membersList = team.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.name).join(', ');
             if (membersList) {
@@ -1215,43 +1216,45 @@ export function renderTeamManager() {
     }
     
     // Gyűjtsük össze az összes tagot ezekből a racer-ekből
-    let allDragonMembers = [];
-    dragonRacers.forEach(r => {
-        const isTeam = r.id.startsWith('DRAGON_') || (r.members && r.members.length > 1);
+    let allMembers = [];
+    allRacers.forEach(r => {
+        const hasTeamName = r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV');
+        const isTeam = r.id.startsWith('DRAGON_') || hasTeamName || (r.members && r.members.length > 1);
         if (r.members) {
-            const teamMember = isTeam ? r.members.find(x => x.otproba_id === 'CSAPATNEV') : null;
+            const teamMember = hasTeamName ? r.members.find(x => x.otproba_id === 'CSAPATNEV') : null;
             const teamName = teamMember ? teamMember.name : (isTeam ? `Csapat #${r.bib}` : null);
             
             r.members.forEach(m => {
                 if (m.otproba_id !== 'CSAPATNEV') {
-                    allDragonMembers.push({ 
+                    allMembers.push({ 
                         ...m, 
                         racerBib: r.bib, 
                         racerStatus: r.status, 
                         racerId: r.id, 
                         teamSize: r.members.length,
                         teamName: teamName,
-                        isTeam: isTeam
+                        isTeam: isTeam,
+                        category: r.category
                     });
                 }
             });
         }
     });
 
-    if (allDragonMembers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-secondary);">Nincs sárkányhajóra jelentkezett versenyző a rendszerben.</td></tr>';
+    if (allMembers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-secondary);">Nincs versenyző a rendszerben.</td></tr>';
         return;
     }
 
     // Rendezés: Egyéni jelentkezők elöl, utána csapatok név szerint
-    allDragonMembers.sort((a, b) => {
+    allMembers.sort((a, b) => {
         if (!a.isTeam && b.isTeam) return -1;
         if (a.isTeam && !b.isTeam) return 1;
         if (a.teamName && b.teamName) return a.teamName.localeCompare(b.teamName);
         return 0;
     });
 
-    allDragonMembers.forEach(m => {
+    allMembers.forEach(m => {
         const tr = document.createElement('tr');
         
         const teamInfo = m.isTeam ? 
@@ -1265,6 +1268,7 @@ export function renderTeamManager() {
             </td>
             <td data-label="Szül.idő">${m.birth_date || '-'}</td>
             <td data-label="Ötpróba ID">${m.otproba_id || '-'}</td>
+            <td data-label="Kategória" style="font-size:0.8rem; color:#ccc;">${rm.formatCategoryName(m.category) || '-'}</td>
             <td data-label="Aktuális Egység" style="font-size:0.8rem; color:#888;">
                 ${teamInfo}
             </td>
