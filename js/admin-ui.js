@@ -1218,7 +1218,10 @@ export function renderTeamManager() {
     let allDragonMembers = [];
     dragonRacers.forEach(r => {
         const isTeam = r.id.startsWith('DRAGON_') || (r.members && r.members.length > 1);
-        if (r.members && !isTeam) {
+        if (r.members) {
+            const teamMember = isTeam ? r.members.find(x => x.otproba_id === 'CSAPATNEV') : null;
+            const teamName = teamMember ? teamMember.name : (isTeam ? `Csapat #${r.bib}` : null);
+            
             r.members.forEach(m => {
                 if (m.otproba_id !== 'CSAPATNEV') {
                     allDragonMembers.push({ 
@@ -1226,7 +1229,9 @@ export function renderTeamManager() {
                         racerBib: r.bib, 
                         racerStatus: r.status, 
                         racerId: r.id, 
-                        teamSize: r.members.length 
+                        teamSize: r.members.length,
+                        teamName: teamName,
+                        isTeam: isTeam
                     });
                 }
             });
@@ -1238,16 +1243,28 @@ export function renderTeamManager() {
         return;
     }
 
+    // Rendezés: Egyéni jelentkezők elöl, utána csapatok név szerint
+    allDragonMembers.sort((a, b) => {
+        if (!a.isTeam && b.isTeam) return -1;
+        if (a.isTeam && !b.isTeam) return 1;
+        if (a.teamName && b.teamName) return a.teamName.localeCompare(b.teamName);
+        return 0;
+    });
+
     allDragonMembers.forEach(m => {
         const tr = document.createElement('tr');
         
+        const teamInfo = m.isTeam ? 
+            `<span style="color:#00e4ff; font-weight:bold;">${m.teamName || ('#' + m.racerBib)}</span>` : 
+            `<span style="color:#ff9800; font-weight:bold;">Egyéni jelentkező</span>`;
+
         tr.innerHTML = `
             <td data-label="Kiválaszt"><input type="checkbox" class="dragon-member-check" value="${m.id}"></td>
             <td data-label="Név" style="font-weight:bold;">${m.name}</td>
             <td data-label="Szül.idő">${m.birth_date || '-'}</td>
             <td data-label="Ötpróba ID">${m.otproba_id || '-'}</td>
             <td data-label="Aktuális Egység" style="font-size:0.8rem; color:#888;">
-                <span style="color:#ff9800; font-weight:bold;">Egyéni jelentkező</span>
+                ${teamInfo}
             </td>
         `;
         tbody.appendChild(tr);
