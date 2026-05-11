@@ -206,10 +206,10 @@ export function formatMemberListHtml(racer) {
         html += `<details style="cursor: pointer; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 6px;">
                     <summary style="font-weight:bold; color:var(--accent-primary); outline: none;">${t.name} <span style="font-size: 0.8em;">▼</span></summary>
                     <div style="margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--accent-secondary);">`;
-        html += rm.map(m => `<div style="margin-bottom:6px;"><strong onclick="window.raceManager.openEditModal('${racer.id}', '${m.id}')" style="cursor: pointer; color: var(--accent-primary); text-decoration: underline;" title="Versenyző/Csapat szerkesztése">${m.name || '?'}</strong> <br><span style="font-size:0.75rem; color:#aaa;">Szül: ${m.birth_date || '?'} | 5P: ${m.otproba_id || '-'}</span></div>`).join('');
+        html += rm.map(m => `<div style="margin-bottom:6px;"><strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--accent-primary);" title="Versenyző/Csapat szerkesztése">${m.name || '?'}</strong> <br><span style="font-size:0.75rem; color:#aaa;">Szül: ${m.birth_date || '?'} | 5P: ${m.otproba_id || '-'}</span></div>`).join('');
         html += `</div></details>`;
     } else {
-        html += rm.map(m => `<div style="margin-bottom:2px;"><strong onclick="window.raceManager.openEditModal('${racer.id}', '${m.id}')" style="cursor: pointer; text-decoration: underline;" title="Versenyző szerkesztése">${m.name || '?'}</strong> <span style="font-size:0.7rem; color:#888;">(${m.birth_date || '?'})</span></div>`).join('');
+        html += rm.map(m => `<div style="margin-bottom:2px;"><strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--text-primary);" title="Versenyző szerkesztése">${m.name || '?'}</strong> <span style="font-size:0.7rem; color:#888;">(${m.birth_date || '?'})</span></div>`).join('');
     }
     return html || (racer.name || '-');
 }

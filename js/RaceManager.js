@@ -481,6 +481,35 @@ export class RaceManager {
         document.getElementById('edit-is_series').checked = !!racer.is_series;
         document.getElementById('edit-is_paid').value = racer.is_paid ? "1" : "0";
 
+        const editDragonTeamContainer = document.getElementById('edit-dragon-team-container');
+        const editDragonTeamSelect = document.getElementById('edit-dragon-team');
+        
+        if (editDragonTeamContainer && editDragonTeamSelect) {
+            if (/s[aá]rk[aá]ny/i.test(racer.category || '')) {
+                editDragonTeamContainer.style.display = 'block';
+                editDragonTeamSelect.innerHTML = '<option value="">-- Jelenlegi állapot megtartása --</option>';
+                
+                const teams = [];
+                this.data.racers.forEach(r => {
+                    if (/s[aá]rk[aá]ny/i.test(r.category || '')) {
+                        const tMember = (r.members || []).find(m => m.otproba_id === 'CSAPATNEV');
+                        if (tMember && tMember.name) {
+                            teams.push({ id: r.id, name: tMember.name, bib: r.bib });
+                        }
+                    }
+                });
+                
+                teams.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
+                    if (t.id !== racer.id) {
+                        editDragonTeamSelect.appendChild(new Option(`${t.name} (#${t.bib || '-'})`, JSON.stringify(t)));
+                    }
+                });
+            } else {
+                editDragonTeamContainer.style.display = 'none';
+                editDragonTeamSelect.innerHTML = '';
+            }
+        }
+
         const container = document.getElementById('edit-members-container');
         if (container) {
             container.innerHTML = '';
@@ -635,7 +664,28 @@ export class RaceManager {
             const result = await response.json();
             
             if (response.ok) {
-                if (result.warning) {
+                const editDragonTeamSelect = document.getElementById('edit-dragon-team');
+                if (editDragonTeamSelect && editDragonTeamSelect.value && memberId) {
+                    try {
+                        const targetTeam = JSON.parse(editDragonTeamSelect.value);
+                        await fetch(`${API_URL}/create-dragon-team`, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${this.adminPassword}`
+                            },
+                            body: JSON.stringify({ 
+                                memberIds: [memberId], 
+                                bib: targetTeam.bib, 
+                                name: targetTeam.name 
+                            })
+                        });
+                        showToast("A versenyző sikeresen átkerült a kiválasztott csapatba!", "success");
+                    } catch (e) {
+                        console.error("Csapat áthelyezési hiba:", e);
+                        showToast("Hiba a csapatba helyezés során!", "error");
+                    }
+                } else if (result.warning) {
                     showToast(result.warning, "warning");
                 } else {
                     showToast("Sikeres mentés!", "success");

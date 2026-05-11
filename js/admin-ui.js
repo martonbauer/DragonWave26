@@ -112,7 +112,26 @@ export function renderAdminTable(filterType = 'all') {
         return;
     }
 
-    racers.sort((a, b) => (a.bib || 0) - (b.bib || 0)).forEach(r => {
+    let displayRacers = [];
+    racers.forEach(r => {
+        if (/s[aá]rk[aá]ny/i.test(r.category || '')) {
+            const realMembers = (r.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
+            if (realMembers.length > 0) {
+                realMembers.forEach(m => {
+                    displayRacers.push({
+                        ...r,
+                        members: [m]
+                    });
+                });
+            } else {
+                displayRacers.push(r);
+            }
+        } else {
+            displayRacers.push(r);
+        }
+    });
+
+    displayRacers.sort((a, b) => (a.bib || 0) - (b.bib || 0)).forEach(r => {
         const tr = document.createElement('tr');
         let statusColor = "white";
         let dataStartAttr = "";
