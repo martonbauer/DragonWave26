@@ -66,7 +66,7 @@ header {
     margin: 0 auto;
     padding: 0 2rem;
     gap: 1rem;
-    flex-wrap: nowrap; /* Enforce single line mobile layout */
+    flex-wrap: wrap; /* Changed to wrap to avoid horizontal scroll on mobile */
 }
 
 #local-time-container {
@@ -126,8 +126,9 @@ header {
     }
 
     .logo-text-unified {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         white-space: normal;
+        flex: 1;
     }
 
     .mobile-menu-toggle {
@@ -173,6 +174,36 @@ header {
 
     #main-nav.active {
         right: 0;
+    }
+}
+
+@media (max-width: 650px) {
+    .management-grid, .admin-landing-grid {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .import-zone, .export-zone, .danger-zone {
+        min-width: 100% !important;
+        text-align: left !important;
+    }
+
+    .modal-content {
+        padding: 20px 15px;
+        width: 95%;
+    }
+
+    .bib-input-wrapper {
+        flex-direction: column;
+    }
+
+    .bib-input-wrapper .button-group {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .bib-input-wrapper .button-group button {
+        width: 100%;
     }
 }
 
@@ -627,7 +658,7 @@ header {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -0.5px;
-    white-space: nowrap;
+    white-space: normal; /* Allowed to wrap */
 }
 
 #main-nav {
