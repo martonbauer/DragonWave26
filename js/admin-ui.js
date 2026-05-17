@@ -1489,12 +1489,11 @@ window.generateDiploma = async (bibStr) => {
         // Használjuk a beépített Helvetica betűtípust
         const font = await pdfDoc.embedFont(window.PDFLib.StandardFonts.HelveticaBold);
 
-        const drawTextAt = (text, x, y, size, color) => {
-            // Eltávolítjuk a nem támogatott karaktereket ha szükséges, vagy kicseréljük őket (ő -> o, ű -> u)
-            // A PDFLib beépített Helvetica nem biztos, hogy ismeri az ő és ű betűket
+        const drawRightAlignedText = (text, rightX, y, size, color) => {
             const safeText = text.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
+            const textWidth = font.widthOfTextAtSize(safeText, size);
             firstPage.drawText(safeText, {
-                x: x,
+                x: rightX - textWidth,
                 y: y,
                 size: size,
                 font: font,
@@ -1502,19 +1501,24 @@ window.generateDiploma = async (bibStr) => {
             });
         };
 
-        // Jobb felső sarok koordinátái
-        // Szélességből kivonunk 280 pontot, hogy legyen hely a szövegnek a jobb szélig, fentről 90 pontról indulunk
-        const startX = width - 280;
-        let startY = height - 90;
-
-        drawTextAt(name, startX, startY, 20, rgb(0.1, 0.1, 0.4));
-        startY -= 25;
+        // A pdf minta alapján a dinamikus szövegeket jobbra igazítjuk a fix feliratok elé.
+        // A "rightX" megadja, hogy hol végződjön a beszúrt szöveg (a fix felirat bal széle előtt)
+        // Az Y koordináta alulról számítandó, ezért a magasságból vonunk ki értékeket
         
-        drawTextAt(`${categoryName} (${distanceStr})`, startX, startY, 14, rgb(0.3, 0.3, 0.3));
-        startY -= 25;
+        const nameRightX = 550; // "részére, aki" felirat előtt végződik
+        const nameY = height - 210;
 
+        const categoryRightX = 390; // "kategóriában" felirat előtt végződik
+        const categoryY = height - 370;
+
+        const rankRightX = 320; // "helyezést" felirat előtt végződik
+        const rankY = height - 425;
+
+        drawRightAlignedText(name, nameRightX, nameY, 32, rgb(0.1, 0.1, 0.4));
+        drawRightAlignedText(`${categoryName} (${distanceStr})`, categoryRightX, categoryY, 20, rgb(0.3, 0.3, 0.3));
+        
         if (rankStr !== "-") {
-            drawTextAt(`Helyezés: ${rankStr}.`, startX, startY, 16, rgb(0.8, 0.2, 0.2));
+            drawRightAlignedText(`${rankStr}.`, rankRightX, rankY, 24, rgb(0.8, 0.2, 0.2));
         }
 
         const pdfBytes = await pdfDoc.save();
