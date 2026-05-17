@@ -583,6 +583,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'turakajak_2_nyitott_22km', name: 'Túrakajak 2 (nyitott)' },
                 { id: 'tengeri_kajak_noi_1_22km', name: 'Tengeri kajak női-1 (51 cm>)' },
                 { id: 'tengeri_kajak_ferfi_1_22km', name: 'Tengeri kajak férfi-1 (51 cm>)' },
+                { id: 'surfski_noi_22km', name: 'Surfski női-1' },
+                { id: 'surfski_ferfi_22km', name: 'Surfski férfi-1' },
                 { id: 'mk_1_fiu_22km', name: 'MK-1 fiú' },
                 { id: 'mk_1_leany_22km', name: 'MK-1 leány' },
                 { id: 'outrigger_noi_1_22km', name: 'Outrigger női-1' },
@@ -647,6 +649,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const isAdmin = notice && notice.classList.contains('hidden');
 
             if(payModal && !isAdmin) {
+                const actualMembersCount = members.filter(m => m.otproba_id !== 'CSAPATNEV').length;
+                const finalAmount = actualMembersCount * 7000;
+                
+                const paymentAmountEl = document.getElementById('payment-amount');
+                if (paymentAmountEl) {
+                    paymentAmountEl.textContent = `${finalAmount.toLocaleString('hu-HU')} Ft`;
+                }
+
                 payModal.classList.add('active');
                 
                 const btnPaySuccess = document.getElementById('btn-pay-success');
@@ -669,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // 2. Barion fizetés indítása API-n keresztül
                         const payload = {
                             email: email,
-                            amount: 15000,
+                            amount: finalAmount,
                             guestString: `${contactName} - ${tav}`,
                             orderId: `DRGW-${Date.now()}`
                         };

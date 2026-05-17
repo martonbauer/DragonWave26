@@ -31,6 +31,8 @@ export class RaceManager {
             'turakajak_2_nyitott_22km': 'Túrakajak 2 (nyitott)',
             'tengeri_kajak_noi_1_22km': 'Tengeri kajak női-1 (51 cm>)',
             'tengeri_kajak_ferfi_1_22km': 'Tengeri kajak férfi-1 (51 cm>)',
+            'surfski_noi_22km': 'Surfski női-1',
+            'surfski_ferfi_22km': 'Surfski férfi-1',
             'mk_1_fiu_22km': 'MK-1 fiú',
             'mk_1_leany_22km': 'MK-1 leány',
             'outrigger_noi_1_22km': 'Outrigger női-1',

@@ -248,13 +248,7 @@ app.post('/api/barion/payment', async (req, res) => {
     
     // Fallback ha nincs kulcs: szimulált visszatérés (hogy az élesítés előtt is működjön a projekt bemutató)
     if (!posKey || posKey === 'your_barion_poskey') {
-        return res.json({ 
-            PaymentId: "TEST-BARION-ID-12345", 
-            PaymentRequestId: "TEST-REQ-ID", 
-            Status: "Prepared", 
-            GatewayUrl: `management.html?payment=success&id=${orderId || 'test'}`,
-            simulated: true
-        });
+        return res.status(400).json({ error: "A Barion fizetés jelenleg élesítve van, de hiányzik a BARION_POS_KEY az .env fájlból!" });
     }
 
     const payload = {
