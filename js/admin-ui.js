@@ -1423,3 +1423,109 @@ window.createDragonTeam = async () => {
         showToast("Hiba a szerver kapcsolatban!", "error");
     }
 };
+
+window.generateDiploma = async (bibStr) => {
+    const bib = parseInt(bibStr);
+    if (isNaN(bib)) {
+        showToast("Kérjük, adjon meg egy érvényes rajtszámot!", "error");
+        return;
+    }
+
+    const rm = window.raceManager;
+    if (!rm || !rm.data || !rm.data.racers) {
+        showToast("Az adatok még nem töltődtek be!", "error");
+        return;
+    }
+
+    const racer = rm.data.racers.find(r => r.bib === bib);
+    if (!racer) {
+        showToast("Nincs ilyen rajtszámmal rendelkező versenyző!", "error");
+        return;
+    }
+
+    showToast("Oklevél generálása folyamatban...", "info");
+
+    try {
+        // Helyezés kiszámítása
+        const categoryRacers = rm.data.racers.filter(r => r.category === racer.category && r.distance === racer.distance);
+        const sorted = categoryRacers.sort((a, b) => {
+            if (a.status === 'finished' && b.status !== 'finished') return -1;
+            if (a.status !== 'finished' && b.status === 'finished') return 1;
+            if (a.status === 'finished' && b.status === 'finished') return (a.total_time || 0) - (b.total_time || 0);
+            return (a.bib || 0) - (b.bib || 0);
+        });
+
+        let rankStr = "-";
+        if (racer.status === 'finished') {
+            const index = sorted.findIndex(r => r.bib === bib);
+            if (index !== -1) rankStr = (index + 1).toString();
+        }
+
+        const name = formatRacerName(racer);
+        const categoryName = rm.formatCategoryName(racer.category);
+        const distanceStr = racer.distance;
+
+        // PDF Letöltése és betöltése
+        const existingPdfBytes = await fetch('Dunakeszi.pdf').then(res => {
+            if (!res.ok) throw new Error("Nem található a Dunakeszi.pdf fájl a szerveren!");
+            return res.arrayBuffer();
+        });
+
+        if (!window.PDFLib) {
+            throw new Error("A PDF-lib könyvtár nem töltődött be!");
+        }
+
+        const { PDFDocument, rgb } = window.PDFLib;
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        
+        if (window.fontkit) {
+            pdfDoc.registerFontkit(window.fontkit);
+        }
+
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+        const { width, height } = firstPage.getSize();
+
+        // Használjuk a beépített Helvetica betűtípust
+        const font = await pdfDoc.embedFont(window.PDFLib.StandardFonts.HelveticaBold);
+
+        const drawCenteredText = (text, y, size, color) => {
+            // Eltávolítjuk a nem támogatott karaktereket ha szükséges, vagy kicseréljük őket (ő -> o, ű -> u)
+            // A PDFLib beépített Helvetica nem biztos, hogy ismeri az ő és ű betűket
+            const safeText = text.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
+            const textWidth = font.widthOfTextAtSize(safeText, size);
+            firstPage.drawText(safeText, {
+                x: width / 2 - textWidth / 2,
+                y: y,
+                size: size,
+                font: font,
+                color: color || rgb(0, 0, 0)
+            });
+        };
+
+        // Alapértelmezett koordináták, majd a minta alapján be kell állítani
+        drawCenteredText(name, height - 300, 32, rgb(0.1, 0.1, 0.4));
+        drawCenteredText(`${categoryName} (${distanceStr})`, height - 350, 20, rgb(0.3, 0.3, 0.3));
+        if (rankStr !== "-") {
+            drawCenteredText(`Helyezés: ${rankStr}.`, height - 400, 24, rgb(0.8, 0.2, 0.2));
+        }
+
+        const pdfBytes = await pdfDoc.save();
+
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Oklevel_${racer.bib}_${name.replace(/[^a-zA-Z0-9_-]/g, '')}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast("Az oklevél sikeresen letöltve!", "success");
+
+    } catch (err) {
+        console.error("PDF hiba:", err);
+        showToast("Hiba történt az oklevél generálása során: " + err.message, "error");
+    }
+};

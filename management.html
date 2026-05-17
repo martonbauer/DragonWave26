@@ -614,6 +614,25 @@
                                     <p>Kategóriánkénti rangsorok és helyezések.</p>
                                     <div class="btn-enter">Megnyitás</div>
                                 </div>
+                                <div class="landing-card" onclick="document.getElementById('admin-results-landing-view').classList.add('hidden'); document.getElementById('admin-diploma-generator-view').classList.remove('hidden');">
+                                    <div class="icon">🏅</div>
+                                    <h3>oklevél generátor</h3>
+                                    <p>Személyre szabott PDF oklevél letöltése rajtszám alapján.</p>
+                                    <div class="btn-enter">Megnyitás</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Diploma Generator View -->
+                        <div id="admin-diploma-generator-view" class="hidden">
+                            <div class="section-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                                <h3 class="section-title" style="margin-bottom:0;">🏅 Oklevél Generálása</h3>
+                                <button class="btn-back" onclick="document.getElementById('admin-diploma-generator-view').classList.add('hidden'); document.getElementById('admin-results-landing-view').classList.remove('hidden');">⬅️ Vissza a választóhoz</button>
+                            </div>
+                            <div class="admin-card" style="max-width: 500px; margin: 0 auto; text-align: center;">
+                                <p style="color: var(--text-secondary); margin-bottom: 20px;">Add meg a versenyző rajtszámát, és a rendszer automatikusan kitölti az oklevelet a nevével, kategóriájával és a helyezésével.</p>
+                                <input type="number" id="diploma-bib-input" placeholder="Rajtszám (pl. 102)" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1.2rem; text-align: center; border-radius: 8px; border: 2px solid var(--accent-primary); background: rgba(0,0,0,0.3); color: white; margin-bottom: 20px;">
+                                <button onclick="window.generateDiploma(document.getElementById('diploma-bib-input').value)" class="btn-primary" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1.1rem; font-weight: bold; margin: 0 auto; display: block;">PDF OKLEVÉL LETÖLTÉSE</button>
                             </div>
                         </div>
 
@@ -893,6 +912,8 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.min.js"></script>
     <script type="module" src="dragon.js"></script>
     <script>
         // Mobile menu fix for offline/CORS mode
