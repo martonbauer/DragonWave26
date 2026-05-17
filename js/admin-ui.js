@@ -1489,11 +1489,11 @@ window.generateDiploma = async (bibStr) => {
         // Használjuk a beépített Helvetica betűtípust
         const font = await pdfDoc.embedFont(window.PDFLib.StandardFonts.HelveticaBold);
 
-        const drawRightAlignedText = (text, rightX, y, size, color) => {
+        const drawCenteredText = (text, centerX, y, size, color) => {
             const safeText = text.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
             const textWidth = font.widthOfTextAtSize(safeText, size);
             firstPage.drawText(safeText, {
-                x: rightX - textWidth,
+                x: centerX - textWidth / 2,
                 y: y,
                 size: size,
                 font: font,
@@ -1506,40 +1506,40 @@ window.generateDiploma = async (bibStr) => {
         const ertElText = isTeam ? "értek el." : "ért el.";
         const teljesitettText = isTeam ? "sikeresen teljesítették a távot." : "sikeresen teljesítette a távot.";
 
-        // A teljes szövegblokk a jobb oldalra kerül
-        const rightMarginX = width - 100;
-        let currentY = height - 190;
+        // A teljes szövegblokk a jobb oldalra kerül, KÖZÉPRE IGAZÍTVA a jobb oldali üres térben
+        const centerX = width * 0.70; // A jobb oldali tér közepe
+        let currentY = height - 170; // Kicsit feljebbről kezdjük, hogy kiférjen a nagy betűméret
 
         const darkBlue = rgb(0.05, 0.2, 0.35);
         const darkRed = rgb(0.65, 0.15, 0.15);
 
         // 1. Név
-        drawRightAlignedText(name, rightMarginX, currentY, 28, darkBlue);
-        currentY -= 30;
+        drawCenteredText(name, centerX, currentY, 34, darkBlue);
+        currentY -= 35;
 
         // 2. Részére, aki(k)
-        drawRightAlignedText(akiText, rightMarginX, currentY, 18, darkBlue);
-        currentY -= 40;
+        drawCenteredText(akiText, centerX, currentY, 22, darkBlue);
+        currentY -= 50;
 
         // 3. Esemény neve (piros)
-        drawRightAlignedText("az Országos Vízitúra Bajnokság", rightMarginX, currentY, 24, darkRed);
-        currentY -= 30;
+        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, currentY, 28, darkRed);
+        currentY -= 32;
         
-        drawRightAlignedText("2. fordulóján", rightMarginX, currentY, 24, darkRed);
-        currentY -= 30;
+        drawCenteredText("2. fordulóján", centerX, currentY, 28, darkRed);
+        currentY -= 32;
         
-        drawRightAlignedText("a Dunakeszi Futamon", rightMarginX, currentY, 24, darkRed);
-        currentY -= 45;
+        drawCenteredText("a Dunakeszi Futamon", centerX, currentY, 28, darkRed);
+        currentY -= 50;
 
         // 4. Kategória
-        drawRightAlignedText(`${categoryName} (${distanceStr}) kategóriában`, rightMarginX, currentY, 22, darkBlue);
+        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, currentY, 26, darkBlue);
         currentY -= 35;
         
         // 5. Helyezés
         if (rankStr !== "-") {
-            drawRightAlignedText(`${rankStr}. helyezést ${ertElText}`, rightMarginX, currentY, 24, darkBlue);
+            drawCenteredText(`${rankStr}. helyezést ${ertElText}`, centerX, currentY, 28, darkBlue);
         } else {
-            drawRightAlignedText(teljesitettText, rightMarginX, currentY, 20, darkBlue);
+            drawCenteredText(teljesitettText, centerX, currentY, 24, darkBlue);
         }
 
         const pdfBytes = await pdfDoc.save();
