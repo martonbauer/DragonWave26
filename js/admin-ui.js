@@ -1489,13 +1489,12 @@ window.generateDiploma = async (bibStr) => {
         // Használjuk a beépített Helvetica betűtípust
         const font = await pdfDoc.embedFont(window.PDFLib.StandardFonts.HelveticaBold);
 
-        const drawCenteredText = (text, y, size, color) => {
+        const drawTextAt = (text, x, y, size, color) => {
             // Eltávolítjuk a nem támogatott karaktereket ha szükséges, vagy kicseréljük őket (ő -> o, ű -> u)
             // A PDFLib beépített Helvetica nem biztos, hogy ismeri az ő és ű betűket
             const safeText = text.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
-            const textWidth = font.widthOfTextAtSize(safeText, size);
             firstPage.drawText(safeText, {
-                x: width / 2 - textWidth / 2,
+                x: x,
                 y: y,
                 size: size,
                 font: font,
@@ -1503,11 +1502,19 @@ window.generateDiploma = async (bibStr) => {
             });
         };
 
-        // Alapértelmezett koordináták, majd a minta alapján be kell állítani
-        drawCenteredText(name, height - 300, 32, rgb(0.1, 0.1, 0.4));
-        drawCenteredText(`${categoryName} (${distanceStr})`, height - 350, 20, rgb(0.3, 0.3, 0.3));
+        // Jobb felső sarok koordinátái
+        // Szélességből kivonunk 280 pontot, hogy legyen hely a szövegnek a jobb szélig, fentről 90 pontról indulunk
+        const startX = width - 280;
+        let startY = height - 90;
+
+        drawTextAt(name, startX, startY, 20, rgb(0.1, 0.1, 0.4));
+        startY -= 25;
+        
+        drawTextAt(`${categoryName} (${distanceStr})`, startX, startY, 14, rgb(0.3, 0.3, 0.3));
+        startY -= 25;
+
         if (rankStr !== "-") {
-            drawCenteredText(`Helyezés: ${rankStr}.`, height - 400, 24, rgb(0.8, 0.2, 0.2));
+            drawTextAt(`Helyezés: ${rankStr}.`, startX, startY, 16, rgb(0.8, 0.2, 0.2));
         }
 
         const pdfBytes = await pdfDoc.save();

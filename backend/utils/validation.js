@@ -38,6 +38,7 @@ const SLUG_MAP = [
     { keys: ['surfski','női'],                               slug: 'surfski_noi' },
     { keys: ['surfski','férfi'],                             slug: 'surfski_ferfi' },
     { keys: ['rövid','kenu'],                                slug: 'rovid_kenu_11km' },
+    { keys: ['kenu','1','nyitott'],                          slug: 'kenu_1_nyitott_11km' },
     { keys: ['kenu','női','1'],                              slug: 'kenu_noi_1' },
     { keys: ['kenu','férfi','1'],                            slug: 'kenu_ferfi_1' },
     { keys: ['kenu','2','férfi'],                            slug: 'kenu_2_ferfi' },
@@ -81,7 +82,7 @@ const CATEGORY_GROUPS = {
         'mk_1_fiu', 'mk_1_leany'
     ],
     KENU: [
-        'rovid_kenu_11km', 'kenu_noi_1', 'kenu_ferfi_1', 
+        'rovid_kenu_11km', 'kenu_1_nyitott_11km', 'kenu_noi_1', 'kenu_ferfi_1', 
         'kenu_2_ferfi', 'kenu_2_vegyes', 'kenu_3_nyitott', 'kenu_4_nyitott',
         'outrigger_noi_1', 'outrigger_ferfi_1', 'outrigger_2_nyitott'
     ],

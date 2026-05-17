@@ -20,6 +20,7 @@ export class RaceManager {
             // 11 km (Rövid)
             'kajak_1_nyitott_11km': 'Kajak-1 nyitott',
             'kajak_2_nyitott_11km': 'Kajak-2 nyitott',
+            'kenu_1_nyitott_11km': 'Kenu-1 nyitott',
             'kenu_nyitott_11km': 'Kenu nyitott',
             'rovid_kenu_11km': 'Rövid kenu',
 
