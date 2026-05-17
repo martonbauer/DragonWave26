@@ -1501,24 +1501,45 @@ window.generateDiploma = async (bibStr) => {
             });
         };
 
-        // A pdf minta alapján a dinamikus szövegeket jobbra igazítjuk a fix feliratok elé.
-        // A "rightX" megadja, hogy hol végződjön a beszúrt szöveg (a fix felirat bal széle előtt)
-        // Az Y koordináta alulról számítandó, ezért a magasságból vonunk ki értékeket
+        const isTeam = (racer.members && racer.members.length > 1) || /s[aá]rk[aá]ny/i.test(racer.category || '');
+        const akiText = isTeam ? "részére, akik" : "részére, aki";
+        const ertElText = isTeam ? "értek el." : "ért el.";
+        const teljesitettText = isTeam ? "sikeresen teljesítették a távot." : "sikeresen teljesítette a távot.";
+
+        // A teljes szövegblokk a jobb oldalra kerül
+        const rightMarginX = width - 100;
+        let currentY = height - 190;
+
+        const darkBlue = rgb(0.05, 0.2, 0.35);
+        const darkRed = rgb(0.65, 0.15, 0.15);
+
+        // 1. Név
+        drawRightAlignedText(name, rightMarginX, currentY, 28, darkBlue);
+        currentY -= 30;
+
+        // 2. Részére, aki(k)
+        drawRightAlignedText(akiText, rightMarginX, currentY, 18, darkBlue);
+        currentY -= 40;
+
+        // 3. Esemény neve (piros)
+        drawRightAlignedText("az Országos Vízitúra Bajnokság", rightMarginX, currentY, 24, darkRed);
+        currentY -= 30;
         
-        const nameRightX = 550; // "részére, aki" felirat előtt végződik
-        const nameY = height - 210;
-
-        const categoryRightX = 390; // "kategóriában" felirat előtt végződik
-        const categoryY = height - 370;
-
-        const rankRightX = 320; // "helyezést" felirat előtt végződik
-        const rankY = height - 425;
-
-        drawRightAlignedText(name, nameRightX, nameY, 32, rgb(0.1, 0.1, 0.4));
-        drawRightAlignedText(`${categoryName} (${distanceStr})`, categoryRightX, categoryY, 20, rgb(0.3, 0.3, 0.3));
+        drawRightAlignedText("2. fordulóján", rightMarginX, currentY, 24, darkRed);
+        currentY -= 30;
         
+        drawRightAlignedText("a Dunakeszi Futamon", rightMarginX, currentY, 24, darkRed);
+        currentY -= 45;
+
+        // 4. Kategória
+        drawRightAlignedText(`${categoryName} (${distanceStr}) kategóriában`, rightMarginX, currentY, 22, darkBlue);
+        currentY -= 35;
+        
+        // 5. Helyezés
         if (rankStr !== "-") {
-            drawRightAlignedText(`${rankStr}.`, rankRightX, rankY, 24, rgb(0.8, 0.2, 0.2));
+            drawRightAlignedText(`${rankStr}. helyezést ${ertElText}`, rightMarginX, currentY, 24, darkBlue);
+        } else {
+            drawRightAlignedText(teljesitettText, rightMarginX, currentY, 20, darkBlue);
         }
 
         const pdfBytes = await pdfDoc.save();
