@@ -1524,12 +1524,23 @@ window.generateDiploma = async (bibStr) => {
             nameSize -= 1;
         }
 
-        drawCenteredText(name, centerX, height * 0.73, nameSize, fontBold, darkBlue);
-        drawCenteredText(reszereText, centerX, height * 0.68, 16, fontNormal, darkBlue);
-        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.62, 18, fontBold, darkBlue);
-        drawCenteredText("2. fordulóján a Dunakeszi Vízitúra Futamon a", centerX, height * 0.57, 16, fontNormal, darkBlue);
-        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.51, 22, fontBold, darkBlue);
-        drawCenteredText(resultText, centerX, height * 0.45, 26, fontBold, darkBlue);
+        drawCenteredText(name, centerX, height * 0.80, nameSize, fontBold, darkBlue);
+        drawCenteredText(reszereText, centerX, height * 0.75, 16, fontNormal, darkBlue);
+        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.69, 18, fontBold, darkBlue);
+        drawCenteredText("2. fordulóján a Dunakeszi Vízitúra Futamon a", centerX, height * 0.64, 16, fontNormal, darkBlue);
+        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.58, 22, fontBold, darkBlue);
+        drawCenteredText(resultText, centerX, height * 0.52, 26, fontBold, darkBlue);
+
+        // Dátum rajzolása az Oklevél felirat fölé balra rendezve
+        const dateText = "Dunakeszi, 2026. május 30.";
+        const safeDateText = dateText.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
+        firstPage.drawText(safeDateText, {
+            x: width * 0.12, // Balra rendezve, margótól beljebb
+            y: height * 0.92, // Az oldal teteje felé
+            size: 16,
+            font: fontNormal,
+            color: darkBlue
+        });
 
         const pdfBytes = await pdfDoc.save();
 
