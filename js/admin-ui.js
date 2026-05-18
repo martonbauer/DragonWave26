@@ -1515,13 +1515,21 @@ window.generateDiploma = async (bibStr) => {
         }
 
         const centerX = width * 0.71;
+        const maxTextWidth = width * 0.45;
 
-        drawCenteredText(name, centerX, height * 0.68, 28, fontBold, darkBlue);
-        drawCenteredText(reszereText, centerX, height * 0.62, 16, fontNormal, darkBlue);
-        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.56, 18, fontBold, darkBlue);
-        drawCenteredText("2. fordulóján a Dunakeszi Vízitúra Futamon a", centerX, height * 0.50, 16, fontNormal, darkBlue);
-        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.44, 22, fontBold, darkBlue);
-        drawCenteredText(resultText, centerX, height * 0.38, 26, fontBold, darkBlue);
+        // Név méretének dinamikus csökkentése, ha túl hosszú (pl. sok csapattag)
+        let nameSize = 28;
+        let safeNameText = name.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
+        while (fontBold.widthOfTextAtSize(safeNameText, nameSize) > maxTextWidth && nameSize > 10) {
+            nameSize -= 1;
+        }
+
+        drawCenteredText(name, centerX, height * 0.73, nameSize, fontBold, darkBlue);
+        drawCenteredText(reszereText, centerX, height * 0.68, 16, fontNormal, darkBlue);
+        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.62, 18, fontBold, darkBlue);
+        drawCenteredText("2. fordulóján a Dunakeszi Vízitúra Futamon a", centerX, height * 0.57, 16, fontNormal, darkBlue);
+        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.51, 22, fontBold, darkBlue);
+        drawCenteredText(resultText, centerX, height * 0.45, 26, fontBold, darkBlue);
 
         const pdfBytes = await pdfDoc.save();
 
