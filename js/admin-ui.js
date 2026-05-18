@@ -1524,20 +1524,22 @@ window.generateDiploma = async (bibStr) => {
             nameSize -= 1;
         }
 
-        drawCenteredText(name, centerX, height * 0.80, nameSize, fontBold, darkBlue);
-        drawCenteredText(reszereText, centerX, height * 0.75, 16, fontNormal, darkBlue);
-        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.69, 18, fontBold, darkBlue);
-        drawCenteredText("2. fordulóján a Dunakeszi Vízitúra Futamon a", centerX, height * 0.64, 16, fontNormal, darkBlue);
-        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.58, 22, fontBold, darkBlue);
-        drawCenteredText(resultText, centerX, height * 0.52, 26, fontBold, darkBlue);
+        drawCenteredText(name, centerX, height * 0.85, nameSize, fontBold, darkBlue);
+        drawCenteredText(reszereText, centerX, height * 0.80, 16, fontNormal, darkBlue);
+        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.74, 18, fontBold, darkBlue);
+        drawCenteredText("2. fordulóján a Dunakeszi Vízitúra Futamon a", centerX, height * 0.69, 16, fontNormal, darkBlue);
+        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.63, 22, fontBold, darkBlue);
+        drawCenteredText(resultText, centerX, height * 0.57, 26, fontBold, darkBlue);
 
-        // Dátum rajzolása az Oklevél felirat fölé balra rendezve
+        // Dátum rajzolása az Oklevél feliratba jobbra rendezve
         const dateText = "Dunakeszi, 2026. május 30.";
         const safeDateText = dateText.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
+        const dateTextSize = 16;
+        const dateTextWidth = fontNormal.widthOfTextAtSize(safeDateText, dateTextSize);
         firstPage.drawText(safeDateText, {
-            x: width * 0.12, // Balra rendezve, margótól beljebb
-            y: height * 0.92, // Az oldal teteje felé
-            size: 16,
+            x: width * 0.92 - dateTextWidth, // Jobbra rendezve
+            y: height * 0.90, // Az Oklevél felirat vonalában (vagy afölött)
+            size: dateTextSize,
             font: fontNormal,
             color: darkBlue
         });
