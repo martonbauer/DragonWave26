@@ -1528,7 +1528,8 @@ window.generateDiploma = async (bibStr) => {
         drawCenteredText(reszereText, centerX, height * 0.68, 16, fontNormal, darkBlue);
         drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.62, 18, fontBold, darkBlue);
         drawCenteredText("2. fordulóján a Dunakeszi Vízitúra Futamon", centerX, height * 0.57, 16, fontNormal, darkBlue);
-        drawCenteredText(resultText, centerX, height * 0.51, 26, fontBold, darkBlue);
+        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.51, 22, fontBold, darkBlue);
+        drawCenteredText(resultText, centerX, height * 0.45, 26, fontBold, darkBlue);
 
 
 
