@@ -1531,18 +1531,7 @@ window.generateDiploma = async (bibStr) => {
         drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.51, 22, fontBold, darkBlue);
         drawCenteredText(resultText, centerX, height * 0.45, 26, fontBold, darkBlue);
 
-        // Dátum rajzolása az Oklevél feliratba jobbra rendezve
-        const dateText = "Dunakeszi, 2026. május 30.";
-        const safeDateText = dateText.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
-        const dateTextSize = 16;
-        const dateTextWidth = fontNormal.widthOfTextAtSize(safeDateText, dateTextSize);
-        firstPage.drawText(safeDateText, {
-            x: width * 0.92 - dateTextWidth, // Jobbra rendezve
-            y: height * 0.90, // Az Oklevél felirat vonalában (vagy afölött)
-            size: dateTextSize,
-            font: fontNormal,
-            color: darkBlue
-        });
+
 
         const pdfBytes = await pdfDoc.save();
 
