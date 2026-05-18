@@ -1487,53 +1487,41 @@ window.generateDiploma = async (bibStr) => {
         const { width, height } = firstPage.getSize();
 
         // Használjuk a beépített Helvetica betűtípust
-        const font = await pdfDoc.embedFont(window.PDFLib.StandardFonts.HelveticaBold);
+        const fontBold = await pdfDoc.embedFont(window.PDFLib.StandardFonts.HelveticaBold);
+        const fontNormal = await pdfDoc.embedFont(window.PDFLib.StandardFonts.Helvetica);
 
-        const drawRightAlignedText = (text, rightX, y, size, color) => {
+        const drawCenteredText = (text, centerX, y, size, fontUsed, color) => {
             const safeText = text.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
-            const textWidth = font.widthOfTextAtSize(safeText, size);
-            firstPage.drawText(safeText, {
-                x: rightX - textWidth,
-                y: y,
-                size: size,
-                font: font,
-                color: color || rgb(0, 0, 0)
-            });
-        };
-
-        const drawCenteredText = (text, centerX, y, size, color) => {
-            const safeText = text.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
-            const textWidth = font.widthOfTextAtSize(safeText, size);
+            const textWidth = fontUsed.widthOfTextAtSize(safeText, size);
             firstPage.drawText(safeText, {
                 x: centerX - textWidth / 2,
                 y: y,
                 size: size,
-                font: font,
+                font: fontUsed,
                 color: color || rgb(0, 0, 0)
             });
         };
 
         const darkBlue = rgb(0.05, 0.2, 0.35);
+        const isPlural = (racer.members && racer.members.length > 1) || /csapat/i.test(name) || /s[aá]rk[aá]ny/i.test(racer.category || '');
+        const reszereText = isPlural ? "részükre, akik" : "részére, aki";
+        const elerteText = isPlural ? "értek el" : "ért el";
 
-        // A PDF-en már eleve rajta vannak a fix feliratok (részére aki, Országos Bajnokság, stb.),
-        // ezért CSAK a nevet, kategóriát és helyezést rajzoljuk rá a megfelelő üres helyekre, hozzáigazítva a fix szöveghez.
-
-        // 1. Név: A fix szövegblokk fölé, középre igazítva
-        const nameCenterY = height - 135; // Y = 460, pontosan a "részére, aki" felirat fölött
-        drawCenteredText(name, 600, nameCenterY, 32, darkBlue);
-
-        // 2. Kategória: A "kategóriában" szó ELÉ (jobbra igazítva)
-        // A képen a "kategóriában" szó nagyjából X=540 körül kezdődik.
-        const categoryRightX = 530;
-        const categoryY = height - 320; // Y = 275
-        drawRightAlignedText(`${categoryName} (${distanceStr})`, categoryRightX, categoryY, 20, darkBlue);
-
-        // 3. Helyezés: A "helyezést" szó ELÉ (jobbra igazítva)
+        let resultText = "";
         if (rankStr !== "-") {
-            const rankRightX = 510;
-            const rankY = height - 370; // Y = 225
-            drawRightAlignedText(`${rankStr}.`, rankRightX, rankY, 24, darkBlue);
+            resultText = `${rankStr}. helyezést ${elerteText}`;
+        } else {
+            resultText = isPlural ? "sikeresen teljesítették a távot" : "sikeresen teljesítette a távot";
         }
+
+        const centerX = width * 0.71;
+
+        drawCenteredText(name, centerX, height * 0.68, 28, fontBold, darkBlue);
+        drawCenteredText(reszereText, centerX, height * 0.62, 16, fontNormal, darkBlue);
+        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.56, 18, fontBold, darkBlue);
+        drawCenteredText("2. fordulóján a Dunakeszi Vízitúra Futamon a", centerX, height * 0.50, 16, fontNormal, darkBlue);
+        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.44, 22, fontBold, darkBlue);
+        drawCenteredText(resultText, centerX, height * 0.38, 26, fontBold, darkBlue);
 
         const pdfBytes = await pdfDoc.save();
 
