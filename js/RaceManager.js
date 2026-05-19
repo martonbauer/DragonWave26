@@ -23,7 +23,7 @@ export class RaceManager {
             'kenu_1_nyitott_11km': 'Kenu-1 nyitott',
             'kenu_nyitott_11km': 'Kenu nyitott',
             'rovid_kenu_11km': 'Rövid kenu',
-
+ 
             // 22 km (Hosszú)
             'versenykajak_noi_1_22km': 'Versenykajak női-1 (38 cm)',
             'versenykajak_ferfi_1_22km': 'Versenykajak férfi-1 (38 cm)',
@@ -32,8 +32,8 @@ export class RaceManager {
             'turakajak_2_nyitott_22km': 'Túrakajak 2 (nyitott)',
             'tengeri_kajak_noi_1_22km': 'Tengeri kajak női-1 (51 cm>)',
             'tengeri_kajak_ferfi_1_22km': 'Tengeri kajak férfi-1 (51 cm>)',
-            'surfski_noi_22km': 'Surfski női-1',
-            'surfski_ferfi_22km': 'Surfski férfi-1',
+            'surfski_noi_22km': 'Surfski kajak női',
+            'surfski_ferfi_22km': 'Surfski kajak férfi',
             'mk_1_fiu_22km': 'MK-1 fiú',
             'mk_1_leany_22km': 'MK-1 leány',
             'outrigger_noi_1_22km': 'Outrigger női-1',
@@ -45,7 +45,7 @@ export class RaceManager {
             'kenu_4_nyitott_22km': 'Kenu-4 (nyitott)',
             'sup_noi_1_22km': 'SUP női-1',
             'sup_ferfi_1_22km': 'SUP férfi-1',
-
+ 
             // 4 km SUP
             'sup_noi_1_merev_39_alatt_4km': 'SUP női-1- merev deszka 39 év alatt',
             'sup_noi_1_merev_40_felett_4km': 'SUP női-1- merev deszka 40 év felett',
@@ -60,6 +60,49 @@ export class RaceManager {
             'sarkanyhajo_otproba': 'Sárkányhajó ötpróba'
         };
         
+        this.distanceCategories = {
+            '4km': [
+                'sup_noi_1_merev_39_alatt_4km',
+                'sup_noi_1_merev_40_felett_4km',
+                'sup_ferfi_1_merev_39_alatt_4km',
+                'sup_ferfi_1_merev_40_felett_4km',
+                'sup_noi_1_felfujhato_39_alatt_4km',
+                'sup_noi_1_felfujhato_40_felett_4km',
+                'sup_ferfi_1_felfujhato_39_alatt_4km',
+                'sup_ferfi_1_felfujhato_40_felett_4km'
+            ],
+            '11km': [
+                'kajak_1_nyitott_11km',
+                'kajak_2_nyitott_11km',
+                'kenu_1_nyitott_11km',
+                'kenu_nyitott_11km',
+                'rovid_kenu_11km',
+                'sarkanyhajo_otproba'
+            ],
+            '22km': [
+                'versenykajak_noi_1_22km',
+                'versenykajak_ferfi_1_22km',
+                'turakajak_noi_1_22km',
+                'turakajak_ferfi_1_22km',
+                'turakajak_2_nyitott_22km',
+                'tengeri_kajak_noi_1_22km',
+                'tengeri_kajak_ferfi_1_22km',
+                'surfski_noi_22km',
+                'surfski_ferfi_22km',
+                'mk_1_fiu_22km',
+                'mk_1_leany_22km',
+                'outrigger_noi_1_22km',
+                'outrigger_ferfi_1_22km',
+                'outrigger_2_nyitott_22km',
+                'kenu_2_ferfi_22km',
+                'kenu_2_vegyes_22km',
+                'kenu_3_nyitott_22km',
+                'kenu_4_nyitott_22km',
+                'sup_noi_1_22km',
+                'sup_ferfi_1_22km'
+            ]
+        };
+
         this.groupMap = {
             'kajak_hosszu': 'Összes Hosszú Kajak',
             'kajak_rovid': 'Összes Rövid Kajak',
@@ -434,6 +477,48 @@ export class RaceManager {
         }
     }
 
+    updateEditCategoryOptions(distance, selectValue = null) {
+        const catSelect = document.getElementById('edit-category');
+        const catCustom = document.getElementById('edit-category-custom');
+        if (!catSelect) return;
+
+        catSelect.innerHTML = '<option value="" disabled selected>Válassz kategóriát...</option>';
+        
+        const keys = this.distanceCategories[distance] || [];
+        keys.forEach(slug => {
+            const name = this.categoryMap[slug];
+            if (name) {
+                catSelect.appendChild(new Option(name, slug));
+            }
+        });
+
+        if (selectValue) {
+            const exists = Array.from(catSelect.options).some(opt => opt.value === selectValue);
+            if (!exists) {
+                const name = this.categoryMap[selectValue] || `${selectValue} (Egyedi)`;
+                catSelect.appendChild(new Option(name, selectValue));
+            }
+            catSelect.value = selectValue;
+        } else {
+            catSelect.value = '';
+        }
+
+        catSelect.appendChild(new Option("➕ Egyéb (kézi megadás)...", "__custom__"));
+
+        if (selectValue === '__custom__' || (selectValue && !keys.includes(selectValue) && !this.categoryMap[selectValue])) {
+            catSelect.value = '__custom__';
+            if (catCustom) {
+                catCustom.style.display = 'block';
+                catCustom.value = selectValue === '__custom__' ? '' : selectValue;
+            }
+        } else {
+            if (catCustom) {
+                catCustom.style.display = 'none';
+                catCustom.value = '';
+            }
+        }
+    }
+
     openEditModal(id, memberId = null) {
         if (!this.data || !this.data.racers) return;
         const racer = this.data.racers.find(r => r.id === id);
@@ -457,28 +542,13 @@ export class RaceManager {
         document.getElementById('edit-bib').value = racer.bib || '';
         document.getElementById('edit-status').value = racer.status || 'registered';
         
-        const catSelect = document.getElementById('edit-category');
-        const catCustom = document.getElementById('edit-category-custom');
-        if (catSelect) {
-            catSelect.innerHTML = '<option value="" disabled>Válassz kategóriát...</option>';
-            for (const [slug, name] of Object.entries(this.categoryMap)) {
-                catSelect.appendChild(new Option(name, slug));
-            }
-            const exists = Array.from(catSelect.options).some(opt => opt.value === racer.category);
-            if (!exists && racer.category) {
-                catSelect.appendChild(new Option(racer.category + " (Egyedi)", racer.category));
-            }
-            catSelect.appendChild(new Option("➕ Egyéb (kézi megadás)...", "__custom__"));
-            
-            catSelect.value = racer.category || '';
-            
-            if (catCustom) {
-                catCustom.style.display = 'none';
-                catCustom.value = '';
-            }
+        const distanceVal = racer.distance || '11km';
+        const editDistanceEl = document.getElementById('edit-distance');
+        if (editDistanceEl) {
+            editDistanceEl.value = distanceVal;
         }
         
-        document.getElementById('edit-distance').value = racer.distance || '11km';
+        this.updateEditCategoryOptions(distanceVal, racer.category);
         document.getElementById('edit-email').value = racer.email || '';
         document.getElementById('edit-phone').value = racer.phone || '';
         document.getElementById('edit-is_series').checked = !!racer.is_series;

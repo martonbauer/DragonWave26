@@ -812,18 +812,18 @@
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                         <div>
-                            <label>Kategória</label>
-                            <select id="edit-category" onchange="if(this.value==='__custom__'){document.getElementById('edit-category-custom').style.display='block';document.getElementById('edit-category-custom').focus();}else{document.getElementById('edit-category-custom').style.display='none';}">
-                            </select>
-                            <input type="text" id="edit-category-custom" placeholder="Kézi kategória név/slug" style="display:none; margin-top:10px;">
-                        </div>
-                        <div>
                             <label>Kategória típus</label>
-                            <select id="edit-distance">
+                            <select id="edit-distance" onchange="window.raceManager.updateEditCategoryOptions(this.value)">
                                 <option value="4km">4 km SUP</option>
                                 <option value="11km">Rövid táv</option>
                                 <option value="22km">Hosszú táv</option>
                             </select>
+                        </div>
+                        <div>
+                            <label>Kategória</label>
+                            <select id="edit-category" onchange="if(this.value==='__custom__'){document.getElementById('edit-category-custom').style.display='block';document.getElementById('edit-category-custom').focus();}else{document.getElementById('edit-category-custom').style.display='none';}">
+                            </select>
+                            <input type="text" id="edit-category-custom" placeholder="Kézi kategória név/slug" style="display:none; margin-top:10px;">
                         </div>
                     </div>
 
