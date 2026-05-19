@@ -665,10 +665,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 newBtn.onclick = async () => {
                     newBtn.disabled = true;
-                    newBtn.textContent = 'Szinkronizálás Barionnal...';
+                    newBtn.textContent = 'Feldolgozás...';
                     try {
-                        // 1. Átmeneti regisztráció a szerveren
-                        const formRes = await window.raceManager.registerRacer(members, kategoria, tav, false, email, phone, contactName, true); // true = silent flag (opcionálisan kiegészítjük, de a race manager bírja)
+                        // 1. Regisztráció a szerveren
+                        const formRes = await window.raceManager.registerRacer(members, kategoria, tav, false, email, phone, contactName, true);
                         
                         if (!formRes) {
                             newBtn.disabled = false;
@@ -676,31 +676,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             return;
                         }
 
-                        // 2. Barion fizetés indítása API-n keresztül
-                        const payload = {
-                            email: email,
-                            amount: finalAmount,
-                            guestString: `${contactName} - ${tav}`,
-                            orderId: `DRGW-${Date.now()}`
-                        };
-                        const barionRes = await fetch(`${API_URL}/barion/payment`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        const barionData = await barionRes.json();
-                        
-                        // 3. Átirányítás a cél URL-re
-                        if (barionData.GatewayUrl) {
-                            showToast('Átirányítás a Barion biztonságos oldalára...', 'info');
-                            setTimeout(() => {
-                                window.location.href = barionData.GatewayUrl;
-                            }, 1500);
-                        } else {
-                            showToast('Hiba a Barion inicializálásakor!', 'error');
-                            newBtn.disabled = false;
-                            newBtn.textContent = 'Tovább a fizetésre ➔';
-                        }
+                        // 2. Átirányítás a cél URL-re
+                        showToast('Sikeres nevezés! Átirányítás a fizetési oldalra...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'https://sarkanyhajozz.hu/termek/dunakeszi-futam-elonevezes/';
+                        }, 1500);
                     } catch (submitErr) {
                         showToast(submitErr.message || "Hiba a mentésnél", "error");
                         newBtn.disabled = false;
