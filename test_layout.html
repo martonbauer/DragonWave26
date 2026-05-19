@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { margin: 0; padding: 0; }
+  #img { position: relative; display: inline-block; }
+  #img img { display: block; max-width: 100%; }
+  #info { position: fixed; top: 10px; left: 10px; background: white; padding: 10px; border: 1px solid black; }
+</style>
+</head>
+<body>
+<div id="img">
+  <img src="Dunakeszi.jpg" id="bg" />
+</div>
+<div id="info">Kattints a képre!</div>
+<script>
+  const img = document.getElementById('bg');
+  const info = document.getElementById('info');
+  img.addEventListener('click', function(e) {
+    const rect = img.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const percentX = (x / rect.width) * 100;
+    const percentY = (y / rect.height) * 100;
+    info.innerHTML = `X: ${x.toFixed(2)}px, Y: ${y.toFixed(2)}px<br>X%: ${percentX.toFixed(2)}%, Y%: ${percentY.toFixed(2)}%<br>Original W/H: ${img.naturalWidth}x${img.naturalHeight}`;
+    console.log(`Percent: X=${percentX.toFixed(2)}%, Y=${percentY.toFixed(2)}%`);
+  });
+</script>
+</body>
+</html>

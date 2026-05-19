@@ -30,7 +30,7 @@ export class RaceManager {
             'versenykajak_ferfi_1_22km': 'Versenykajak férfi-1 (38 cm)',
             'turakajak_noi_1_22km': 'Túrakajak női-1 (42–51 cm)',
             'turakajak_ferfi_1_22km': 'Túrakajak férfi-1 (42–51 cm)',
-            'turakajak_2_nyitott_22km': 'Túrakajak 2 (nyitott)',
+            'turakajak_2_nyitott_22km': 'Túrakajak 2 (nyitott) - hosszú',
             'tengeri_kajak_noi_1_22km': 'Tengeri kajak női-1 (51 cm>)',
             'tengeri_kajak_ferfi_1_22km': 'Tengeri kajak férfi-1 (51 cm>)',
             'surfski_noi_22km': 'Surfski kajak női',
@@ -60,7 +60,14 @@ export class RaceManager {
         };
         
         this.distanceCategories = {
-            '4km': [
+            '11km': [
+                'kajak_1_nyitott_11km',
+                'kajak_2_nyitott_11km',
+                'kenu_1_nyitott_11km',
+                'kenu_2_nyitott_11km',
+                'kenu_3_nyitott_11km',
+                'kenu_4_nyitott_11km',
+                'sarkanyhajo_otproba',
                 'sup_noi_1_merev_39_alatt_4km',
                 'sup_noi_1_merev_40_felett_4km',
                 'sup_ferfi_1_merev_39_alatt_4km',
@@ -69,15 +76,6 @@ export class RaceManager {
                 'sup_noi_1_felfujhato_40_felett_4km',
                 'sup_ferfi_1_felfujhato_39_alatt_4km',
                 'sup_ferfi_1_felfujhato_40_felett_4km'
-            ],
-            '11km': [
-                'kajak_1_nyitott_11km',
-                'kajak_2_nyitott_11km',
-                'kenu_1_nyitott_11km',
-                'kenu_2_nyitott_11km',
-                'kenu_3_nyitott_11km',
-                'kenu_4_nyitott_11km',
-                'sarkanyhajo_otproba'
             ],
             '22km': [
                 'versenykajak_noi_1_22km',
@@ -1377,7 +1375,7 @@ export class RaceManager {
         if (groupId === 'kajak_rovid') return (cat.includes('kajak') || cat.includes('surfski')) && dist === '11km';
         if (groupId === 'kenu_hosszu') return (cat.includes('kenu') || cat.includes('outrigger') || cat.includes('sup')) && dist === '22km';
         if (groupId === 'kenu_rovid') return (cat.includes('kenu') || cat.includes('outrigger')) && dist === '11km';
-        if (groupId === 'sup_4km') return cat.includes('sup') && dist === '4km';
+        if (groupId === 'sup_4km') return cat.includes('sup') && (dist === '11km' || dist === '4km');
         if (groupId === 'sarkanyhajo_11km') return /s[aá]rk[aá]ny/i.test(cat) && dist === '11km';
         return false;
     }

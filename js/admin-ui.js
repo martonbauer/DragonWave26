@@ -24,14 +24,18 @@ export function renderAdminCharts() {
 
     const racers = rm.data.racers;
     
-    const distCount = { '22km': 0, '11km': 0, '4km': 0 };
-    racers.forEach(r => { if(distCount[r.distance] !== undefined) distCount[r.distance]++; });
+    const distCount = { '22km': 0, '11km': 0 };
+    racers.forEach(r => { 
+        let dist = r.distance;
+        if (dist === '4km') dist = '11km';
+        if(distCount[dist] !== undefined) distCount[dist]++; 
+    });
     
     const distData = {
-        labels: ['22km Hosszú', '11km Rövid', '4km SUP'],
+        labels: ['22km Hosszú', '11km Rövid'],
         datasets: [{
-            data: [distCount['22km'], distCount['11km'], distCount['4km']],
-            backgroundColor: ['#00A3FF', '#FF4D4D', '#00FFCC'],
+            data: [distCount['22km'], distCount['11km']],
+            backgroundColor: ['#00A3FF', '#FF4D4D'],
             borderWidth: 0
         }]
     };
@@ -89,7 +93,7 @@ export function renderAdminTable(filterType = 'all') {
         // 11km-esek, kivéve a sárkányhajó kategóriát
         racers = racers.filter(r => r.distance === '11km' && !(/s[aá]rk[aá]ny/i.test(r.category || '')));
     } else if (filterType === '4km') {
-        racers = racers.filter(r => r.distance === '4km');
+        racers = racers.filter(r => r.category.includes('sup') && (r.distance === '11km' || r.distance === '4km'));
     } else if (filterType === 'sarkany') {
         racers = racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
     } else if (filterType === 'running') {
@@ -229,7 +233,7 @@ export function renderAdminControlButtons() {
     if (distanceContainer) {
         distanceContainer.innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
-                ${['11km', '22km', '4km'].map(dist => {
+                ${['11km', '22km'].map(dist => {
                     const isRunning = !!rm.data.categories[`DISTANCE_${dist}`];
                     return `
                         <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,228,255,0.03); padding: 10px; border-radius: var(--border-radius-md); border: 1px solid rgba(0,228,255,0.1);">
@@ -269,21 +273,32 @@ export function renderAdminControlButtons() {
         });
 
         Object.keys(rm.categoryMap).forEach(catId => {
-            ['11km', '22km', '4km'].forEach(dist => {
+            ['11km', '22km'].forEach(dist => {
                 const key = `${catId}_${dist}`;
                 const isSup = catId.includes('sup');
                 const isSarkany = /s[aá]rk[aá]ny/i.test(catId || '');
                 const hasDistSuffix = catId.endsWith(`_${dist}`);
                 const hasOtherDistSuffix = (dist !== '11km' && catId.endsWith('_11km')) || 
-                                           (dist !== '22km' && catId.endsWith('_22km')) || 
-                                           (dist !== '4km' && catId.endsWith('_4km'));
+                                           (dist !== '22km' && catId.endsWith('_22km'));
                 
                 let isDistanceMatch = false;
-                if (hasDistSuffix) isDistanceMatch = true;
-                else if (hasOtherDistSuffix) isDistanceMatch = false;
-                else if (isSup) isDistanceMatch = (dist === '4km' || dist === '22km' || dist === '11km'); // SUP can be multiple
-                else if (isSarkany) isDistanceMatch = (dist === '11km');
-                else isDistanceMatch = (dist === '11km' || dist === '22km');
+                if (isSup) {
+                    if (catId.endsWith('_4km')) {
+                        isDistanceMatch = (dist === '11km');
+                    } else if (catId.endsWith('_22km')) {
+                        isDistanceMatch = (dist === '22km');
+                    } else {
+                        isDistanceMatch = (dist === '11km' || dist === '22km');
+                    }
+                } else if (hasDistSuffix) {
+                    isDistanceMatch = true;
+                } else if (hasOtherDistSuffix) {
+                    isDistanceMatch = false;
+                } else if (isSarkany) {
+                    isDistanceMatch = (dist === '11km');
+                } else {
+                    isDistanceMatch = (dist === '11km' || dist === '22km');
+                }
 
                 if (isDistanceMatch) {
                     const isRunning = !!rm.data.categories[key];
@@ -360,7 +375,7 @@ export function exportResultsToExcel() {
                     r.bib,
                     formatRacerName(r),
                     r.members ? r.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.otproba_id || '').filter(id => id).join(', ') : (r.otproba_id || '-'),
-                    r.distance,
+                    r.distance === '11km' ? 'Rövid' : r.distance === '22km' ? 'Hosszú' : r.distance,
                     r.status,
                     r.status === 'finished' ? formatTime(r.total_time) : (r.status === 'running' ? 'Folyamatban' : 'Regisztrálva')
                 ]);
@@ -455,8 +470,8 @@ export function exportFilteredTableToExcel(filterType, specificCatId = null) {
             racers = racers.filter(r => r.distance === '11km' && !(/s[aá]rk[aá]ny/i.test(r.category || '')));
             titlePrefix = "11km_Nevezettek";
         } else if (filterType === '4km') {
-            racers = racers.filter(r => r.distance === '4km');
-            titlePrefix = "4km_Nevezettek";
+            racers = racers.filter(r => r.category.includes('sup') && (r.distance === '11km' || r.distance === '4km'));
+            titlePrefix = "SUP_Nevezettek";
         } else if (filterType === 'sarkany') {
             racers = racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
             titlePrefix = "Sarkanyhajo_Nevezettek";
@@ -473,7 +488,7 @@ export function exportFilteredTableToExcel(filterType, specificCatId = null) {
             r.members ? r.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.birth_date || '').filter(d => d).join(', ') : '-',
             r.members ? r.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.otproba_id || '').filter(id => id).join(', ') : (r.otproba_id || '-'),
             rm.formatCategoryName(r.category),
-            r.distance,
+            r.distance === '11km' ? 'Rövid' : r.distance === '22km' ? 'Hosszú' : r.distance,
             r.is_series ? 'Igen' : 'Nem',
             r.status,
             r.status === 'finished' ? formatTime(r.total_time) : (r.status === 'running' ? 'Folyamatban' : 'Regisztrálva')
@@ -497,8 +512,7 @@ export function renderAdminCategoryList() {
 
     const distances = [
         { id: '11km', title: '📐 Rövid' },
-        { id: '22km', title: '📏 Hosszú' },
-        { id: '4km', title: '🛶 SUP 4 km' }
+        { id: '22km', title: '📏 Hosszú' }
     ];
 
     distances.forEach(dist => {
@@ -512,6 +526,11 @@ export function renderAdminCategoryList() {
         grid.style = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;';
         
         const validCategories = Object.keys(rm.categoryMap).filter(catId => {
+            // If it's a SUP category ending with _4km, it now belongs to 11km (Rövid táv)
+            if (catId.includes('sup') && catId.endsWith('_4km')) {
+                return dist.id === '11km';
+            }
+            
             // Szigorú ellenőrzés: csak ha az ID a megfelelő távval végződik
             if (catId.endsWith(`_${dist.id}`)) return true;
             
@@ -991,7 +1010,7 @@ export function renderResultsTable(filterType = 'all') {
             <th style="width: ${showFordulo ? '35%' : '45%'}">Egység Tagjai</th>
             <th style="width: 15%">Kategória</th>
             <th style="width: 10%">Táv</th>
-            ${showFordulo ? '<th style="width: 10%">Forduló idő (11km)</th>' : ''}
+            ${showFordulo ? '<th style="width: 10%">Forduló idő (Rövid)</th>' : ''}
             <th style="width: 10%">Időeredmény</th>
         `;
     }
@@ -1004,14 +1023,14 @@ export function renderResultsTable(filterType = 'all') {
 
         const cp = (rm.data.checkpoints || []).find(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo');
         const forduloTd = showFordulo ? 
-            `<td data-label="Forduló (11km)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>` : '';
+            `<td data-label="Forduló (Rövid)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>` : '';
 
         tr.innerHTML = `
             <td data-label="Helyezés" style="${rankDecor}">${rank}.</td>
             <td data-label="Rajtszám"><strong>#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
             <td data-label="Egység Tagjai">${memberList}</td>
             <td data-label="Kategória">${rm.formatCategoryName(r.category)}</td>
-            <td data-label="Táv">${r.distance || '-'}</td>
+            <td data-label="Táv">${r.distance === '11km' ? 'Rövid' : r.distance === '22km' ? 'Hosszú' : r.distance || '-'}</td>
             ${forduloTd}
             <td data-label="Időeredmény" style="font-family:'Space Mono'; font-weight:bold; color:var(--accent-primary);">${formatTime(r.total_time || 0)}</td>
         `;
@@ -1031,13 +1050,13 @@ export function renderResultsCategoryList() {
     const rm = window.raceManager;
     if (!rm) return;
 
-    const distances = ['22km', '11km', '4km'];
+    const distances = ['22km', '11km'];
     distances.forEach(dist => {
         const distSection = document.createElement('div');
         distSection.style = 'margin-bottom: 2.5rem;';
         distSection.innerHTML = `
             <h4 style="color:var(--accent-secondary); margin-bottom:1.2rem; border-left:4px solid var(--accent-secondary); padding-left:12px; font-size:1.1rem; text-transform:uppercase; letter-spacing:1px;">
-                ${dist === '4km' ? '🛶 4 km (SUP)' : dist === '11km' ? '📐 11 km (Rövid)' : '📏 22 km (Hosszú)'}
+                ${dist === '11km' ? '📐 Rövid' : '📏 Hosszú'}
             </h4>
         `;
 
@@ -1135,7 +1154,8 @@ export function renderResultsCategoryDetail(distId, catId) {
     const rm = window.raceManager;
     if (!rm) return;
 
-    if (titleEl) titleEl.textContent = `🥇 ${rm.formatCategoryName(catId)} - Rangsor (${distId})`;
+    const distName = distId === '11km' ? 'Rövid' : distId === '22km' ? 'Hosszú' : distId;
+    if (titleEl) titleEl.textContent = `🥇 ${rm.formatCategoryName(catId)} - Rangsor (${distName})`;
 
     // Szűrés kategória és táv szerint
     let finishers = [];
@@ -1171,7 +1191,7 @@ export function renderResultsCategoryDetail(distId, catId) {
             <th style="width: 10%">Helyezés</th>
             <th style="width: 15%">Rajtszám</th>
             <th style="width: ${distId === '22km' ? '45%' : '55%'}">Egység Tagjai</th>
-            ${distId === '22km' ? '<th style="width: 15%">Forduló idő (11km)</th>' : ''}
+            ${distId === '22km' ? '<th style="width: 15%">Forduló idő (Rövid)</th>' : ''}
             <th style="width: 15%">Időeredmény</th>
         `;
     }
@@ -1184,7 +1204,7 @@ export function renderResultsCategoryDetail(distId, catId) {
 
         const cp = (rm.data.checkpoints || []).find(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo');
         const forduloTd = (distId === '22km') ? 
-            `<td data-label="Forduló (11km)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>` : '';
+            `<td data-label="Forduló (Rövid)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>` : '';
 
         tr.innerHTML = `
             <td data-label="Helyezés" style="${rankDecor}">${rank}.</td>

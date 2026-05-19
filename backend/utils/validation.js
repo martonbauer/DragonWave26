@@ -50,14 +50,14 @@ const SLUG_MAP = [
     { keys: ['outrigger','női'],                            slug: 'outrigger_noi_1' },
     { keys: ['outrigger','férfi'],                          slug: 'outrigger_ferfi_1' },
     { keys: ['outrigger','2'],                               slug: 'outrigger_2_nyitott' },
-    { keys: ['sup','női','merev','alatt'],                  slug: 'sup_noi_1_merev_39_alatt' },
-    { keys: ['sup','női','merev'],                          slug: 'sup_noi_1_merev_39_felett' },
-    { keys: ['sup','férfi','merev','alatt'],                slug: 'sup_ferfi_1_merev_39_alatt' },
-    { keys: ['sup','férfi','merev'],                        slug: 'sup_ferfi_1_merev_39_felett' },
-    { keys: ['sup','női','felfújható','alatt'],           slug: 'sup_noi_1_felfujhato_39_alatt' },
-    { keys: ['sup','női','felfújható'],                   slug: 'sup_noi_1_felfujhato_39_felett' },
-    { keys: ['sup','férfi','felfújható','alatt'],         slug: 'sup_ferfi_1_felfujhato_39_alatt' },
-    { keys: ['sup','férfi','felfújható'],               slug: 'sup_ferfi_1_felfujhato_39_felett' },
+    { keys: ['sup','női','merev','alatt'],                  slug: 'sup_noi_1_merev_39_alatt_4km' },
+    { keys: ['sup','női','merev'],                          slug: 'sup_noi_1_merev_40_felett_4km' },
+    { keys: ['sup','férfi','merev','alatt'],                slug: 'sup_ferfi_1_merev_39_alatt_4km' },
+    { keys: ['sup','férfi','merev'],                        slug: 'sup_ferfi_1_merev_40_felett_4km' },
+    { keys: ['sup','női','felfújható','alatt'],           slug: 'sup_noi_1_felfujhato_39_alatt_4km' },
+    { keys: ['sup','női','felfújható'],                   slug: 'sup_noi_1_felfujhato_40_felett_4km' },
+    { keys: ['sup','férfi','felfújható','alatt'],         slug: 'sup_ferfi_1_felfujhato_39_alatt_4km' },
+    { keys: ['sup','férfi','felfújható'],               slug: 'sup_ferfi_1_felfujhato_40_felett_4km' },
     { keys: ['sárkányha'],                                  slug: 'sarkanyhajo_otproba' },
     { keys: ['sarkanyhaj'],                                  slug: 'sarkanyhajo_otproba' },
 ];
@@ -89,11 +89,11 @@ const CATEGORY_GROUPS = {
         'outrigger_noi_1', 'outrigger_ferfi_1', 'outrigger_2_nyitott'
     ],
     SUP: [
-        'sup_noi_1_merev_39_alatt', 'sup_noi_1_merev_39_felett',
-        'sup_ferfi_1_merev_39_alatt', 'sup_ferfi_1_merev_39_felett',
-        'sup_noi_1_felfujhato_39_alatt', 'sup_noi_1_felfujhato_39_felett',
-        'sup_ferfi_1_felfujhato_39_alatt', 'sup_ferfi_1_felfujhato_39_felett',
-        'sup_noi_1', 'sup_ferfi_1'
+        'sup_noi_1_merev_39_alatt_4km', 'sup_noi_1_merev_40_felett_4km',
+        'sup_ferfi_1_merev_39_alatt_4km', 'sup_ferfi_1_merev_40_felett_4km',
+        'sup_noi_1_felfujhato_39_alatt_4km', 'sup_noi_1_felfujhato_40_felett_4km',
+        'sup_ferfi_1_felfujhato_39_alatt_4km', 'sup_ferfi_1_felfujhato_40_felett_4km',
+        'sup_noi_1_22km', 'sup_ferfi_1_22km'
     ],
     SARKANYHAJO: ['sarkanyhajo_otproba']
 };

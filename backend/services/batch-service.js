@@ -28,7 +28,7 @@ function getGroupQuery(query, batchKey) {
     if (batchKey === 'kajak_rovid') return query.in('category', CATEGORY_GROUPS.KAJAK).eq('distance', '11km');
     if (batchKey === 'kenu_hosszu') return query.in('category', CATEGORY_GROUPS.KENU).eq('distance', '22km');
     if (batchKey === 'kenu_rovid') return query.in('category', CATEGORY_GROUPS.KENU).eq('distance', '11km');
-    if (batchKey === 'sup_4km') return query.in('category', CATEGORY_GROUPS.SUP).eq('distance', '4km');
+    if (batchKey === 'sup_4km') return query.in('category', CATEGORY_GROUPS.SUP).in('distance', ['4km', '11km']);
     if (batchKey === 'sarkanyhajo_11km') return query.in('category', CATEGORY_GROUPS.SARKANYHAJO).eq('distance', '11km');
     
     // 4. Egyéni kategória/távolság páros

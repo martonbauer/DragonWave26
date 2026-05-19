@@ -92,7 +92,6 @@
                     <label for="versenytav">Kategória típus:</label>
                     <select id="versenytav" required onchange="window.updateCategorySelect()">
                         <option value="" disabled selected>Válassz kategória típust...</option>
-                        <option value="4km">4 km SUP</option>
                         <option value="11km">Rövid táv</option>
                         <option value="22km">Hosszú táv</option>
                     </select>
@@ -202,7 +201,7 @@
                         </div>
                         <div class="admin-card" id="distance-start-card">
                             <h3 class="card-title">📏 Távolság Rajt</h3>
-                            <p class="card-desc">Rajt a választott távolság alapján (4km, 11km, 22km).</p>
+                            <p class="card-desc">Rajt a választott távolság alapján (11km, 22km).</p>
                             <div id="distance-start-ctrl"></div>
                         </div>
                         <div class="admin-card" id="individual-start-card">
@@ -483,7 +482,6 @@
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;">
                                     <button onclick="window.filterAdminTable('22km')" class="btn-secondary" style="flex: 1; min-width: 150px;">📏 22 km (Hosszú)</button>
                                     <button onclick="window.filterAdminTable('11km')" class="btn-secondary" style="flex: 1; min-width: 150px;">📐 11 km (Rövid)</button>
-                                    <button onclick="window.filterAdminTable('4km')" class="btn-secondary" style="flex: 1; min-width: 150px;">🛶 4 km (SUP)</button>
                                     <button onclick="window.filterAdminTable('sarkany')" class="btn-secondary" style="flex: 1; min-width: 150px;">🐉 Sárkányhajó</button>
                                     <button onclick="window.filterAdminTable('running')" class="btn-secondary" style="flex: 1; min-width: 150px; border-color: orange; color: orange; font-weight: bold;">🏃 Vízen lévők</button>
                                 </div>
@@ -645,9 +643,8 @@
 
                             <div id="admin-results-filter-ctrls" class="hidden" style="margin-bottom: 2rem;">
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;">
-                                    <button onclick="window.filterResultsTable('22km')" class="btn-secondary" style="flex: 1; min-width: 150px;">📏 22 km (Hosszú)</button>
-                                    <button onclick="window.filterResultsTable('11km')" class="btn-secondary" style="flex: 1; min-width: 150px;">📐 11 km (Rövid)</button>
-                                    <button onclick="window.filterResultsTable('4km')" class="btn-secondary" style="flex: 1; min-width: 150px;">🛶 4 km (SUP)</button>
+                                    <button onclick="window.filterResultsTable('22km')" class="btn-secondary" style="flex: 1; min-width: 150px;">📏 Hosszú</button>
+                                    <button onclick="window.filterResultsTable('11km')" class="btn-secondary" style="flex: 1; min-width: 150px;">📐 Rövid</button>
                                     <button onclick="window.filterResultsTable('sarkany')" class="btn-secondary" style="flex: 1; min-width: 150px;">🐉 Sárkányhajó</button>
                                 </div>
                                 <div style="text-align: center;">
@@ -814,7 +811,6 @@
                         <div>
                             <label>Kategória típus</label>
                             <select id="edit-distance" onchange="window.raceManager.updateEditCategoryOptions(this.value)">
-                                <option value="4km">4 km SUP</option>
                                 <option value="11km">Rövid táv</option>
                                 <option value="22km">Hosszú táv</option>
                             </select>

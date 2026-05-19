@@ -575,14 +575,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'kenu_2_nyitott_11km', name: 'Kenu-2 nyitott' },
                 { id: 'kenu_3_nyitott_11km', name: 'Kenu-3 nyitott' },
                 { id: 'kenu_4_nyitott_11km', name: 'Kenu-4 nyitott' },
-                { id: 'sarkanyhajo_otproba', name: 'Sárkányhajó' }
+                { id: 'sarkanyhajo_otproba', name: 'Sárkányhajó' },
+                { id: 'sup_noi_1_merev_39_alatt_4km', name: 'SUP női-1- merev deszka 39 év alatt' },
+                { id: 'sup_noi_1_merev_40_felett_4km', name: 'SUP női-1- merev deszka 40 év felett' },
+                { id: 'sup_ferfi_1_merev_39_alatt_4km', name: 'SUP férfi-1- merev deszka 39 év alatt' },
+                { id: 'sup_ferfi_1_merev_40_felett_4km', name: 'SUP férfi-1- merev deszka 40 év felett' },
+                { id: 'sup_noi_1_felfujhato_39_alatt_4km', name: 'SUP női-1- felfújható deszka 39 év alatt' },
+                { id: 'sup_noi_1_felfujhato_40_felett_4km', name: 'SUP női-1- felfújható deszka 40 év felett' },
+                { id: 'sup_ferfi_1_felfujhato_39_alatt_4km', name: 'SUP férfi-1- felfújható deszka 39 év alatt' },
+                { id: 'sup_ferfi_1_felfujhato_40_felett_4km', name: 'SUP férfi-1- felfújható deszka 40 év felett' }
             ],
             '22km': [
                 { id: 'versenykajak_noi_1_22km', name: 'Versenykajak női-1 (38 cm)' },
                 { id: 'versenykajak_ferfi_1_22km', name: 'Versenykajak férfi-1 (38 cm)' },
                 { id: 'turakajak_noi_1_22km', name: 'Túrakajak női-1 (42–51 cm)' },
                 { id: 'turakajak_ferfi_1_22km', name: 'Túrakajak férfi-1 (42–51 cm)' },
-                { id: 'turakajak_2_nyitott_22km', name: 'Túrakajak 2 (nyitott)' },
+                { id: 'turakajak_2_nyitott_22km', name: 'Túrakajak 2 (nyitott) - hosszú' },
                 { id: 'tengeri_kajak_noi_1_22km', name: 'Tengeri kajak női-1 (51 cm>)' },
                 { id: 'tengeri_kajak_ferfi_1_22km', name: 'Tengeri kajak férfi-1 (51 cm>)' },
                 { id: 'surfski_noi_22km', name: 'Surfski kajak női' },
@@ -596,16 +604,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'kenu_4_nyitott_22km', name: 'Kenu-4 (nyitott)' },
                 { id: 'sup_noi_1_22km', name: 'SUP női-1' },
                 { id: 'sup_ferfi_1_22km', name: 'SUP férfi-1' }
-            ],
-            '4km': [
-                { id: 'sup_noi_1_merev_39_alatt_4km', name: 'SUP női-1- merev deszka 39 év alatt' },
-                { id: 'sup_noi_1_merev_40_felett_4km', name: 'SUP női-1- merev deszka 40 év felett' },
-                { id: 'sup_ferfi_1_merev_39_alatt_4km', name: 'SUP férfi-1- merev deszka 39 év alatt' },
-                { id: 'sup_ferfi_1_merev_40_felett_4km', name: 'SUP férfi-1- merev deszka 40 év felett' },
-                { id: 'sup_noi_1_felfujhato_39_alatt_4km', name: 'SUP női-1- felfújható deszka 39 év alatt' },
-                { id: 'sup_noi_1_felfujhato_40_felett_4km', name: 'SUP női-1- felfújható deszka 40 év felett' },
-                { id: 'sup_ferfi_1_felfujhato_39_alatt_4km', name: 'SUP férfi-1- felfújható deszka 39 év alatt' },
-                { id: 'sup_ferfi_1_felfujhato_40_felett_4km', name: 'SUP férfi-1- felfújható deszka 40 év felett' }
             ]
         };
 

@@ -745,7 +745,7 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
         if (n.includes('sárkányhajó') || n.includes('sarkanyhajo') || n.includes('sárkányha') || n.includes('sarkanyhaj')) return 'sarkanyhajo_otproba';
     }
     
-    if (dist === '4km') {
+    if (dist === '4km' || dist === '11km') {
         const isMerev = n.includes('merev');
         const isFelfujhato = n.includes('felfújható') || n.includes('felfujhato');
         const isNoi = n.includes('női');
@@ -823,7 +823,7 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                     else if (normDist.includes('sup')) {
                         const normCat = rawCategory.toLowerCase();
                         if (normCat.includes('merev') || normCat.includes('felfujhato') || normCat.includes('39') || normCat.includes('40')) {
-                            dist = '4km';
+                            dist = '11km';
                         } else {
                             dist = '22km';
                         }
