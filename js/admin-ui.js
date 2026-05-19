@@ -1524,13 +1524,13 @@ window.generateDiploma = async (bibStr) => {
             nameSize -= 1;
         }
 
-        // Minden felirat betűméretét (a neven kívül) a 2. fordulóján a Dunakeszi Futam sor méretéhez (18) igazítjuk
+        // Minden felirat betűméretét az elvárt egyedi méretekre állítjuk
         drawCenteredText(name, centerX, height * 0.73, nameSize, fontBold, darkBlue);
         drawCenteredText(reszereText, centerX, height * 0.68, 18, fontNormal, darkBlue);
-        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.62, 18, fontBold, darkBlue);
-        drawCenteredText("2. fordulóján a Dunakeszi Futam", centerX, height * 0.57, 18, fontNormal, darkBlue);
-        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.51, 18, fontBold, darkBlue);
-        drawCenteredText(resultText, centerX, height * 0.45, 18, fontBold, darkBlue);
+        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.62, 14, fontBold, darkBlue);
+        drawCenteredText("2. fordulóján a Dunakeszi Futam", centerX, height * 0.57, 14, fontNormal, darkBlue);
+        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.51, 14, fontBold, darkBlue);
+        drawCenteredText(resultText, centerX, height * 0.45, 14, fontBold, darkBlue);
 
 
 
