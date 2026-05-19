@@ -892,7 +892,7 @@ form select:focus {
 /* Eredménytáblázatok rácsa */
 #results-tables-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: 1fr;
     gap: 2rem;
     margin-bottom: 3rem;
 }
@@ -939,19 +939,7 @@ form select:focus {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
     font-size: 0.95rem;
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.results-table td:hover {
-    white-space: normal;
     word-break: break-word;
-    overflow: visible;
-    position: relative;
-    z-index: 10;
-    background: var(--bg-primary);
 }
 
 .results-table .rank-col {
