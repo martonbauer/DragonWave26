@@ -587,8 +587,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'tengeri_kajak_ferfi_1_22km', name: 'Tengeri kajak férfi-1 (51 cm>)' },
                 { id: 'surfski_noi_22km', name: 'Surfski kajak női' },
                 { id: 'surfski_ferfi_22km', name: 'Surfski kajak férfi' },
-                { id: 'mk_1_fiu_22km', name: 'MK-1 fiú' },
-                { id: 'mk_1_leany_22km', name: 'MK-1 leány' },
                 { id: 'outrigger_noi_1_22km', name: 'Outrigger női-1' },
                 { id: 'outrigger_ferfi_1_22km', name: 'Outrigger férfi-1' },
                 { id: 'outrigger_2_nyitott_22km', name: 'Outrigger-2 (nyitott)' },

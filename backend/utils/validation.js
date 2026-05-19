@@ -80,8 +80,7 @@ const CATEGORY_GROUPS = {
         'versenykajak_noi_1', 'versenykajak_ferfi_1', 
         'turakajak_noi_1', 'turakajak_ferfi_1', 'turakajak_2_nyitott',
         'tengeri_kajak_noi_1', 'tengeri_kajak_ferfi_1',
-        'surfski_noi', 'surfski_ferfi',
-        'mk_1_fiu', 'mk_1_leany'
+        'surfski_noi', 'surfski_ferfi'
     ],
     KENU: [
         'kenu_1_nyitott_11km', 'kenu_2_nyitott_11km', 'kenu_3_nyitott_11km', 'kenu_4_nyitott_11km',

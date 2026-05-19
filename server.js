@@ -718,10 +718,6 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
             if (n.includes('női')) return 'surfski_noi_22km';
             if (n.includes('férfi')) return 'surfski_ferfi_22km';
         }
-        if (n.includes('mk')) {
-            if (n.includes('fiú') || n.includes('fiu')) return 'mk_1_fiu_22km';
-            if (n.includes('leány') || n.includes('leany')) return 'mk_1_leany_22km';
-        }
         if (n.includes('outrigger')) {
             if (n.includes('2')) return 'outrigger_2_nyitott_22km';
             if (n.includes('női')) return 'outrigger_noi_1_22km';
