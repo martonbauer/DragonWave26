@@ -698,10 +698,99 @@ app.post('/api/reset-times', authenticateAdmin, async (req, res) => {
 });
 
 // --- 13. CSV IMPORTÁLÁS (DATA IMPORT) ---
+function mapCsvCategoryToSlug(rawCategory, dist) {
+    if (!rawCategory) return '';
+    const n = rawCategory.toLowerCase();
+    
+    if (dist === '22km') {
+        if (n.includes('versenykajak') && n.includes('női')) return 'versenykajak_noi_1_22km';
+        if (n.includes('versenykajak') && n.includes('férfi')) return 'versenykajak_ferfi_1_22km';
+        if (n.includes('túrakajak') || n.includes('turakajak')) {
+            if (n.includes('2')) return 'turakajak_2_nyitott_22km';
+            if (n.includes('női')) return 'turakajak_noi_1_22km';
+            if (n.includes('férfi')) return 'turakajak_ferfi_1_22km';
+        }
+        if (n.includes('tengeri')) {
+            if (n.includes('női')) return 'tengeri_kajak_noi_1_22km';
+            if (n.includes('férfi')) return 'tengeri_kajak_ferfi_1_22km';
+        }
+        if (n.includes('surfski')) {
+            if (n.includes('női')) return 'surfski_noi_22km';
+            if (n.includes('férfi')) return 'surfski_ferfi_22km';
+        }
+        if (n.includes('mk')) {
+            if (n.includes('fiú') || n.includes('fiu')) return 'mk_1_fiu_22km';
+            if (n.includes('leány') || n.includes('leany')) return 'mk_1_leany_22km';
+        }
+        if (n.includes('outrigger')) {
+            if (n.includes('2')) return 'outrigger_2_nyitott_22km';
+            if (n.includes('női')) return 'outrigger_noi_1_22km';
+            if (n.includes('férfi')) return 'outrigger_ferfi_22km';
+        }
+        if (n.includes('kenu')) {
+            if (n.includes('2') && n.includes('férfi')) return 'kenu_2_ferfi_22km';
+            if (n.includes('2') && n.includes('vegyes')) return 'kenu_2_vegyes_22km';
+            if (n.includes('3')) return 'kenu_3_nyitott_22km';
+            if (n.includes('4')) return 'kenu_4_nyitott_22km';
+        }
+        if (n.includes('sup')) {
+            if (n.includes('női')) return 'sup_noi_1_22km';
+            if (n.includes('férfi')) return 'sup_ferfi_1_22km';
+        }
+    }
+    
+    if (dist === '11km') {
+        if (n.includes('kajak') && n.includes('1')) return 'kajak_1_nyitott_11km';
+        if (n.includes('kajak') && n.includes('2')) return 'kajak_2_nyitott_11km';
+        if (n.includes('kenu') && n.includes('1')) return 'kenu_1_nyitott_11km';
+        if (n.includes('kenu') && n.includes('nyitott')) return 'kenu_nyitott_11km';
+        if (n.includes('rövid') || n.includes('rovid')) return 'rovid_kenu_11km';
+        if (n.includes('sárkányhajó') || n.includes('sarkanyhajo') || n.includes('sárkányha') || n.includes('sarkanyhaj')) return 'sarkanyhajo_otproba';
+    }
+    
+    if (dist === '4km') {
+        const isMerev = n.includes('merev');
+        const isFelfujhato = n.includes('felfújható') || n.includes('felfujhato');
+        const isNoi = n.includes('női');
+        const isFerfi = n.includes('férfi');
+        const is39Alatt = n.includes('39') || n.includes('alatt');
+        const is40Felett = n.includes('40') || n.includes('felett');
+        
+        if (isNoi) {
+            if (isMerev) {
+                if (is39Alatt) return 'sup_noi_1_merev_39_alatt_4km';
+                if (is40Felett) return 'sup_noi_1_merev_40_felett_4km';
+            }
+            if (isFelfujhato) {
+                if (is39Alatt) return 'sup_noi_1_felfujhato_39_alatt_4km';
+                if (is40Felett) return 'sup_noi_1_felfujhato_40_felett_4km';
+            }
+        }
+        if (isFerfi) {
+            if (isMerev) {
+                if (is39Alatt) return 'sup_ferfi_1_merev_39_alatt_4km';
+                if (is40Felett) return 'sup_ferfi_1_merev_40_felett_4km';
+            }
+            if (isFelfujhato) {
+                if (is39Alatt) return 'sup_ferfi_1_felfujhato_39_alatt_4km';
+                if (is40Felett) return 'sup_ferfi_1_felfujhato_40_felett_4km';
+            }
+        }
+    }
+    
+    return normalizeCategoryToSlug(rawCategory);
+}
+
 app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }), async (req, res) => {
     const { csvData } = req.body;
     const lines = csvData.trim().split('\n');
-    let added = 0;
+    if (lines.length === 0) {
+        return res.json({ success: true, importedCount: 0, duplicatesCount: 0, logs: [] });
+    }
+
+    const header = lines[0].toLowerCase();
+    const isNewFormat = header.includes('kategoriatipus') || header.includes('kategorianev');
+
     try {
         const results = [];
         // Szekvenciális feldolgozás, hogy a rajtszám generálás ne akadjon össze
@@ -713,92 +802,215 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
             const delim = line.includes(';') ? ';' : ',';
             const fields = line.split(delim).map(s => s.trim());
             
-            // Az első névnek kötelezőnek kell lennie
-            if (fields.length >= 8 && fields[1]) {
-                const category = normalizeCategoryToSlug(fields[7]);
-                const dist = (fields[12] || '11km').replace(/\s+/g, '').toLowerCase();
-                let bib = parseInt(fields[0]);
-                if (isNaN(bib)) bib = await getNextBib(dist, category);
+            if (isNewFormat) {
+                // ÚJ FORMÁTUM FELDOLGOZÁSA:
+                // fields[0]: Nev (Contact Name)
+                // fields[1]: Email
+                // fields[2]: 5p (Contact 5Próba ID)
+                // fields[3]: KategoriaTipus (Distance string)
+                // fields[4]: KategoriaNev (Category string)
+                // fields[5] - fields[8]: InduloNeve1 - InduloNeve4
                 
-                if (bib) {
-                    let isDuplicate = false;
-                    const { data: existing } = await supabase.from('racers')
-                        .select('id')
-                        .eq('bib', bib)
-                        .eq('distance', dist)
-                        .maybeSingle();
+                if (fields.length >= 5 && fields[0]) {
+                    const contactName = fields[0];
+                    const email = fields[1] || '';
+                    const rawOtp = fields[2] || '';
+                    const rawDistance = fields[3] || '11km';
+                    const rawCategory = fields[4] || '';
 
-                    if (existing) {
-                        isDuplicate = true;
-                        bib = await getNextBib(dist, category);
-                        if (!bib) {
-                            results.push({ added: 0, duplicate: 0 });
-                            continue;
+                    // Megállapítjuk a távolságot (distance slug)
+                    let dist = '11km';
+                    const normDist = rawDistance.toLowerCase();
+                    if (normDist.includes('hosszú') || normDist.includes('hosszu')) dist = '22km';
+                    else if (normDist.includes('rövid') || normDist.includes('rovid')) dist = '11km';
+                    else if (normDist.includes('sup')) {
+                        const normCat = rawCategory.toLowerCase();
+                        if (normCat.includes('merev') || normCat.includes('felfujhato') || normCat.includes('39') || normCat.includes('40')) {
+                            dist = '4km';
+                        } else {
+                            dist = '22km';
                         }
                     }
+
+                    const category = mapCsvCategoryToSlug(rawCategory, dist);
+                    let bib = await getNextBib(dist, category);
                     
-                    const membersToInsert = [];
-                    let hasHardConflict = false;
-                    
-                    for(let j=0; j<4; j++) {
-                        if(fields[j+1]) {
-                            const mName = fields[j+1].trim();
-                            const mBirth = fields[j+8] ? fields[j+8].trim() : '';
-                            const mOtp = fields[j+13] ? fields[j+13].trim() : '';
-                            
-                            membersToInsert.push({ racer_id: "", name: mName, birth_date: mBirth, otproba_id: mOtp });
-                            
-                            if (mOtp.length > 0 && mOtp.toLowerCase() !== 'nincs') {
-                                const { data } = await supabase.from('members').select('id, name').eq('otproba_id', mOtp).limit(1);
-                                if (data && data.length > 0) {
-                                    if (data[0].name.toLowerCase().trim() !== mName.toLowerCase().trim()) {
-                                        hasHardConflict = true;
-                                        break;
+                    if (bib) {
+                        let isDuplicate = false;
+                        const { data: existing } = await supabase.from('racers')
+                            .select('id')
+                            .eq('bib', bib)
+                            .eq('distance', dist)
+                            .maybeSingle();
+
+                        if (existing) {
+                            isDuplicate = true;
+                            bib = await getNextBib(dist, category);
+                            if (!bib) {
+                                results.push({ added: 0, duplicate: 0 });
+                                continue;
+                            }
+                        }
+                        
+                        const membersToInsert = [];
+                        let hasHardConflict = false;
+                        
+                        // maximum 4 induló beolvasása
+                        for (let j = 0; j < 4; j++) {
+                            const mName = fields[j + 5] ? fields[j + 5].trim() : '';
+                            if (mName) {
+                                // Ha a tag neve megegyezik a kapcsolattartó nevével, megkapja a megadott 5Próba ID-t
+                                let mOtp = 'Nincs';
+                                if (mName.toLowerCase() === contactName.toLowerCase() && rawOtp && rawOtp.toLowerCase() !== 'x') {
+                                    mOtp = rawOtp.trim();
+                                }
+                                
+                                const mBirth = ''; // Új formátumban nincs születési dátum
+                                
+                                membersToInsert.push({ racer_id: "", name: mName, birth_date: mBirth, otproba_id: mOtp });
+                                
+                                if (mOtp !== 'Nincs' && mOtp.length > 0) {
+                                    const { data } = await supabase.from('members').select('id, name').eq('otproba_id', mOtp).limit(1);
+                                    if (data && data.length > 0) {
+                                        if (data[0].name.toLowerCase().trim() !== mName.toLowerCase().trim()) {
+                                            hasHardConflict = true;
+                                            break;
+                                        }
+                                        isDuplicate = true;
                                     }
-                                    isDuplicate = true;
+                                }
+                                
+                                if (!isDuplicate && mName) {
+                                    const { data } = await supabase.from('members').select('id').ilike('name', mName).eq('birth_date', mBirth).limit(1);
+                                    if (data && data.length > 0) isDuplicate = true;
                                 }
                             }
-                            if (!isDuplicate && mName && mBirth) {
-                                const { data } = await supabase.from('members').select('id').ilike('name', mName).eq('birth_date', mBirth).limit(1);
-                                if (data && data.length > 0) isDuplicate = true;
+                        }
+
+                        if (hasHardConflict || membersToInsert.length === 0) {
+                            results.push({ 
+                                added: 0, 
+                                duplicate: 0,
+                                log: hasHardConflict ? `❌ Kihagyva: ${membersToInsert.length > 0 ? membersToInsert[0].name : 'Ismeretlen'} - Az 5Próba azonosító egy másik névhez tartozik!` : null
+                            });
+                            continue;
+                        }
+
+                        const finalStatus = isDuplicate ? 'duplicate' : 'registered';
+                        const racerId = Date.now().toString() + "_" + Math.floor(Math.random() * 1000);
+                        
+                        membersToInsert.forEach(m => m.racer_id = racerId);
+
+                        const { error: rError } = await supabase.from('racers').insert({ 
+                            id: racerId, bib, category, distance: dist, 
+                            status: finalStatus, email
+                        });
+                        
+                        if (!rError) {
+                            const { error: mError } = await supabase.from('members').insert(membersToInsert);
+                            if (mError) {
+                                await supabase.from('racers').delete().eq('id', racerId);
+                                results.push({ added: 0, duplicate: 0 });
+                            } else {
+                                results.push({ 
+                                    added: 1, 
+                                    duplicate: isDuplicate ? 1 : 0,
+                                    log: isDuplicate ? `⚠️ Duplikáció: ${membersToInsert[0].name} (Egyezés egy már létező nevezéssel)` : null
+                                });
+                            }
+                            continue;
+                        } else {
+                            console.error('Racer insert error:', rError);
+                        }
+                    }
+                }
+            } else {
+                // RÉGI FORMÁTUM FELDOLGOZÁSA:
+                if (fields.length >= 8 && fields[1]) {
+                    const category = normalizeCategoryToSlug(fields[7]);
+                    const dist = (fields[12] || '11km').replace(/\s+/g, '').toLowerCase();
+                    let bib = parseInt(fields[0]);
+                    
+                    if (bib) {
+                        let isDuplicate = false;
+                        const { data: existing } = await supabase.from('racers')
+                            .select('id')
+                            .eq('bib', bib)
+                            .eq('distance', dist)
+                            .maybeSingle();
+
+                        if (existing) {
+                            isDuplicate = true;
+                            bib = await getNextBib(dist, category);
+                            if (!bib) {
+                                results.push({ added: 0, duplicate: 0 });
+                                continue;
                             }
                         }
-                    }
-
-                    if (hasHardConflict || membersToInsert.length === 0) {
-                        results.push({ 
-                            added: 0, 
-                            duplicate: 0,
-                            log: hasHardConflict ? `❌ Kihagyva: ${membersToInsert.length > 0 ? membersToInsert[0].name : 'Ismeretlen'} - Az 5Próba azonosító egy másik névhez tartozik!` : null
-                        });
-                        continue;
-                    }
-
-                    const finalStatus = isDuplicate ? 'duplicate' : 'registered';
-                    const racerId = Date.now().toString() + "_" + Math.floor(Math.random() * 1000);
-                    
-                    membersToInsert.forEach(m => m.racer_id = racerId);
-
-                    const { error: rError } = await supabase.from('racers').insert({ 
-                        id: racerId, bib, category, distance: dist, 
-                        status: finalStatus 
-                    });
-                    
-                    if (!rError) {
-                        const { error: mError } = await supabase.from('members').insert(membersToInsert);
-                        if (mError) {
-                            await supabase.from('racers').delete().eq('id', racerId);
-                            results.push({ added: 0, duplicate: 0 });
-                        } else {
-                            results.push({ 
-                                added: 1, 
-                                duplicate: isDuplicate ? 1 : 0,
-                                log: isDuplicate ? `⚠️ Duplikáció: ${membersToInsert[0].name} (Egyezés egy már létező nevezéssel)` : null
-                            });
+                        
+                        const membersToInsert = [];
+                        let hasHardConflict = false;
+                        
+                        for(let j=0; j<4; j++) {
+                            if(fields[j+1]) {
+                                const mName = fields[j+1].trim();
+                                const mBirth = fields[j+8] ? fields[j+8].trim() : '';
+                                const mOtp = fields[j+13] ? fields[j+13].trim() : '';
+                                
+                                membersToInsert.push({ racer_id: "", name: mName, birth_date: mBirth, otproba_id: mOtp });
+                                
+                                if (mOtp.length > 0 && mOtp.toLowerCase() !== 'nincs') {
+                                    const { data } = await supabase.from('members').select('id, name').eq('otproba_id', mOtp).limit(1);
+                                    if (data && data.length > 0) {
+                                        if (data[0].name.toLowerCase().trim() !== mName.toLowerCase().trim()) {
+                                            hasHardConflict = true;
+                                            break;
+                                        }
+                                        isDuplicate = true;
+                                    }
+                                }
+                                if (!isDuplicate && mName && mBirth) {
+                                    const { data } = await supabase.from('members').select('id').ilike('name', mName).eq('birth_date', mBirth).limit(1);
+                                    if (data && data.length > 0) isDuplicate = true;
+                                }
+                            }
                         }
-                        continue;
-                    } else {
-                        console.error('Racer insert error:', rError); // log to see if there's a constraint issue
+
+                        if (hasHardConflict || membersToInsert.length === 0) {
+                            results.push({ 
+                                added: 0, 
+                                duplicate: 0,
+                                log: hasHardConflict ? `❌ Kihagyva: ${membersToInsert.length > 0 ? membersToInsert[0].name : 'Ismeretlen'} - Az 5Próba azonosító egy másik névhez tartozik!` : null
+                            });
+                            continue;
+                        }
+
+                        const finalStatus = isDuplicate ? 'duplicate' : 'registered';
+                        const racerId = Date.now().toString() + "_" + Math.floor(Math.random() * 1000);
+                        
+                        membersToInsert.forEach(m => m.racer_id = racerId);
+
+                        const { error: rError } = await supabase.from('racers').insert({ 
+                            id: racerId, bib, category, distance: dist, 
+                            status: finalStatus 
+                        });
+                        
+                        if (!rError) {
+                            const { error: mError } = await supabase.from('members').insert(membersToInsert);
+                            if (mError) {
+                                await supabase.from('racers').delete().eq('id', racerId);
+                                results.push({ added: 0, duplicate: 0 });
+                            } else {
+                                results.push({ 
+                                    added: 1, 
+                                    duplicate: isDuplicate ? 1 : 0,
+                                    log: isDuplicate ? `⚠️ Duplikáció: ${membersToInsert[0].name} (Egyezés egy már létező nevezéssel)` : null
+                                });
+                            }
+                            continue;
+                        } else {
+                            console.error('Racer insert error:', rError);
+                        }
                     }
                 }
             }
