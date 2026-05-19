@@ -1451,3 +1451,17 @@ form select:focus {
         grid-template-columns: 1fr;
     }
 }
+
+/* Okostelefonos nézet finomhangolása az eredménylistákhoz */
+@media (max-width: 600px) {
+    .category-results-table {
+        padding: 1rem 0.8rem;
+        border-radius: 12px;
+    }
+    
+    .category-title {
+        font-size: 0.95rem;
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+}

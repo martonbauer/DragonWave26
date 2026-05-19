@@ -326,6 +326,7 @@
                     catWrapper.style.marginBottom = '2rem';
 
                     let html = `<h4 class="category-title">${typeName} - ${formatCategoryName(groupKey)}</h4>
+                                <div class="table-responsive">
                                 <table class="results-table">
                                     <thead>
                                         <tr>
@@ -353,7 +354,7 @@
                                  </tr>`;
                     });
 
-                    html += `</tbody></table>`;
+                    html += `</tbody></table></div>`;
                     catWrapper.innerHTML = html;
                     container.appendChild(catWrapper);
                 });

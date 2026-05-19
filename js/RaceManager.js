@@ -1436,7 +1436,7 @@ export class RaceManager {
         const catWrapper = document.createElement('div');
         catWrapper.className = 'category-results-table';
         catWrapper.style.marginBottom = '2rem';
-        catWrapper.innerHTML = `<h4 class="category-title">${title}</h4><table class="results-table"><thead><tr><th style="width: 80px;">Helyezés</th><th style="width: 80px;">Rajtszám</th><th>Név</th>${showCategory ? '<th>Kategória</th>' : ''}${hasKöridő ? '<th>Köridő</th>' : ''}<th style="text-align:right;">Időeredmény</th></tr></thead><tbody></tbody></table>`;
+        catWrapper.innerHTML = `<h4 class="category-title">${title}</h4><div class="table-responsive"><table class="results-table"><thead><tr><th style="width: 80px;">Helyezés</th><th style="width: 80px;">Rajtszám</th><th>Név</th>${showCategory ? '<th>Kategória</th>' : ''}${hasKöridő ? '<th>Köridő</th>' : ''}<th style="text-align:right;">Időeredmény</th></tr></thead><tbody></tbody></table></div>`;
         const tbody = catWrapper.querySelector('tbody');
         let rank = 1;
         racers.forEach(r => {
