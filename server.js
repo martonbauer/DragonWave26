@@ -725,7 +725,7 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
         if (n.includes('outrigger')) {
             if (n.includes('2')) return 'outrigger_2_nyitott_22km';
             if (n.includes('női')) return 'outrigger_noi_1_22km';
-            if (n.includes('férfi')) return 'outrigger_ferfi_22km';
+            if (n.includes('férfi')) return 'outrigger_ferfi_1_22km';
         }
         if (n.includes('kenu')) {
             if (n.includes('2') && n.includes('férfi')) return 'kenu_2_ferfi_22km';
@@ -743,8 +743,9 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
         if (n.includes('kajak') && n.includes('1')) return 'kajak_1_nyitott_11km';
         if (n.includes('kajak') && n.includes('2')) return 'kajak_2_nyitott_11km';
         if (n.includes('kenu') && n.includes('1')) return 'kenu_1_nyitott_11km';
-        if (n.includes('kenu') && n.includes('nyitott')) return 'kenu_nyitott_11km';
-        if (n.includes('rövid') || n.includes('rovid')) return 'rovid_kenu_11km';
+        if (n.includes('kenu') && n.includes('2')) return 'kenu_2_nyitott_11km';
+        if (n.includes('kenu') && n.includes('3')) return 'kenu_3_nyitott_11km';
+        if (n.includes('kenu') && n.includes('4')) return 'kenu_4_nyitott_11km';
         if (n.includes('sárkányhajó') || n.includes('sarkanyhajo') || n.includes('sárkányha') || n.includes('sarkanyhaj')) return 'sarkanyhajo_otproba';
     }
     

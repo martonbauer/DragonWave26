@@ -565,8 +565,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'kajak_1_nyitott_11km', name: 'Kajak-1 nyitott' },
                 { id: 'kajak_2_nyitott_11km', name: 'Kajak-2 nyitott' },
                 { id: 'kenu_1_nyitott_11km', name: 'Kenu-1 nyitott' },
-                { id: 'kenu_nyitott_11km', name: 'Kenu nyitott' },
-                { id: 'rovid_kenu_11km', name: 'Rövid kenu' },
+                { id: 'kenu_2_nyitott_11km', name: 'Kenu-2 nyitott' },
+                { id: 'kenu_3_nyitott_11km', name: 'Kenu-3 nyitott' },
+                { id: 'kenu_4_nyitott_11km', name: 'Kenu-4 nyitott' },
                 { id: 'sarkanyhajo_otproba', name: 'Sárkányhajó' }
             ],
             '22km': [
