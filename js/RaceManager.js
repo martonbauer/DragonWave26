@@ -1465,7 +1465,9 @@ export class RaceManager {
             }
 
             const rowColor = r.status === 'finished' ? '#00ff88' : (r.status === 'running' ? 'var(--accent-primary)' : 'inherit');
-            tr.innerHTML = `<td style="color:${rowColor}; font-weight:bold;">${rankDisplay}</td><td>#${(r.bib || 0).toString().padStart(3, '0')}</td><td>${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}</td>${showCategory ? `<td style="font-size: 0.8rem; color: #888;">${this.categoryMap[r.category] || r.category}</td>` : ''}${cpHtml}<td class="time" style="color:${rowColor}; font-family: 'Space Mono', monospace; text-align:right;" ${dataStartAttr}>${timeDisplay}</td>`;
+            const diplomaBtnHtml = r.status === 'finished' ? `<button onclick="window.generateDiploma('${r.bib}')" class="btn-primary" style="display:inline-flex; align-items:center; gap:5px; margin-left:12px; padding: 3px 8px; font-size: 0.7rem; background: #007bff; border: none; border-radius: 4px; cursor: pointer; color: white; vertical-align: middle; font-family: inherit;">🎓 Oklevél</button>` : '';
+            const namesDisplay = `${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}${diplomaBtnHtml}`;
+            tr.innerHTML = `<td style="color:${rowColor}; font-weight:bold;">${rankDisplay}</td><td>#${(r.bib || 0).toString().padStart(3, '0')}</td><td>${namesDisplay}</td>${showCategory ? `<td style="font-size: 0.8rem; color: #888;">${this.categoryMap[r.category] || r.category}</td>` : ''}${cpHtml}<td class="time" style="color:${rowColor}; font-family: 'Space Mono', monospace; text-align:right;" ${dataStartAttr}>${timeDisplay}</td>`;
             tbody.appendChild(tr);
         });
         container.appendChild(catWrapper);
