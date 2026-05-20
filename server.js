@@ -596,9 +596,61 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
     const { bib, category, distance, is_series, status, email, phone, members, checked_in, is_paid } = req.body;
     try {
         if (bib) {
-            const { data: existing } = await supabase.from('racers').select('id').eq('bib', bib).neq('id', id).maybeSingle();
-            if (existing) return res.status(400).json({ error: `A #${bib} rajtszám már foglalt egy másik versenyzőnél!` });
+            const { data: existing } = await supabase.from('racers').select('id, bib').eq('bib', bib).neq('id', id).maybeSingle();
+            if (existing) {
+                if (req.body.swap) {
+                    // Kölcsönös rajtszám csere megvalósítása
+                    const { data: racerA } = await supabase.from('racers').select('bib').eq('id', id).single();
+                    if (!racerA) return res.status(404).json({ error: "A módosítani kívánt versenyző nem található!" });
+
+                    const oldBibA = racerA.bib;
+                    const oldBibB = existing.bib;
+                    const idB = existing.id;
+                    
+                    // UNIQUE ütközés elkerülése miatt Racer A-t ideiglenes rajtszámra állítjuk
+                    const tempBib = -1000 - Math.floor(Math.random() * 10000);
+                    const { error: err1 } = await supabase.from('racers').update({ bib: tempBib }).eq('id', id);
+                    if (err1) throw new Error("Csere hiba (A -> Temp): " + err1.message);
+
+                    // Racer B -> Racer A régi rajtszáma
+                    const { error: err2 } = await supabase.from('racers').update({ bib: oldBibA }).eq('id', idB);
+                    if (err2) {
+                        await supabase.from('racers').update({ bib: oldBibA }).eq('id', id); // Visszaállítás
+                        throw new Error("Csere hiba (B -> A régi): " + err2.message);
+                    }
+
+                    // Racer A -> Racer B régi rajtszáma (cél rajtszám)
+                    const { error: err3 } = await supabase.from('racers').update({ bib: oldBibB }).eq('id', id);
+                    if (err3) {
+                        throw new Error("Csere hiba (A -> B régi): " + err3.message);
+                    }
+
+                    // Tagok neveinek lekérése az előzmények naplózásához
+                    const { data: m1 } = await supabase.from('members').select('name').eq('racer_id', id);
+                    const { data: m2 } = await supabase.from('members').select('name').eq('racer_id', idB);
+                    const nameA = m1 && m1.length > 0 ? m1.map(m => m.name).join(', ') : 'Ismeretlen';
+                    const nameB = m2 && m2.length > 0 ? m2.map(m => m.name).join(', ') : 'Ismeretlen';
+
+                    await addBibHistoryEntry({
+                        racerName: nameA,
+                        oldBib: oldBibA,
+                        newBib: oldBibB
+                    });
+
+                    await addBibHistoryEntry({
+                        racerName: nameB,
+                        oldBib: oldBibB,
+                        newBib: oldBibA
+                    });
+
+                    // Töröljük a req.body.oldBib-et, hogy az alatta lévő hagyományos naplózó ne fusson le mégegyszer
+                    delete req.body.oldBib;
+                } else {
+                    return res.status(400).json({ error: `A #${bib} rajtszám már foglalt egy másik versenyzőnél!` });
+                }
+            }
         }
+
 
         let isDuplicate = false;
         if (members && members.length > 0) {

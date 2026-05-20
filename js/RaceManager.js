@@ -1039,11 +1039,21 @@ export class RaceManager {
 
         const bibNum = parseInt(newBib);
         
+        let swap = false;
+        
         // Helyi duplikáció ellenőrzés
         const existing = this.data.racers.find(r => r.bib === bibNum && r.id !== id);
         if (existing) {
-            showToast(`A #${bibNum} rajtszám már foglalt!`, 'error');
-            return;
+            const existingName = existing.members && existing.members.length > 0 
+                ? existing.members.map(m => m.name).join(', ') 
+                : 'Ismeretlen';
+            const currentRacer = this.data.racers.find(r => r.id === id);
+            const originalBib = currentRacer ? currentRacer.bib : '?';
+            const wantSwap = confirm(`A #${bibNum} rajtszám már foglalt (${existingName} által)!\n\nSzeretnéd felcserélni a két rajtszámot? (A(z) ${existingName} megkapja a(z) #${originalBib} rajtszámot.)`);
+            if (!wantSwap) {
+                return;
+            }
+            swap = true;
         }
 
         // Tagok neveinek lekérése a történethez
@@ -1063,7 +1073,8 @@ export class RaceManager {
                 body: JSON.stringify({ 
                     bib: bibNum,
                     oldBib: originalBib,
-                    racerName: racerName
+                    racerName: racerName,
+                    swap: swap
                 })
             });
 
