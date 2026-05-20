@@ -745,13 +745,14 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
         if (n.includes('sárkányhajó') || n.includes('sarkanyhajo') || n.includes('sárkányha') || n.includes('sarkanyhaj')) return 'sarkanyhajo_otproba';
     }
     
-    if (dist === '4km' || dist === '11km') {
+    if (dist === '4km') {
         const isMerev = n.includes('merev');
         const isFelfujhato = n.includes('felfújható') || n.includes('felfujhato');
         const isNoi = n.includes('női');
         const isFerfi = n.includes('férfi');
         const is39Alatt = n.includes('39') || n.includes('alatt');
         const is40Felett = n.includes('40') || n.includes('felett');
+        const is16Alatt = n.includes('16');
         
         if (isNoi) {
             if (isMerev) {
@@ -759,6 +760,7 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
                 if (is40Felett) return 'sup_noi_1_merev_40_felett_4km';
             }
             if (isFelfujhato) {
+                if (is16Alatt) return 'sup_noi_1_felfujhato_16_alatt_4km';
                 if (is39Alatt) return 'sup_noi_1_felfujhato_39_alatt_4km';
                 if (is40Felett) return 'sup_noi_1_felfujhato_40_felett_4km';
             }
@@ -769,6 +771,7 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
                 if (is40Felett) return 'sup_ferfi_1_merev_40_felett_4km';
             }
             if (isFelfujhato) {
+                if (is16Alatt) return 'sup_ferfi_1_felfujhato_16_alatt_4km';
                 if (is39Alatt) return 'sup_ferfi_1_felfujhato_39_alatt_4km';
                 if (is40Felett) return 'sup_ferfi_1_felfujhato_40_felett_4km';
             }
@@ -823,7 +826,7 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                     else if (normDist.includes('sup')) {
                         const normCat = rawCategory.toLowerCase();
                         if (normCat.includes('merev') || normCat.includes('felfujhato') || normCat.includes('39') || normCat.includes('40')) {
-                            dist = '11km';
+                            dist = '4km';
                         } else {
                             dist = '22km';
                         }

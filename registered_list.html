@@ -196,9 +196,9 @@
                 <div class="stat-label">Rövid táv</div>
                 <div id="count-11km" class="stat-value">0</div>
             </a>
-            <a href="#target-sup_11km" class="stat-card">
-                <div class="stat-label">SUP 11 km</div>
-                <div id="count-sup_11km" class="stat-value">0</div>
+            <a href="#target-4km" class="stat-card">
+                <div class="stat-label">SUP 4 km</div>
+                <div id="count-4km" class="stat-value">0</div>
             </a>
             <div class="stat-card total">
                 <div class="stat-label">Összes nevezett</div>
@@ -227,7 +227,7 @@
             'versenykajak_ferfi_1_22km': 'Versenykajak férfi-1 (38 cm)',
             'turakajak_noi_1_22km': 'Túrakajak női-1 (42–51 cm)',
             'turakajak_ferfi_1_22km': 'Túrakajak férfi-1 (42–51 cm)',
-            'turakajak_2_nyitott_22km': 'Túrakajak 2 (nyitott) - hosszú',
+            'turakajak_2_nyitott_22km': 'Túrakajak 2 (nyitott)',
             'tengeri_kajak_noi_1_22km': 'Tengeri kajak női-1 (51 cm>)',
             'tengeri_kajak_ferfi_1_22km': 'Tengeri kajak férfi-1 (51 cm>)',
             'surfski_noi_22km': 'Surfski kajak női',
@@ -249,6 +249,8 @@
             'sup_noi_1_felfujhato_40_felett_4km': 'SUP női-1- felfújható deszka 40 év felett',
             'sup_ferfi_1_felfujhato_39_alatt_4km': 'SUP férfi-1- felfújható deszka 39 év alatt',
             'sup_ferfi_1_felfujhato_40_felett_4km': 'SUP férfi-1- felfújható deszka 40 év felett',
+            'sup_ferfi_1_felfujhato_16_alatt_4km': 'SUP férfi-1- felfújható deszka 16 év alatt',
+            'sup_noi_1_felfujhato_16_alatt_4km': 'SUP női-1- felfújható deszka 16 év alatt',
             'sarkanyhajo_otproba': 'Sárkányhajó'
         };
 
@@ -267,23 +269,14 @@
                 // Minden versenyzőt megjelenítünk a nevezettek között
                 const registered = result.racers || [];
 
-                const counts = { '22km': 0, '11km': 0, 'sup_11km': 0 };
+                const counts = { '22km': 0, '11km': 0, '4km': 0 };
                 registered.forEach(r => {
-                    if (r.distance === '22km') {
-                        counts['22km']++;
-                    } else if (r.distance === '11km' || r.distance === '4km') {
-                        const isSup = r.category.toLowerCase().includes('sup');
-                        if (isSup) {
-                            counts['sup_11km']++;
-                        } else {
-                            counts['11km']++;
-                        }
-                    }
+                    if (counts[r.distance] !== undefined) counts[r.distance]++;
                 });
 
                 document.getElementById('count-22km').textContent = counts['22km'];
                 document.getElementById('count-11km').textContent = counts['11km'];
-                document.getElementById('count-sup_11km').textContent = counts['sup_11km'];
+                document.getElementById('count-4km').textContent = counts['4km'];
                 document.getElementById('count-total').textContent = registered.length;
 
                 const container = document.getElementById('results-tables-container');
@@ -302,16 +295,14 @@
                     catGroups[groupKey].push(r);
                 });
 
-                const distanceOrder = { '22km': 1, '11km': 2, 'sup_11km': 3, '4km': 4 };
-                const distanceNames = { '11km': 'Rövid táv', '22km': 'Hosszú táv', 'sup_11km': 'SUP 11 km', '4km': 'SUP 4 km (Legacy)' };
-                const distanceTargets = { '22km': 'target-22km', '11km': 'target-11km', 'sup_11km': 'target-sup_11km', '4km': 'target-4km' };
+                const distanceOrder = { '22km': 1, '11km': 2, '4km': 3 };
+                const distanceNames = { '11km': 'Rövid táv', '22km': 'Hosszú táv', '4km': 'SUP 4 km' };
+                const distanceTargets = { '22km': 'target-22km', '11km': 'target-11km', '4km': 'target-4km' };
                 const renderedTargets = new Set();
 
                 Object.keys(catGroups).sort((a, b) => {
-                    const rA = catGroups[a][0];
-                    const rB = catGroups[b][0];
-                    const distA = (rA.distance === '11km' && rA.category.toLowerCase().includes('sup')) ? 'sup_11km' : rA.distance;
-                    const distB = (rB.distance === '11km' && rB.category.toLowerCase().includes('sup')) ? 'sup_11km' : rB.distance;
+                    const distA = catGroups[a][0].distance;
+                    const distB = catGroups[b][0].distance;
                     if (distanceOrder[distA] !== distanceOrder[distB]) {
                         return distanceOrder[distA] - distanceOrder[distB];
                     }
@@ -321,10 +312,8 @@
                     // Rendezés rajtszám szerint
                     racers.sort((a, b) => (a.bib || 0) - (b.bib || 0));
 
-                    const rawDist = racers[0].distance;
-                    const isSup = racers[0].category.toLowerCase().includes('sup');
-                    const dist = (rawDist === '11km' && isSup) ? 'sup_11km' : rawDist;
-                    const typeName = distanceNames[dist] || rawDist;
+                    const dist = racers[0].distance;
+                    const typeName = distanceNames[dist] || dist;
 
                     if (!renderedTargets.has(dist)) {
                         const anchor = document.createElement('div');
