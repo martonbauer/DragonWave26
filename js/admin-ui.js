@@ -977,7 +977,7 @@ export function renderResultsTable(filterType = 'all') {
     racers.sort((a, b) => (a.total_time || 0) - (b.total_time || 0));
 
     if (racers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Nincs beérkezett eredmény a szűrésnek megfelelően</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Nincs beérkezett eredmény a szűrésnek megfelelően</td></tr>';
         return;
     }
 
@@ -987,12 +987,14 @@ export function renderResultsTable(filterType = 'all') {
     if (thead) {
         thead.innerHTML = `
             <th style="width: 8%">Helyezés</th>
-            <th style="width: 12%">Rajtszám</th>
-            <th style="width: ${showFordulo ? '35%' : '45%'}">Egység Tagjai</th>
+            <th style="width: 10%">Rajtszám</th>
+            <th style="width: ${showFordulo ? '25%' : '35%'}">Egység Tagjai</th>
             <th style="width: 15%">Kategória</th>
             <th style="width: 10%">Táv</th>
             ${showFordulo ? '<th style="width: 10%">Forduló idő (11km)</th>' : ''}
             <th style="width: 10%">Időeredmény</th>
+            <th style="width: 10%">Különbség</th>
+            <th style="width: 10%; text-align: center;">Oklevél</th>
         `;
     }
 
@@ -1006,6 +1008,8 @@ export function renderResultsTable(filterType = 'all') {
         const forduloTd = showFordulo ? 
             `<td data-label="Forduló (11km)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>` : '';
 
+        const gapStr = idx === 0 ? 'Leader' : `+${formatTime(r.total_time - racers[0].total_time)}`;
+
         tr.innerHTML = `
             <td data-label="Helyezés" style="${rankDecor}">${rank}.</td>
             <td data-label="Rajtszám"><strong>#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
@@ -1014,6 +1018,10 @@ export function renderResultsTable(filterType = 'all') {
             <td data-label="Táv">${r.distance || '-'}</td>
             ${forduloTd}
             <td data-label="Időeredmény" style="font-family:'Space Mono'; font-weight:bold; color:var(--accent-primary);">${formatTime(r.total_time || 0)}</td>
+            <td data-label="Különbség" style="font-family:'Space Mono'; color: ${idx === 0 ? 'var(--success)' : '#aaa'}">${gapStr}</td>
+            <td data-label="Oklevél" style="text-align: center;">
+                <button onclick="window.generateCertificate('${r.id}')" class="action-btn" style="background:#5BB226; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Oklevél letöltése">📜 LETÖLTÉS</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -1158,7 +1166,7 @@ export function renderResultsCategoryDetail(distId, catId) {
     finishers.sort((a, b) => (a.total_time || 0) - (b.total_time || 0));
 
     if (finishers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Még nincs beérkezett eredmény ebben a kategóriában.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Még nincs beérkezett eredmény ebben a kategóriában.</td></tr>';
         return;
     }
 
@@ -1170,9 +1178,11 @@ export function renderResultsCategoryDetail(distId, catId) {
         targetThead.innerHTML = `
             <th style="width: 10%">Helyezés</th>
             <th style="width: 15%">Rajtszám</th>
-            <th style="width: ${distId === '22km' ? '45%' : '55%'}">Egység Tagjai</th>
+            <th style="width: ${distId === '22km' ? '30%' : '40%'}">Egység Tagjai</th>
             ${distId === '22km' ? '<th style="width: 15%">Forduló idő (11km)</th>' : ''}
             <th style="width: 15%">Időeredmény</th>
+            <th style="width: 15%">Különbség</th>
+            <th style="width: 10%; text-align: center;">Oklevél</th>
         `;
     }
 
@@ -1186,12 +1196,18 @@ export function renderResultsCategoryDetail(distId, catId) {
         const forduloTd = (distId === '22km') ? 
             `<td data-label="Forduló (11km)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>` : '';
 
+        const gapStr = idx === 0 ? 'Leader' : `+${formatTime(r.total_time - finishers[0].total_time)}`;
+
         tr.innerHTML = `
             <td data-label="Helyezés" style="${rankDecor}">${rank}.</td>
             <td data-label="Rajtszám"><strong>#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
             <td data-label="Egység Tagjai">${memberList}</td>
             ${forduloTd}
             <td data-label="Időeredmény" style="font-family:'Space Mono'; font-weight:bold; color:var(--accent-primary);">${formatTime(r.total_time || 0)}</td>
+            <td data-label="Különbség" style="font-family:'Space Mono'; color: ${idx === 0 ? 'var(--success)' : '#aaa'}">${gapStr}</td>
+            <td data-label="Oklevél" style="text-align: center;">
+                <button onclick="window.generateCertificate('${r.id}')" class="action-btn" style="background:#5BB226; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Oklevél letöltése">📜 LETÖLTÉS</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -1553,3 +1569,108 @@ window.generateDiploma = async (bibStr) => {
         showToast("Hiba történt az oklevél generálása során: " + err.message, "error");
     }
 };
+
+export async function generateCertificate(racerId) {
+    const rm = window.raceManager;
+    if (!rm) return;
+    const racer = rm.data.racers.find(r => r.id === racerId);
+    if (!racer) return;
+
+    showToast("Oklevél generálása...", "info");
+
+    // Dinamikusan betöltjük a jsPDF könyvtárat CDN-ről, ha még nincs betöltve
+    if (typeof window.jspdf === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        document.head.appendChild(script);
+        await new Promise((resolve) => { script.onload = resolve; });
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    // 1. Háttér: Sötétkék arculat (#0B192C)
+    doc.setFillColor(11, 25, 44);
+    doc.rect(0, 0, 297, 210, 'F');
+
+    // 2. Dekoratív cián keret
+    doc.setDrawColor(0, 228, 255); // cián
+    doc.setLineWidth(1);
+    doc.line(10, 10, 287, 10);
+    doc.line(10, 10, 10, 200);
+    doc.line(287, 10, 287, 200);
+    doc.line(10, 200, 287, 200);
+
+    // 3. Dekoratív arany keret beljebb
+    doc.setDrawColor(255, 215, 0); // arany
+    doc.setLineWidth(1.5);
+    doc.line(14, 14, 283, 14);
+    doc.line(14, 14, 14, 196);
+    doc.line(283, 14, 283, 196);
+    doc.line(14, 196, 283, 196);
+
+    // 4. Oklevél fejléce
+    doc.setTextColor(0, 228, 255); // cián
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(38);
+    doc.text("ELISMERŐ OKLEVÉL", 148, 45, { align: "center" });
+
+    // Aláírásos rész szövege
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(16);
+    doc.text("amelyet büszkén adományozunk a", 148, 65, { align: "center" });
+
+    // 5. Versenyző(k) neve
+    const names = formatRacerName(racer);
+    doc.setTextColor(255, 215, 0); // arany
+    doc.setFont("helvetica", "bold");
+    if (names.length > 35) {
+        doc.setFontSize(18);
+    } else {
+        doc.setFontSize(26);
+    }
+    doc.text(names, 148, 85, { align: "center" });
+
+    // 6. Távolság és kategória
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(16);
+    doc.text("részére, aki sikeresen teljesítette a", 148, 105, { align: "center" });
+
+    const categoryName = rm.formatCategoryName(racer.category);
+    doc.setTextColor(0, 228, 255); // cián
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text(`DUNAKESZI FUTAM 2026 - ${racer.distance} (${categoryName})`, 148, 125, { align: "center" });
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(16);
+    doc.text("versenytávot, az alábbi hivatalos időeredménnyel:", 148, 145, { align: "center" });
+
+    // 7. Célidő
+    doc.setTextColor(0, 255, 194); // zöldes-cián
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(30);
+    doc.text(formatTime(racer.total_time || 0), 148, 168, { align: "center" });
+
+    // 8. Dátum és hitelesítés
+    doc.setTextColor(139, 168, 203);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text("Dunakeszi, 2026. május 26.", 30, 188);
+
+    doc.text("__________________________", 240, 183, { align: "center" });
+    doc.text("DunakesziFutam Szervezőség", 240, 188, { align: "center" });
+
+    // Letöltés indítása
+    const sanitized = names.replace(/[^a-zA-Z0-9]/g, "_");
+    doc.save(`oklevel_${sanitized}.pdf`);
+    showToast("Oklevél sikeresen letöltve!", "success");
+}
+window.generateCertificate = generateCertificate;

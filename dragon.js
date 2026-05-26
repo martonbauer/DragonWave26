@@ -643,6 +643,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const birth_date = entry.querySelector('.member-birth').value;
                 const otprobaInp = entry.querySelector('.member-otproba');
                 const otproba_id = otprobaInp.disabled ? "Nincs" : otprobaInp.value;
+                
+                // Ha ez a csapatnév mező, és nincs kitöltve (mivel opcionális), egyszerűen átugorjuk
+                if (entry.classList.contains('team-name-entry') && !name) {
+                    return;
+                }
+                
                 if (!name || !birth_date) throw new Error(`Kérjük adja meg a(z) ${idx + 1}. versenyző minden adatát!`);
                 members.push({ name, birth_date, otproba_id });
             });

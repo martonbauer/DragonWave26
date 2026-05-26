@@ -67,7 +67,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { 
+    cors: { 
+        origin: (origin, callback) => {
+            // Engedélyezzük a local-hostot és a térerő hiányában helyben futtatott klienseket
+            callback(null, true);
+        },
+        methods: ['GET', 'POST']
+    } 
+});
 
 io.on('connection', (socket) => {
     console.log('Új kliens csatlakozott az élő szinkronizációhoz!');
@@ -212,7 +220,9 @@ app.post('/api/register', async (req, res) => {
         const { error: rError } = await supabase.from('racers').insert({
             id: racerId, bib, category, distance, 
             is_series: is_series ? 1 : 0, 
-            status: finalStatus
+            status: finalStatus,
+            email,
+            phone
         });
         if (rError) throw rError;
 
@@ -392,8 +402,8 @@ app.post('/api/reset-category', authenticateAdmin, async (req, res) => {
 });
 
 app.post('/api/stop-racer', authenticateAdmin, async (req, res) => {
-    const { bib } = req.body;
-    const now = Date.now();
+    const { bib, timestamp } = req.body;
+    const now = timestamp || Date.now();
     try {
         const { data: racer } = await supabase.from('racers').select('*').eq('bib', bib).single();
         if (!racer) return res.status(404).json({ error: 'Nincs ilyen rajtszám!' });
@@ -425,8 +435,8 @@ app.post('/api/stop-racer', authenticateAdmin, async (req, res) => {
 });
 
 app.post('/api/stop-bulk-racers', authenticateAdmin, async (req, res) => {
-    const { bibs } = req.body;
-    const baseNow = Date.now();
+    const { bibs, timestamp } = req.body;
+    const baseNow = timestamp || Date.now();
     
     if (!bibs || !Array.isArray(bibs) || bibs.length === 0) {
         return res.status(400).json({ error: 'Üres rajtszám lista!' });
@@ -549,8 +559,8 @@ app.delete('/api/unassigned-time/:id', authenticateAdmin, async (req, res) => {
 
 // --- 10.5 ELLENŐRZŐPONT REGISZTRÁCIÓ (CHECKPOINT) ---
 app.post('/api/checkpoint', authenticateAdmin, async (req, res) => {
-    const { bib, checkpoint_name } = req.body;
-    const now = Date.now();
+    const { bib, checkpoint_name, timestamp } = req.body;
+    const now = timestamp || Date.now();
     try {
         const { data: racer } = await supabase.from('racers').select('id, status').eq('bib', bib).maybeSingle();
         if (!racer) return res.status(404).json({ error: 'Nincs ilyen rajtszám!' });

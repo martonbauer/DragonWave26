@@ -567,6 +567,7 @@
         async function handleSubmit() {
             const input = bibInput.value.trim();
             const checkpointName = checkPointSelect.value;
+            const recordTimestamp = Date.now();
             
             if (!input) {
                 showToast('Adj meg legalább egy rajtszámot!', 'warning');
@@ -594,7 +595,7 @@
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${adminPassword}`
                         },
-                        body: JSON.stringify({ bib, checkpoint_name: checkpointName })
+                        body: JSON.stringify({ bib, checkpoint_name: checkpointName, timestamp: recordTimestamp })
                     });
                     const data = await response.json();
                     
@@ -619,9 +620,76 @@
                 showToast(msg, failed.length > 0 ? (successful.length > 0 ? 'warning' : 'error') : 'success');
             } catch (err) {
                 document.getElementById('app-loading').style.display = 'none';
-                showToast(`Kapcsolódási hiba! Ellenőrizd a netet.`, 'error');
+                
+                // OFFLINE QUEUEING FALLBACK
+                let queue = JSON.parse(localStorage.getItem('dragonwave_offline_checkpoints') || '[]');
+                for (const bib of bibs) {
+                    queue.push({
+                        bib,
+                        checkpoint_name: checkpointName,
+                        timestamp: recordTimestamp
+                    });
+                }
+                localStorage.setItem('dragonwave_offline_checkpoints', JSON.stringify(queue));
+                bibInput.value = '';
+                
+                showToast(`⚠️ Offline mód élesítve!\nInternet hiányában a kör rögzítve lett helyben.\nAutomatikus szinkronizáció ha visszatér a térerő!`, 'warning');
+                startOfflineSyncInterval();
             }
         }
+
+        async function syncOfflineCheckpoints() {
+            if (!adminPassword) return;
+            let queue = JSON.parse(localStorage.getItem('dragonwave_offline_checkpoints') || '[]');
+            if (queue.length === 0) return;
+            
+            console.log(`[Offline Sync] Szinkronizálás folyamatban: ${queue.length} elem...`);
+            let successfulIndexes = [];
+            
+            for (let i = 0; i < queue.length; i++) {
+                const item = queue[i];
+                try {
+                    const response = await fetch(`${API_BASE}/checkpoint`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${adminPassword}`
+                        },
+                        body: JSON.stringify({ 
+                            bib: item.bib, 
+                            checkpoint_name: item.checkpoint_name, 
+                            timestamp: item.timestamp 
+                        })
+                    });
+                    if (response.ok) {
+                        successfulIndexes.push(i);
+                    }
+                } catch (e) {
+                    break; // Csatlakozási hiba, megállítjuk az aktuális kört
+                }
+            }
+            
+            if (successfulIndexes.length > 0) {
+                queue = queue.filter((_, idx) => !successfulIndexes.includes(idx));
+                localStorage.setItem('dragonwave_offline_checkpoints', JSON.stringify(queue));
+                showToast(`🔄 Sikeres háttér-szinkronizáció!\n${successfulIndexes.length} köridő feltöltve.`, 'success');
+                fetchStats();
+            }
+        }
+
+        let syncInterval;
+        function startOfflineSyncInterval() {
+            if (syncInterval) return;
+            syncInterval = setInterval(syncOfflineCheckpoints, 8000);
+            console.log("[Offline Sync] Háttér-szinkronizáció elindítva.");
+        }
+
+        // Automatikus indítás belépés után
+        const originalShowApp = showApp;
+        showApp = function() {
+            originalShowApp();
+            startOfflineSyncInterval();
+        };
 
         document.querySelectorAll('.key-btn').forEach(btn => {
             btn.addEventListener('click', () => {

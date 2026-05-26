@@ -557,6 +557,8 @@
 
         async function handleSubmit() {
             const input = bibInput.value.trim();
+            const recordTimestamp = Date.now();
+            
             if (!input) {
                 showToast('Adj meg legalább egy rajtszámot!', 'warning');
                 return;
@@ -579,7 +581,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${adminPassword}`
                     },
-                    body: JSON.stringify({ bibs })
+                    body: JSON.stringify({ bibs, timestamp: recordTimestamp })
                 });
                 const data = await response.json();
                 
@@ -602,11 +604,23 @@
                 }
             } catch (err) {
                 document.getElementById('app-loading').style.display = 'none';
-                showToast(`Kapcsolódási hiba! Ellenőrizd a netet.`, 'error');
+                
+                // OFFLINE QUEUEING FALLBACK FOR FINISHES
+                let queue = JSON.parse(localStorage.getItem('dragonwave_offline_finishes') || '[]');
+                queue.push({
+                    bibs,
+                    timestamp: recordTimestamp
+                });
+                localStorage.setItem('dragonwave_offline_finishes', JSON.stringify(queue));
+                bibInput.value = '';
+                
+                showToast(`⚠️ Offline mód élesítve!\nInternet hiányában a beérkezés rögzítve lett helyben.\nAutomatikus szinkronizáció ha visszatér a térerő!`, 'warning');
+                startOfflineSyncInterval();
             }
         }
 
         async function handleUnassignedTime() {
+            const recordTimestamp = Date.now();
             document.getElementById('app-loading').style.display = 'flex';
             try {
                 const response = await fetch(`${API_BASE}/unassigned-time`, {
@@ -615,7 +629,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${adminPassword}`
                     },
-                    body: JSON.stringify({ timestamp: Date.now() })
+                    body: JSON.stringify({ timestamp: recordTimestamp })
                 });
                 const data = await response.json();
                 document.getElementById('app-loading').style.display = 'none';
@@ -627,9 +641,93 @@
                 }
             } catch (err) {
                 document.getElementById('app-loading').style.display = 'none';
-                showToast(`Kapcsolódási hiba!`, 'error');
+                
+                // OFFLINE QUEUEING FALLBACK FOR BLIND TIMES
+                let queue = JSON.parse(localStorage.getItem('dragonwave_offline_unassigned') || '[]');
+                queue.push({
+                    timestamp: recordTimestamp
+                });
+                localStorage.setItem('dragonwave_offline_unassigned', JSON.stringify(queue));
+                
+                showToast(`⚠️ Offline mód élesítve!\nRajtszám nélküli idő helyben rögzítve.\nAutomatikus szinkronizáció ha visszatér a térerő!`, 'warning');
+                startOfflineSyncInterval();
             }
         }
+
+        async function syncOfflineFinishes() {
+            if (!adminPassword) return;
+            
+            // 1. Tömeges rögzítések szinkronizálása
+            let bulkQueue = JSON.parse(localStorage.getItem('dragonwave_offline_finishes') || '[]');
+            let successfulBulkIndexes = [];
+            
+            for (let i = 0; i < bulkQueue.length; i++) {
+                const item = bulkQueue[i];
+                try {
+                    const response = await fetch(`${API_BASE}/stop-bulk-racers`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${adminPassword}`
+                        },
+                        body: JSON.stringify({ bibs: item.bibs, timestamp: item.timestamp })
+                    });
+                    if (response.ok) {
+                        successfulBulkIndexes.push(i);
+                    }
+                } catch (e) {
+                    break;
+                }
+            }
+            if (successfulBulkIndexes.length > 0) {
+                bulkQueue = bulkQueue.filter((_, idx) => !successfulBulkIndexes.includes(idx));
+                localStorage.setItem('dragonwave_offline_finishes', JSON.stringify(bulkQueue));
+                showToast(`🔄 Sikeres cél szinkronizáció!\n${successfulBulkIndexes.length} beérkezés feltöltve.`, 'success');
+                fetchStats();
+            }
+
+            // 2. Vakrögzítések szinkronizálása
+            let unassignedQueue = JSON.parse(localStorage.getItem('dragonwave_offline_unassigned') || '[]');
+            let successfulUnassignedIndexes = [];
+            
+            for (let i = 0; i < unassignedQueue.length; i++) {
+                const item = unassignedQueue[i];
+                try {
+                    const response = await fetch(`${API_BASE}/unassigned-time`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${adminPassword}`
+                        },
+                        body: JSON.stringify({ timestamp: item.timestamp })
+                    });
+                    if (response.ok) {
+                        successfulUnassignedIndexes.push(i);
+                    }
+                } catch (e) {
+                    break;
+                }
+            }
+            if (successfulUnassignedIndexes.length > 0) {
+                unassignedQueue = unassignedQueue.filter((_, idx) => !successfulUnassignedIndexes.includes(idx));
+                localStorage.setItem('dragonwave_offline_unassigned', JSON.stringify(unassignedQueue));
+                showToast(`🔄 Sikeres háttér-szinkronizáció!\n${successfulUnassignedIndexes.length} vakrögzítés feltöltve.`, 'success');
+            }
+        }
+
+        let syncInterval;
+        function startOfflineSyncInterval() {
+            if (syncInterval) return;
+            syncInterval = setInterval(syncOfflineFinishes, 8000);
+            console.log("[Offline Sync] Háttér-szinkronizáció elindítva.");
+        }
+
+        // Automatikus indítás belépés után
+        const originalShowApp = showApp;
+        showApp = function() {
+            originalShowApp();
+            startOfflineSyncInterval();
+        };
 
         document.querySelectorAll('.key-btn').forEach(btn => {
             btn.addEventListener('click', () => {

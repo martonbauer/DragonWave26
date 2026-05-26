@@ -916,14 +916,16 @@ export class RaceManager {
         container.innerHTML = '';
 
         if (size > 1) {
+            const isSarkany = catId && (catId.toLowerCase().includes('sarkany') || catId.toLowerCase().includes('dragon'));
+            
             // Csapatnév mező (Egység neve)
             const teamDiv = document.createElement('div');
             teamDiv.className = 'member-entry team-name-entry';
             teamDiv.style = "margin-bottom: 25px; padding: 15px; border: 1px solid var(--accent-primary); border-radius: 12px; background: rgba(0, 145, 255, 0.05);";
             teamDiv.innerHTML = `
                 <div>
-                    <label style="color: var(--accent-primary); font-weight: bold; font-size: 1.1rem;">Egység / Csapat neve</label>
-                    <input type="text" class="member-name" placeholder="Pl. Sárkányok" required maxlength="100">
+                    <label style="color: var(--accent-primary); font-weight: bold; font-size: 1.1rem;">Egység / Csapat neve (${isSarkany ? 'kötelező' : 'opcionális'})</label>
+                    <input type="text" class="member-name" placeholder="Pl. Sárkányok" ${isSarkany ? 'required' : ''} maxlength="100">
                     <input type="hidden" class="member-birth" value="1900-01-01">
                     <input type="hidden" class="member-otproba" value="CSAPATNEV">
                 </div>
