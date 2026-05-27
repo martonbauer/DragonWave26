@@ -1678,135 +1678,155 @@ window.generateCertificate = generateCertificate;
 export function renderOtprobaList() {
     const rm = window.raceManager;
     const container = document.getElementById('admin-otproba-content');
-    if (!rm || !container) return;
+    if (!container) return;
 
-    container.innerHTML = '';
-
-    const racers = rm.data.racers || [];
-    
-    // Gyűjtsük össze az összes 5Próba tagot egyetlen listába
-    const otprobaList = [];
-
-    // Robust cleaner and identifier extractor for 5Próba ID (e.g. "5P123456", "5p 123456", "123456")
-    const cleanOtprobaId = (val) => {
-        if (val === undefined || val === null) return null;
-        const s = String(val).trim();
-        if (s.toLowerCase() === 'nincs' || s.toLowerCase() === 'csapatnev' || s === '') return null;
+    try {
+        container.innerHTML = '';
         
-        // Match optional '5P' prefix, optional separators (spaces, dashes, hashes), and then a series of digits
-        const match = s.match(/^(?:5[Pp])?[-#\s]*(\d+)$/);
-        if (match) {
-            return match[1]; // Return the clean digits
+        if (!rm || !rm.data) {
+            container.innerHTML = `
+                <div class="admin-card" style="padding: 25px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border);">
+                    <p style="color: var(--text-secondary); margin:0; font-style: italic; font-size: 0.9rem;">Hiba: A versenyadatok nincsenek betöltve (RaceManager hiányzik).</p>
+                </div>
+            `;
+            return;
         }
-        return null;
-    };
 
-    // Logging helper to diagnose what we have in the database (helpful if list is empty)
-    console.log("renderOtprobaList: processing", racers.length, "racers");
-    const rawIdsForDebug = [];
+        const racers = rm.data.racers || [];
+        
+        // Gyűjtsük össze az összes 5Próba tagot egyetlen listába
+        const otprobaList = [];
 
-    racers.forEach(r => {
-        if (!r.members || r.members.length === 0) {
-            if (r.otproba_id) {
-                rawIdsForDebug.push({ source: 'racer', name: r.name, raw: r.otproba_id, cleaned: cleanOtprobaId(r.otproba_id) });
+        // Robust cleaner and identifier extractor for 5Próba ID (e.g. "5P123456", "5p 123456", "123456")
+        const cleanOtprobaId = (val) => {
+            if (val === undefined || val === null) return null;
+            const s = String(val).trim();
+            if (s.toLowerCase() === 'nincs' || s.toLowerCase() === 'csapatnev' || s === '') return null;
+            
+            // Match optional '5P' prefix, optional separators (spaces, dashes, hashes), and then a series of digits
+            const match = s.match(/^(?:5[Pp])?[-#\s]*(\d+)$/);
+            if (match) {
+                return match[1]; // Return the clean digits
             }
-            const cleanId = cleanOtprobaId(r.otproba_id);
-            if (cleanId) {
-                otprobaList.push({
-                    bib: r.bib,
-                    name: r.name || 'Névtelen',
-                    otproba_id: cleanId,
-                    category: r.category,
-                    distance: r.distance,
-                    status: r.status,
-                    total_time: r.total_time
-                });
-            }
-        } else {
-            r.members.forEach(m => {
-                if (m.otproba_id) {
-                    rawIdsForDebug.push({ source: 'member', name: m.name, raw: m.otproba_id, cleaned: cleanOtprobaId(m.otproba_id) });
+            return null;
+        };
+
+        // Logging helper to diagnose what we have in the database (helpful if list is empty)
+        console.log("renderOtprobaList: processing", racers.length, "racers");
+        const rawIdsForDebug = [];
+
+        racers.forEach(r => {
+            if (!r.members || r.members.length === 0) {
+                if (r.otproba_id) {
+                    rawIdsForDebug.push({ source: 'racer', name: r.name, raw: r.otproba_id, cleaned: cleanOtprobaId(r.otproba_id) });
                 }
-                const cleanId = cleanOtprobaId(m.otproba_id);
+                const cleanId = cleanOtprobaId(r.otproba_id);
                 if (cleanId) {
                     otprobaList.push({
                         bib: r.bib,
-                        name: m.name || 'Névtelen',
+                        name: r.name || 'Névtelen',
                         otproba_id: cleanId,
                         category: r.category,
                         distance: r.distance,
-                        status: r.status,
+                        status: r.status || 'registered',
                         total_time: r.total_time
                     });
                 }
-            });
-        }
-    });
+            } else {
+                r.members.forEach(m => {
+                    if (m.otproba_id) {
+                        rawIdsForDebug.push({ source: 'member', name: m.name, raw: m.otproba_id, cleaned: cleanOtprobaId(m.otproba_id) });
+                    }
+                    const cleanId = cleanOtprobaId(m.otproba_id);
+                    if (cleanId) {
+                        otprobaList.push({
+                            bib: r.bib,
+                            name: m.name || 'Névtelen',
+                            otproba_id: cleanId,
+                            category: r.category,
+                            distance: r.distance,
+                            status: r.status || 'registered',
+                            total_time: r.total_time
+                        });
+                    }
+                });
+            }
+        });
 
-    console.log("renderOtprobaList: scanned ids in database:", rawIdsForDebug);
-    console.log("renderOtprobaList: matched valid numeric 5Próba list:", otprobaList);
+        console.log("renderOtprobaList: scanned ids in database:", rawIdsForDebug);
+        console.log("renderOtprobaList: matched valid numeric 5Próba list:", otprobaList);
 
-    // Rendezzük rajtszám szerint
-    otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
+        // Rendezzük rajtszám szerint
+        otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
 
-    let html = '';
+        let html = '';
 
-    // Összesítő statisztika kártya
-    html += `
-        <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px;">
-            <div class="admin-card" style="text-align: center; border-left: 4px solid #00ff88; background: rgba(0, 255, 136, 0.03); padding: 15px; border-radius: 12px;">
-                <span style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Összesen 5Próbás Versenyző</span>
-                <h2 style="margin: 5px 0 0 0; color: #fff; font-size: 2.2rem; font-weight: 800;">${otprobaList.length} fő</h2>
-            </div>
-        </div>
-    `;
-
-    if (otprobaList.length === 0) {
+        // Összesítő statisztika kártya
         html += `
-            <div class="admin-card" style="padding: 25px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border);">
-                <p style="color: var(--text-secondary); margin:0; font-style: italic; font-size: 0.9rem;">Nincs regisztrált egész számú 5Próba azonosítóval rendelkező versenyző.</p>
-            </div>
-        `;
-    } else {
-        html += `
-            <div class="admin-card" style="padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                <div class="table-responsive">
-                    <table class="results-table" style="font-size: 0.85rem;">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Rajtszám</th>
-                                <th>Név</th>
-                                <th>5Próba Azonosító</th>
-                                <th>Kategória</th>
-                                <th>Táv</th>
-                                <th>Státusz</th>
-                                <th style="text-align: right;">Eredmény</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${otprobaList.map(item => {
-                                const statusColor = item.status === 'finished' ? '#00FFCC' : (item.status === 'running' ? 'var(--accent-primary)' : '#aaa');
-                                const timeStr = item.status === 'finished' ? formatTime(item.total_time || 0) : (item.status === 'running' ? 'Futamban' : 'Regisztrálva');
-                                return `
-                                    <tr>
-                                        <td><strong style="color: var(--accent-primary);">#${(item.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                        <td style="font-weight: bold; color: #fff;">${item.name}</td>
-                                        <td><span style="font-family: 'Space Mono', monospace; font-weight: bold; color: var(--accent-secondary); background: rgba(0, 163, 255, 0.1); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(0, 163, 255, 0.2);">5P${item.otproba_id}</span></td>
-                                        <td style="font-size: 0.75rem; color: var(--text-secondary);">${rm.formatCategoryName(item.category)}</td>
-                                        <td style="font-size: 0.75rem; color: #aaa;">${item.distance || '-'}</td>
-                                        <td style="color: ${statusColor}; font-weight: 600; font-size: 0.75rem;">${item.status.toUpperCase()}</td>
-                                        <td style="text-align: right; font-family: 'Space Mono', monospace; font-weight: bold; color: ${item.status === 'finished' ? '#00ff88' : '#888'};">${timeStr}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px;">
+                <div class="admin-card" style="text-align: center; border-left: 4px solid #00ff88; background: rgba(0, 255, 136, 0.03); padding: 15px; border-radius: 12px;">
+                    <span style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Összesen 5Próbás Versenyző</span>
+                    <h2 style="margin: 5px 0 0 0; color: #fff; font-size: 2.2rem; font-weight: 800;">${otprobaList.length} fő</h2>
                 </div>
             </div>
         `;
-    }
 
-    container.innerHTML = html;
+        if (otprobaList.length === 0) {
+            html += `
+                <div class="admin-card" style="padding: 25px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border);">
+                    <p style="color: var(--text-secondary); margin:0; font-style: italic; font-size: 0.9rem;">Nincs regisztrált egész számú 5Próba azonosítóval rendelkező versenyző.</p>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="admin-card" style="padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                    <div class="table-responsive">
+                        <table class="results-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">Rajtszám</th>
+                                    <th>Név</th>
+                                    <th>5Próba Azonosító</th>
+                                    <th>Kategória</th>
+                                    <th>Táv</th>
+                                    <th>Státusz</th>
+                                    <th style="text-align: right;">Eredmény</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${otprobaList.map(item => {
+                                    const status = item.status || 'registered';
+                                    const statusColor = status === 'finished' ? '#00FFCC' : (status === 'running' ? 'var(--accent-primary)' : '#aaa');
+                                    const timeStr = status === 'finished' ? formatTime(item.total_time || 0) : (status === 'running' ? 'Futamban' : 'Regisztrálva');
+                                    return `
+                                        <tr>
+                                            <td><strong style="color: var(--accent-primary);">#${(item.bib || 0).toString().padStart(3, '0')}</strong></td>
+                                            <td style="font-weight: bold; color: #fff;">${item.name}</td>
+                                            <td><span style="font-family: 'Space Mono', monospace; font-weight: bold; color: var(--accent-secondary); background: rgba(0, 163, 255, 0.1); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(0, 163, 255, 0.2);">5P${item.otproba_id}</span></td>
+                                            <td style="font-size: 0.75rem; color: var(--text-secondary);">${rm.formatCategoryName(item.category)}</td>
+                                            <td style="font-size: 0.75rem; color: #aaa;">${item.distance || '-'}</td>
+                                            <td style="color: ${statusColor}; font-weight: 600; font-size: 0.75rem;">${status.toUpperCase()}</td>
+                                            <td style="text-align: right; font-family: 'Space Mono', monospace; font-weight: bold; color: ${status === 'finished' ? '#00ff88' : '#888'};">${timeStr}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error("renderOtprobaList error:", error);
+        container.innerHTML = `
+            <div class="admin-card" style="padding: 25px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border); border-left: 4px solid var(--accent-primary); background: rgba(255, 0, 85, 0.03);">
+                <p style="color: var(--accent-primary); margin:0; font-weight: bold;">Hiba történt a megjelenítés közben:</p>
+                <p style="color: var(--text-secondary); margin:5px 0 0 0; font-family: monospace; font-size: 0.85rem;">${error.message}</p>
+            </div>
+        `;
+    }
 }
 window.renderOtprobaList = renderOtprobaList;
 
