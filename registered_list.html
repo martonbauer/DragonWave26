@@ -189,19 +189,23 @@
         <div class="stats-grid">
             <a href="#target-22km" class="stat-card">
                 <div class="stat-label">Hosszú táv</div>
-                <div id="count-22km" class="stat-value">0</div>
+                <div id="count-22km" class="stat-value">0 egység</div>
             </a>
             <a href="#target-11km" class="stat-card">
                 <div class="stat-label">Rövid táv</div>
-                <div id="count-11km" class="stat-value">0</div>
+                <div id="count-11km" class="stat-value">0 egység</div>
             </a>
             <a href="#target-4km" class="stat-card">
                 <div class="stat-label">SUP 4 km</div>
-                <div id="count-4km" class="stat-value">0</div>
+                <div id="count-4km" class="stat-value">0 egység</div>
             </a>
             <div class="stat-card total">
                 <div class="stat-label">Összes nevezett</div>
-                <div id="count-total" class="stat-value">0</div>
+                <div id="count-total" class="stat-value">0 egység</div>
+            </div>
+            <div class="stat-card total" style="background: linear-gradient(135deg, rgba(255, 184, 0, 0.1), rgba(255, 115, 0, 0.1)); border-color: rgba(255, 184, 0, 0.3);">
+                <div class="stat-label" style="color: rgba(255, 184, 0, 0.85);">Nevezett fő</div>
+                <div id="count-heads" class="stat-value" style="color: #FFB800; text-shadow: 0 0 20px rgba(255, 184, 0, 0.4);">0 fő</div>
             </div>
         </div>
 
@@ -269,14 +273,22 @@
                 const registered = result.racers || [];
 
                 const counts = { '22km': 0, '11km': 0, '4km': 0 };
+                let totalHeads = 0;
                 registered.forEach(r => {
                     if (counts[r.distance] !== undefined) counts[r.distance]++;
+                    if (r.members && r.members.length > 0) {
+                        const rMems = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+                        totalHeads += rMems.length > 0 ? rMems.length : 1;
+                    } else {
+                        totalHeads += 1;
+                    }
                 });
 
-                document.getElementById('count-22km').textContent = counts['22km'];
-                document.getElementById('count-11km').textContent = counts['11km'];
-                document.getElementById('count-4km').textContent = counts['4km'];
-                document.getElementById('count-total').textContent = registered.length;
+                document.getElementById('count-22km').textContent = counts['22km'] + ' egység';
+                document.getElementById('count-11km').textContent = counts['11km'] + ' egység';
+                document.getElementById('count-4km').textContent = counts['4km'] + ' egység';
+                document.getElementById('count-total').textContent = registered.length + ' egység';
+                document.getElementById('count-heads').textContent = totalHeads + ' fő';
 
                 const container = document.getElementById('results-tables-container');
                 container.innerHTML = '';
