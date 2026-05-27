@@ -1684,15 +1684,20 @@ export function renderOtprobaList() {
 
     const racers = rm.data.racers || [];
     
-    // Gyűjtsük össze az összes 5Próba tagot távolság szerint csoportosítva
-    const longTav = []; // 22km
-    const rovidTav = []; // 11km and 4km
+    // Gyűjtsük össze az összes 5Próba tagot egyetlen listába
+    const otprobaList = [];
+
+    const isInteger = (str) => {
+        if (typeof str !== 'string' && typeof str !== 'number') return false;
+        const s = String(str).trim();
+        return /^\d+$/.test(s);
+    };
 
     racers.forEach(r => {
         if (!r.members || r.members.length === 0) {
-            const otpId = r.otproba_id ? r.otproba_id.trim() : '';
-            if (otpId && otpId.toLowerCase() !== 'nincs' && otpId !== 'CSAPATNEV') {
-                const item = {
+            const otpId = r.otproba_id ? String(r.otproba_id).trim() : '';
+            if (isInteger(otpId)) {
+                otprobaList.push({
                     bib: r.bib,
                     name: r.name || 'Névtelen',
                     otproba_id: otpId,
@@ -1700,18 +1705,13 @@ export function renderOtprobaList() {
                     distance: r.distance,
                     status: r.status,
                     total_time: r.total_time
-                };
-                if (r.distance === '22km') {
-                    longTav.push(item);
-                } else {
-                    rovidTav.push(item);
-                }
+                });
             }
         } else {
             r.members.forEach(m => {
-                const otpId = m.otproba_id ? m.otproba_id.trim() : '';
-                if (otpId && otpId.toLowerCase() !== 'nincs' && otpId !== 'CSAPATNEV') {
-                    const item = {
+                const otpId = m.otproba_id ? String(m.otproba_id).trim() : '';
+                if (isInteger(otpId)) {
+                    otprobaList.push({
                         bib: r.bib,
                         name: m.name,
                         otproba_id: otpId,
@@ -1719,53 +1719,36 @@ export function renderOtprobaList() {
                         distance: r.distance,
                         status: r.status,
                         total_time: r.total_time
-                    };
-                    if (r.distance === '22km') {
-                        longTav.push(item);
-                    } else {
-                        rovidTav.push(item);
-                    }
+                    });
                 }
             });
         }
     });
 
-    longTav.sort((a, b) => (a.bib || 0) - (b.bib || 0));
-    rovidTav.sort((a, b) => (a.bib || 0) - (b.bib || 0));
+    // Rendezzük rajtszám szerint
+    otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
 
     let html = '';
 
-    // Összesítő statisztika kártyák
+    // Összesítő statisztika kártya
     html += `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px;">
             <div class="admin-card" style="text-align: center; border-left: 4px solid #00ff88; background: rgba(0, 255, 136, 0.03); padding: 15px; border-radius: 12px;">
-                <span style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Összesen 5Próbás</span>
-                <h2 style="margin: 5px 0 0 0; color: #fff; font-size: 2.2rem; font-weight: 800;">${longTav.length + rovidTav.length} fő</h2>
-            </div>
-            <div class="admin-card" style="text-align: center; border-left: 4px solid var(--accent-primary); background: rgba(0, 163, 255, 0.03); padding: 15px; border-radius: 12px;">
-                <span style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Hosszú táv (22km)</span>
-                <h2 style="margin: 5px 0 0 0; color: #fff; font-size: 2.2rem; font-weight: 800;">${longTav.length} fő</h2>
-            </div>
-            <div class="admin-card" style="text-align: center; border-left: 4px solid #ff4d4d; background: rgba(255, 77, 77, 0.03); padding: 15px; border-radius: 12px;">
-                <span style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Rövid táv (11km & 4km)</span>
-                <h2 style="margin: 5px 0 0 0; color: #fff; font-size: 2.2rem; font-weight: 800;">${rovidTav.length} fő</h2>
+                <span style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Összesen 5Próbás Versenyző</span>
+                <h2 style="margin: 5px 0 0 0; color: #fff; font-size: 2.2rem; font-weight: 800;">${otprobaList.length} fő</h2>
             </div>
         </div>
     `;
 
-    const buildTable = (list, title, colorClass) => {
-        if (list.length === 0) {
-            return `
-                <div class="admin-card" style="margin-bottom: 30px; padding: 25px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border);">
-                    <h3 style="color: var(--text-primary); margin-top:0; font-size: 1.1rem; font-weight: 700;">${title}</h3>
-                    <p style="color: var(--text-secondary); margin:0; font-style: italic; font-size: 0.9rem;">Nincs regisztrált 5Próba azonosítóval rendelkező versenyző ezen a távon.</p>
-                </div>
-            `;
-        }
-
-        return `
-            <div class="admin-card" style="margin-bottom: 30px; padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                <h3 style="color: var(--text-primary); margin-top:0; margin-bottom: 15px; border-left: 4px solid ${colorClass}; padding-left: 10px; font-size: 1.1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${title} (${list.length} fő)</h3>
+    if (otprobaList.length === 0) {
+        html += `
+            <div class="admin-card" style="padding: 25px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border);">
+                <p style="color: var(--text-secondary); margin:0; font-style: italic; font-size: 0.9rem;">Nincs regisztrált egész számú 5Próba azonosítóval rendelkező versenyző.</p>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="admin-card" style="padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border);">
                 <div class="table-responsive">
                     <table class="results-table" style="font-size: 0.85rem;">
                         <thead>
@@ -1774,12 +1757,13 @@ export function renderOtprobaList() {
                                 <th>Név</th>
                                 <th>5Próba Azonosító</th>
                                 <th>Kategória</th>
+                                <th>Táv</th>
                                 <th>Státusz</th>
                                 <th style="text-align: right;">Eredmény</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${list.map(item => {
+                            ${otprobaList.map(item => {
                                 const statusColor = item.status === 'finished' ? '#00FFCC' : (item.status === 'running' ? 'var(--accent-primary)' : '#aaa');
                                 const timeStr = item.status === 'finished' ? formatTime(item.total_time || 0) : (item.status === 'running' ? 'Futamban' : 'Regisztrálva');
                                 return `
@@ -1788,6 +1772,7 @@ export function renderOtprobaList() {
                                         <td style="font-weight: bold; color: #fff;">${item.name}</td>
                                         <td><span style="font-family: 'Space Mono', monospace; font-weight: bold; color: var(--accent-secondary); background: rgba(0, 163, 255, 0.1); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(0, 163, 255, 0.2);">5P${item.otproba_id}</span></td>
                                         <td style="font-size: 0.75rem; color: var(--text-secondary);">${rm.formatCategoryName(item.category)}</td>
+                                        <td style="font-size: 0.75rem; color: #aaa;">${item.distance || '-'}</td>
                                         <td style="color: ${statusColor}; font-weight: 600; font-size: 0.75rem;">${item.status.toUpperCase()}</td>
                                         <td style="text-align: right; font-family: 'Space Mono', monospace; font-weight: bold; color: ${item.status === 'finished' ? '#00ff88' : '#888'};">${timeStr}</td>
                                     </tr>
@@ -1798,10 +1783,7 @@ export function renderOtprobaList() {
                 </div>
             </div>
         `;
-    };
-
-    html += buildTable(longTav, 'Hosszú Táv (22 km) 5Próba Résztvevők', 'var(--accent-primary)');
-    html += buildTable(rovidTav, 'Rövid Táv (11 km & 4 km) 5Próba Résztvevők', '#ff4d4d');
+    }
 
     container.innerHTML = html;
 }
