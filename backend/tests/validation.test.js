@@ -8,9 +8,7 @@ describe('validation.js tests', () => {
                 phone: '123456789',
                 category: 'versenykajak_noi_1',
                 distance: '11km',
-                members: [
-                    { name: 'John Doe', otproba_id: 'OT-123' }
-                ]
+                members: [{ name: 'John Doe', otproba_id: 'OT-123' }],
             };
             expect(validateRacerData(data)).toBeNull();
         });
@@ -18,7 +16,7 @@ describe('validation.js tests', () => {
         it('should return error if email is too long', () => {
             const data = {
                 email: 'a'.repeat(151) + '@example.com',
-                phone: '123456789'
+                phone: '123456789',
             };
             expect(validateRacerData(data)).toBe('Az email cím túl hosszú!');
         });
@@ -31,9 +29,7 @@ describe('validation.js tests', () => {
 
         it('should return error if a member name is too long', () => {
             const data = {
-                members: [
-                    { name: 'a'.repeat(101) }
-                ]
+                members: [{ name: 'a'.repeat(101) }],
             };
             expect(validateRacerData(data)).toBe('A név túl hosszú (max 100 karakter)!');
         });

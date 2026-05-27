@@ -16,11 +16,29 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:watch": "node --watch --watch-path=server.js --watch-path=database.js --watch-path=dragon.js --watch-path=js/ js/lint-watch.js",
+    "format": "prettier --write .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,mjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.6.0",
     "html-to-docx": "^1.8.0",
+    "husky": "^9.1.7",
     "jest": "^30.3.0",
-    "pdf-parse": "^2.4.5"
+    "lint-staged": "^17.0.5",
+    "pdf-parse": "^2.4.5",
+    "prettier": "^3.8.3"
   }
 }

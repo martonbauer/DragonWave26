@@ -3,7 +3,7 @@ import { showToast, formatTime } from './ui-utils.js';
 
 /**
  * --- KÖZPONTI LOGIKAI RÉTEG (MANAGER LAYER) ---
- * RaceManager - A verseny lebonyolításáért, az adatok kezeléséért 
+ * RaceManager - A verseny lebonyolításáért, az adatok kezeléséért
  * és a szinkronizációért felelős központi üzleti logika.
  */
 export class RaceManager {
@@ -11,56 +11,56 @@ export class RaceManager {
         this.data = {
             racers: [],
             categories: {}, // { 'category_id': startTime (timestamp) }
-            events: []
+            events: [],
         };
         this.serverTimeOffset = 0;
         this.adminPassword = sessionStorage.getItem('dragonAdminPassword') || '';
-        
+
         this.categoryMap = {
             // 11 km (Rövid)
-            'kajak_1_nyitott_11km': 'Kajak-1 nyitott',
-            'kajak_2_nyitott_11km': 'Kajak-2 nyitott',
-            'kenu_1_nyitott_11km': 'Kenu-1 nyitott',
-            'kenu_2_nyitott_11km': 'Kenu-2 nyitott',
-            'kenu_3_nyitott_11km': 'Kenu-3 nyitott',
-            'kenu_4_nyitott_11km': 'Kenu-4 nyitott',
- 
+            kajak_1_nyitott_11km: 'Kajak-1 nyitott',
+            kajak_2_nyitott_11km: 'Kajak-2 nyitott',
+            kenu_1_nyitott_11km: 'Kenu-1 nyitott',
+            kenu_2_nyitott_11km: 'Kenu-2 nyitott',
+            kenu_3_nyitott_11km: 'Kenu-3 nyitott',
+            kenu_4_nyitott_11km: 'Kenu-4 nyitott',
+
             // 22 km (Hosszú)
-            'versenykajak_noi_1_22km': 'Versenykajak női-1 (38 cm)',
-            'versenykajak_ferfi_1_22km': 'Versenykajak férfi-1 (38 cm)',
-            'turakajak_noi_1_22km': 'Túrakajak női-1 (42–51 cm)',
-            'turakajak_ferfi_1_22km': 'Túrakajak férfi-1 (42–51 cm)',
-            'turakajak_2_nyitott_22km': 'Túrakajak 2 (nyitott)',
-            'tengeri_kajak_noi_1_22km': 'Tengeri kajak női-1 (51 cm>)',
-            'tengeri_kajak_ferfi_1_22km': 'Tengeri kajak férfi-1 (51 cm>)',
-            'surfski_noi_22km': 'Surfski kajak női',
-            'surfski_ferfi_22km': 'Surfski kajak férfi',
-            'outrigger_noi_1_22km': 'Outrigger női-1',
-            'outrigger_ferfi_1_22km': 'Outrigger férfi-1',
-            'outrigger_2_nyitott_22km': 'Outrigger-2 (nyitott)',
-            'kenu_2_ferfi_22km': 'Kenu-2 férfi',
-            'kenu_2_vegyes_22km': 'Kenu-2 vegyes',
-            'kenu_3_nyitott_22km': 'Kenu-3 (nyitott)',
-            'kenu_4_nyitott_22km': 'Kenu-4 (nyitott)',
-            'sup_noi_1_22km': 'SUP női-1',
-            'sup_ferfi_1_22km': 'SUP férfi-1',
- 
+            versenykajak_noi_1_22km: 'Versenykajak női-1 (38 cm)',
+            versenykajak_ferfi_1_22km: 'Versenykajak férfi-1 (38 cm)',
+            turakajak_noi_1_22km: 'Túrakajak női-1 (42–51 cm)',
+            turakajak_ferfi_1_22km: 'Túrakajak férfi-1 (42–51 cm)',
+            turakajak_2_nyitott_22km: 'Túrakajak 2 (nyitott)',
+            tengeri_kajak_noi_1_22km: 'Tengeri kajak női-1 (51 cm>)',
+            tengeri_kajak_ferfi_1_22km: 'Tengeri kajak férfi-1 (51 cm>)',
+            surfski_noi_22km: 'Surfski kajak női',
+            surfski_ferfi_22km: 'Surfski kajak férfi',
+            outrigger_noi_1_22km: 'Outrigger női-1',
+            outrigger_ferfi_1_22km: 'Outrigger férfi-1',
+            outrigger_2_nyitott_22km: 'Outrigger-2 (nyitott)',
+            kenu_2_ferfi_22km: 'Kenu-2 férfi',
+            kenu_2_vegyes_22km: 'Kenu-2 vegyes',
+            kenu_3_nyitott_22km: 'Kenu-3 (nyitott)',
+            kenu_4_nyitott_22km: 'Kenu-4 (nyitott)',
+            sup_noi_1_22km: 'SUP női-1',
+            sup_ferfi_1_22km: 'SUP férfi-1',
+
             // 4 km SUP
-            'sup_noi_1_merev_39_alatt_4km': 'SUP női-1- merev deszka 39 év alatt',
-            'sup_noi_1_merev_40_felett_4km': 'SUP női-1- merev deszka 40 év felett',
-            'sup_ferfi_1_merev_39_alatt_4km': 'SUP férfi-1- merev deszka 39 év alatt',
-            'sup_ferfi_1_merev_40_felett_4km': 'SUP férfi-1- merev deszka 40 év felett',
-            'sup_noi_1_felfujhato_39_alatt_4km': 'SUP női-1- felfújható deszka 39 év alatt',
-            'sup_noi_1_felfujhato_40_felett_4km': 'SUP női-1- felfújható deszka 40 év felett',
-            'sup_ferfi_1_felfujhato_39_alatt_4km': 'SUP férfi-1- felfújható deszka 39 év alatt',
-            'sup_ferfi_1_felfujhato_40_felett_4km': 'SUP férfi-1- felfújható deszka 40 év felett',
-            'sup_ferfi_1_felfujhato_16_alatt_4km': 'SUP férfi-1- felfújható deszka 16 év alatt',
-            'sup_noi_1_felfujhato_16_alatt_4km': 'SUP női-1- felfújható deszka 16 év alatt',
-            
+            sup_noi_1_merev_39_alatt_4km: 'SUP női-1- merev deszka 39 év alatt',
+            sup_noi_1_merev_40_felett_4km: 'SUP női-1- merev deszka 40 év felett',
+            sup_ferfi_1_merev_39_alatt_4km: 'SUP férfi-1- merev deszka 39 év alatt',
+            sup_ferfi_1_merev_40_felett_4km: 'SUP férfi-1- merev deszka 40 év felett',
+            sup_noi_1_felfujhato_39_alatt_4km: 'SUP női-1- felfújható deszka 39 év alatt',
+            sup_noi_1_felfujhato_40_felett_4km: 'SUP női-1- felfújható deszka 40 év felett',
+            sup_ferfi_1_felfujhato_39_alatt_4km: 'SUP férfi-1- felfújható deszka 39 év alatt',
+            sup_ferfi_1_felfujhato_40_felett_4km: 'SUP férfi-1- felfújható deszka 40 év felett',
+            sup_ferfi_1_felfujhato_16_alatt_4km: 'SUP férfi-1- felfújható deszka 16 év alatt',
+            sup_noi_1_felfujhato_16_alatt_4km: 'SUP női-1- felfújható deszka 16 év alatt',
+
             // Legacy / Admin support
-            'sarkanyhajo_otproba': 'Sárkányhajó ötpróba'
+            sarkanyhajo_otproba: 'Sárkányhajó ötpróba',
         };
-        
+
         this.distanceCategories = {
             '4km': [
                 'sup_noi_1_merev_39_alatt_4km',
@@ -72,7 +72,7 @@ export class RaceManager {
                 'sup_ferfi_1_felfujhato_39_alatt_4km',
                 'sup_ferfi_1_felfujhato_40_felett_4km',
                 'sup_ferfi_1_felfujhato_16_alatt_4km',
-                'sup_noi_1_felfujhato_16_alatt_4km'
+                'sup_noi_1_felfujhato_16_alatt_4km',
             ],
             '11km': [
                 'kajak_1_nyitott_11km',
@@ -81,7 +81,7 @@ export class RaceManager {
                 'kenu_2_nyitott_11km',
                 'kenu_3_nyitott_11km',
                 'kenu_4_nyitott_11km',
-                'sarkanyhajo_otproba'
+                'sarkanyhajo_otproba',
             ],
             '22km': [
                 'versenykajak_noi_1_22km',
@@ -101,17 +101,17 @@ export class RaceManager {
                 'kenu_3_nyitott_22km',
                 'kenu_4_nyitott_22km',
                 'sup_noi_1_22km',
-                'sup_ferfi_1_22km'
-            ]
+                'sup_ferfi_1_22km',
+            ],
         };
 
         this.groupMap = {
-            'kajak_hosszu': 'Összes Hosszú Kajak',
-            'kajak_rovid': 'Összes Rövid Kajak',
-            'kenu_hosszu': 'Összes Hosszú Kenu + Hosszú SUP',
-            'kenu_rovid': 'Összes Rövid Kenu',
-            'sup_4km': 'Összes SUP 4 km',
-            'sarkanyhajo_11km': '🐉 SÁRKÁNYHAJÓ'
+            kajak_hosszu: 'Összes Hosszú Kajak',
+            kajak_rovid: 'Összes Rövid Kajak',
+            kenu_hosszu: 'Összes Hosszú Kenu + Hosszú SUP',
+            kenu_rovid: 'Összes Rövid Kenu',
+            sup_4km: 'Összes SUP 4 km',
+            sarkanyhajo_11km: '🐉 SÁRKÁNYHAJÓ',
         };
         this.init();
     }
@@ -127,17 +127,17 @@ export class RaceManager {
 
     setupRealtimeSync() {
         if (socketAdmin) {
-            socketAdmin.on('dataUpdated', (msg) => {
+            socketAdmin.on('dataUpdated', msg => {
                 console.log('Real-time frissítés érkezett:', msg);
                 this.refreshUI();
             });
-            socketAdmin.on('notify_event', (data) => {
+            socketAdmin.on('notify_event', data => {
                 if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                     new Notification(data.title, { body: data.body, icon: 'admin_landingpage_4_0_png.png' });
                 }
             });
         }
-        
+
         if (this.adminPassword && typeof Notification !== 'undefined') {
             if (Notification.permission === 'default') {
                 Notification.requestPermission();
@@ -150,18 +150,18 @@ export class RaceManager {
             const response = await fetch(`${API_URL}/health`);
             const result = await response.json();
             if (response.ok && result.database === 'connected') {
-                console.log("Adatbázis kapcsolat ellenőrizve.");
+                console.log('Adatbázis kapcsolat ellenőrizve.');
             } else {
-                throw new Error(result.error || "Adatbázis nem elérhető");
+                throw new Error(result.error || 'Adatbázis nem elérhető');
             }
         } catch (err) {
-            console.error("Connectivity check failed:", err);
-            showToast("Hiba: Nincs adatbázis kapcsolat! Ellenőrizd a szervert.", "error");
+            console.error('Connectivity check failed:', err);
+            showToast('Hiba: Nincs adatbázis kapcsolat! Ellenőrizd a szervert.', 'error');
         }
     }
 
     getAuthHeader() {
-        return { 'Authorization': `Bearer ${this.adminPassword}` };
+        return { Authorization: `Bearer ${this.adminPassword}` };
     }
 
     async refreshUI() {
@@ -176,22 +176,22 @@ export class RaceManager {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error("Szerver hiba:", errorData);
+                console.error('Szerver hiba:', errorData);
                 throw new Error(errorData.error || `HTTP hiba! státusz: ${response.status}`);
             }
 
             const result = await response.json();
             this.data = result;
-            
+
             if (result.serverNow) {
                 this.serverTimeOffset = result.serverNow - Date.now();
                 console.log(`Idő szinkronizáció: eltolás ${this.serverTimeOffset}ms`);
             }
-            
-            console.log("Adatok sikeresen betöltve:", this.data);
+
+            console.log('Adatok sikeresen betöltve:', this.data);
         } catch (err) {
-            console.error("KRITIKUS: Nem sikerült betölteni az adatokat:", err);
-            showToast("Szerver hiba az adatok betöltésekor!", "error");
+            console.error('KRITIKUS: Nem sikerült betölteni az adatokat:', err);
+            showToast('Szerver hiba az adatok betöltésekor!', 'error');
         }
     }
 
@@ -201,26 +201,26 @@ export class RaceManager {
             const formattedMembers = members.map(m => ({
                 name: m.name,
                 birth_date: m.birth_date,
-                otproba_id: m.otproba_id
+                otproba_id: m.otproba_id,
             }));
 
             const response = await fetch(`${API_URL}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    members: formattedMembers, 
-                    category, 
-                    distance, 
-                    is_series, 
-                    email, 
+                body: JSON.stringify({
+                    members: formattedMembers,
+                    category,
+                    distance,
+                    is_series,
+                    email,
                     phone,
-                    contact_name: contactName 
-                })
+                    contact_name: contactName,
+                }),
             });
 
             if (response.status === 401 || response.status === 403) {
                 const errorData = await response.json();
-                showToast(`Hitelesítési hiba: ${errorData.error}`, "error");
+                showToast(`Hitelesítési hiba: ${errorData.error}`, 'error');
                 if (response.status === 403) sessionStorage.removeItem('dragonAdminPassword');
                 return;
             }
@@ -232,13 +232,16 @@ export class RaceManager {
 
                 if (!isSilent) {
                     if (result.isDuplicate) {
-                        showToast(`FIGYELEM: Te már neveztél! A nevezésedet rögzítettük 'Függő Duplikáció' állapotban. Az Adminisztrátor fogja jóváhagyni.`, 'info');
+                        showToast(
+                            `FIGYELEM: Te már neveztél! A nevezésedet rögzítettük 'Függő Duplikáció' állapotban. Az Adminisztrátor fogja jóváhagyni.`,
+                            'info'
+                        );
                     } else {
                         showToast(`Sikeres nevezés! Rajtszám: ${result.bib.toString().padStart(3, '0')}`, 'success');
                     }
 
                     setTimeout(() => {
-                        window.location.href = "https://sarkanyhajozz.hu/termek/dunakeszi-futam-elonevezes/";
+                        window.location.href = 'https://sarkanyhajozz.hu/termek/dunakeszi-futam-elonevezes/';
                     }, 3000);
                 } else {
                     if (result.isDuplicate) {
@@ -251,10 +254,10 @@ export class RaceManager {
                 return result;
             } else {
                 const errorData = await response.json();
-                showToast(errorData.error || "Hiba a regisztráció során!", "error");
+                showToast(errorData.error || 'Hiba a regisztráció során!', 'error');
             }
         } catch (err) {
-            showToast("Hiba a regisztráció során!", "error");
+            showToast('Hiba a regisztráció során!', 'error');
         }
     }
 
@@ -265,17 +268,25 @@ export class RaceManager {
             return;
         }
         try {
-            const response = await apiCall('start-category', 'POST', { categoryName, distance, groupId }, this.adminPassword);
+            const response = await apiCall(
+                'start-category',
+                'POST',
+                { categoryName, distance, groupId },
+                this.adminPassword
+            );
             if (!response) return;
             const result = await response.json();
             if (response.ok) {
                 await this.refreshUI();
-                showToast(`START: ${this.formatCategoryName(startKey)} (${result.startedCount || result.count} versenyző)`, 'success');
+                showToast(
+                    `START: ${this.formatCategoryName(startKey)} (${result.startedCount || result.count} versenyző)`,
+                    'success'
+                );
             } else {
                 showToast(result.error, 'error');
             }
         } catch (err) {
-            showToast("Hiba a rajt indításakor!", "error");
+            showToast('Hiba a rajt indításakor!', 'error');
         }
     }
 
@@ -285,57 +296,90 @@ export class RaceManager {
             showToast(`Ez a futam még el sem indult!`, 'error');
             return;
         }
-        if (confirm(`FIGYELEM! Leállítod a(z) ${this.formatCategoryName(startKey)} futamot?\nA még úton lévők automatikusan befejezik mostani idővel!`)) {
+        if (
+            confirm(
+                `FIGYELEM! Leállítod a(z) ${this.formatCategoryName(startKey)} futamot?\nA még úton lévők automatikusan befejezik mostani idővel!`
+            )
+        ) {
             try {
-                const response = await apiCall('stop-category', 'POST', { categoryName, distance, groupId }, this.adminPassword);
+                const response = await apiCall(
+                    'stop-category',
+                    'POST',
+                    { categoryName, distance, groupId },
+                    this.adminPassword
+                );
                 if (!response) return;
                 const result = await response.json();
                 await this.refreshUI();
                 this.updateLiveTimers();
-                showToast(`STOP: ${this.formatCategoryName(startKey)} leállítva. (${result.count} versenyző beérkezett)`, 'success');
+                showToast(
+                    `STOP: ${this.formatCategoryName(startKey)} leállítva. (${result.count} versenyző beérkezett)`,
+                    'success'
+                );
             } catch (err) {
-                showToast("Hiba a megállítás során!", "error");
+                showToast('Hiba a megállítás során!', 'error');
             }
         }
     }
 
     async resetCategory(categoryName, distance, groupId) {
         const startKey = groupId || `${categoryName}_${distance}`;
-        if (confirm(`Biztosan törlöd a(z) ${this.formatCategoryName(startKey)} időmérőjét?\n(A futó óra leáll, de a versenyzők státusza nem változik!)`)) {
+        if (
+            confirm(
+                `Biztosan törlöd a(z) ${this.formatCategoryName(startKey)} időmérőjét?\n(A futó óra leáll, de a versenyzők státusza nem változik!)`
+            )
+        ) {
             try {
-                const response = await apiCall('reset-category', 'POST', { categoryName, distance, groupId }, this.adminPassword);
+                const response = await apiCall(
+                    'reset-category',
+                    'POST',
+                    { categoryName, distance, groupId },
+                    this.adminPassword
+                );
                 if (!response) return;
                 if (response.ok) {
                     await this.refreshUI();
-                    showToast("Időmérő törölve.", "info");
+                    showToast('Időmérő törölve.', 'info');
                 }
             } catch (err) {
-                console.error("ResetCategory error:", err);
+                console.error('ResetCategory error:', err);
             }
         }
     }
 
     async stopRacer(bibInput) {
         const inputStr = String(bibInput).trim();
-        if (!inputStr) { showToast("Kérlek adj meg legalább egy érvényes rajtszámot!", "error"); return; }
-        
-        const bibs = inputStr.split(/\s+/).map(b => parseInt(b, 10)).filter(b => !isNaN(b));
-        if (bibs.length === 0) { showToast("Kérlek adj meg érvényes rajtszámokat!", "error"); return; }
+        if (!inputStr) {
+            showToast('Kérlek adj meg legalább egy érvényes rajtszámot!', 'error');
+            return;
+        }
+
+        const bibs = inputStr
+            .split(/\s+/)
+            .map(b => parseInt(b, 10))
+            .filter(b => !isNaN(b));
+        if (bibs.length === 0) {
+            showToast('Kérlek adj meg érvényes rajtszámokat!', 'error');
+            return;
+        }
 
         if (bibs.length > 1) {
             try {
                 const response = await apiCall('stop-bulk-racers', 'POST', { bibs }, this.adminPassword);
                 if (!response) return;
                 const data = await response.json();
-                
+
                 if (response.ok && data.success) {
                     await this.refreshUI();
                     const { successful, failed } = data.results;
-                    let msg = "";
+                    let msg = '';
                     if (successful.length > 0) {
                         msg += `✅ Rögzítve:\n${successful.join(', ')}\n`;
                         const bibInputEl = document.getElementById('bib-input');
-                        if (bibInputEl) { bibInputEl.value = ''; bibInputEl.focus(); }
+                        if (bibInputEl) {
+                            bibInputEl.value = '';
+                            bibInputEl.focus();
+                        }
                     }
                     if (failed.length > 0) msg += `\n❌ Sikertelen:\n${failed.join('\n')}`;
                     showToast(msg, failed.length > 0 ? (successful.length > 0 ? 'warning' : 'error') : 'success');
@@ -343,7 +387,7 @@ export class RaceManager {
                     showToast(data.error || 'Hiba a tömeges rögzítéskor!', 'error');
                 }
             } catch (err) {
-                showToast("Hálózati hiba a tömeges rögzítéskor!", "error");
+                showToast('Hálózati hiba a tömeges rögzítéskor!', 'error');
             }
         } else {
             const bib = bibs[0];
@@ -356,29 +400,46 @@ export class RaceManager {
                     const names = result.racer.name;
                     showToast(`CÉL: #${bib} ${names} - ${formatTime(result.racer.total_time)}`, 'success');
                     const bibInputEl = document.getElementById('bib-input');
-                    if (bibInputEl) { bibInputEl.value = ''; bibInputEl.focus(); }
+                    if (bibInputEl) {
+                        bibInputEl.value = '';
+                        bibInputEl.focus();
+                    }
                 } else {
                     showToast(result.error, 'error');
                 }
             } catch (err) {
-                showToast("Hiba a célba érkezés rögzítésekor!", "error");
+                showToast('Hiba a célba érkezés rögzítésekor!', 'error');
             }
         }
     }
 
     async recordCheckpoint(bibInput, checkpointName) {
         const inputStr = String(bibInput).trim();
-        if (!inputStr) { showToast("Kérlek adj meg egy érvényes rajtszámot!", "error"); return; }
+        if (!inputStr) {
+            showToast('Kérlek adj meg egy érvényes rajtszámot!', 'error');
+            return;
+        }
 
-        const bibs = inputStr.split(/\s+/).map(b => parseInt(b, 10)).filter(b => !isNaN(b));
-        if (bibs.length === 0) { showToast("Kérlek adj meg egy érvényes rajtszámot!", "error"); return; }
+        const bibs = inputStr
+            .split(/\s+/)
+            .map(b => parseInt(b, 10))
+            .filter(b => !isNaN(b));
+        if (bibs.length === 0) {
+            showToast('Kérlek adj meg egy érvényes rajtszámot!', 'error');
+            return;
+        }
 
         try {
             let successful = [];
             let failed = [];
 
             for (const bib of bibs) {
-                const response = await apiCall('checkpoint', 'POST', { bib, checkpoint_name: checkpointName }, this.adminPassword);
+                const response = await apiCall(
+                    'checkpoint',
+                    'POST',
+                    { bib, checkpoint_name: checkpointName },
+                    this.adminPassword
+                );
                 if (response && response.ok) {
                     successful.push(bib);
                 } else {
@@ -388,12 +449,15 @@ export class RaceManager {
             }
 
             await this.refreshUI();
-            
-            let msg = "";
+
+            let msg = '';
             if (successful.length > 0) {
                 msg += `📍 Kör rögzítve:\n${successful.join(', ')}\n`;
                 const cpBibEl = document.getElementById('checkpoint-bib-input');
-                if (cpBibEl) { cpBibEl.value = ''; cpBibEl.focus(); }
+                if (cpBibEl) {
+                    cpBibEl.value = '';
+                    cpBibEl.focus();
+                }
             }
             if (failed.length > 0) {
                 msg += `\n❌ Sikertelen:\n${failed.join('\n')}`;
@@ -401,12 +465,15 @@ export class RaceManager {
 
             showToast(msg, failed.length > 0 ? (successful.length > 0 ? 'warning' : 'error') : 'success');
         } catch (err) {
-            showToast("Hálózati hiba az ellenőrzőpont rögzítésekor!", "error");
+            showToast('Hálózati hiba az ellenőrzőpont rögzítésekor!', 'error');
         }
     }
 
     async startIndividual(bib) {
-        if (!bib) { showToast("Kérlek adj meg egy rajtszámot!", "error"); return; }
+        if (!bib) {
+            showToast('Kérlek adj meg egy rajtszámot!', 'error');
+            return;
+        }
         try {
             const response = await apiCall('start-individual', 'POST', { bib }, this.adminPassword);
             if (!response) return;
@@ -418,12 +485,17 @@ export class RaceManager {
                 showToast(result.error, 'error');
             }
         } catch (err) {
-            showToast("Hiba az egyéni indításkor!", "error");
+            showToast('Hiba az egyéni indításkor!', 'error');
         }
     }
 
     async startMass() {
-        if (!confirm("BIZTOSAN ELINDÍTOD A TÖMEGRAJTOT?\nMinden 'Regisztrált' állapotú versenyző elindul az aktuális idővel!")) return;
+        if (
+            !confirm(
+                "BIZTOSAN ELINDÍTOD A TÖMEGRAJTOT?\nMinden 'Regisztrált' állapotú versenyző elindul az aktuális idővel!"
+            )
+        )
+            return;
         try {
             const response = await apiCall('start-mass', 'POST', {}, this.adminPassword);
             if (!response) return;
@@ -435,7 +507,7 @@ export class RaceManager {
                 showToast(result.error, 'error');
             }
         } catch (err) {
-            showToast("Hiba a tömegrajt indításakor!", "error");
+            showToast('Hiba a tömegrajt indításakor!', 'error');
         }
     }
 
@@ -452,17 +524,17 @@ export class RaceManager {
                 showToast(result.error, 'error');
             }
         } catch (err) {
-            showToast("Hiba a táv szerinti indításkor!", "error");
+            showToast('Hiba a táv szerinti indításkor!', 'error');
         }
     }
 
     async deleteRacer(id, bib) {
         if (!confirm(`Biztosan törlöd ezt a versenyzőt?${bib ? ' (Rajtszám: #' + bib + ')' : ''}`)) return;
-        
+
         try {
-            const response = await fetch(`${API_URL}/racer/${id}`, { 
+            const response = await fetch(`${API_URL}/racer/${id}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${this.adminPassword}` }
+                headers: { Authorization: `Bearer ${this.adminPassword}` },
             });
 
             if (response.ok) {
@@ -471,11 +543,11 @@ export class RaceManager {
                 showToast(`Versenyző törölve: ${bib ? '#' + bib : 'ID: ' + id}`, 'info');
             } else {
                 const errData = await response.json();
-                showToast(`Hiba a törlés során: ${errData.error || response.statusText}`, "error");
+                showToast(`Hiba a törlés során: ${errData.error || response.statusText}`, 'error');
             }
         } catch (err) {
-            console.error("Delete error:", err);
-            showToast("Hiba a hálózati kapcsolatban!", "error");
+            console.error('Delete error:', err);
+            showToast('Hiba a hálózati kapcsolatban!', 'error');
         }
     }
 
@@ -485,7 +557,7 @@ export class RaceManager {
         if (!catSelect) return;
 
         catSelect.innerHTML = '<option value="" disabled selected>Válassz kategóriát...</option>';
-        
+
         const keys = this.distanceCategories[distance] || [];
         keys.forEach(slug => {
             const name = this.categoryMap[slug];
@@ -505,9 +577,12 @@ export class RaceManager {
             catSelect.value = '';
         }
 
-        catSelect.appendChild(new Option("➕ Egyéb (kézi megadás)...", "__custom__"));
+        catSelect.appendChild(new Option('➕ Egyéb (kézi megadás)...', '__custom__'));
 
-        if (selectValue === '__custom__' || (selectValue && !keys.includes(selectValue) && !this.categoryMap[selectValue])) {
+        if (
+            selectValue === '__custom__' ||
+            (selectValue && !keys.includes(selectValue) && !this.categoryMap[selectValue])
+        ) {
             catSelect.value = '__custom__';
             if (catCustom) {
                 catCustom.style.display = 'block';
@@ -531,7 +606,7 @@ export class RaceManager {
 
         const dataContainer = document.getElementById('edit-racer-data-container');
         const titleEl = document.querySelector('#editRacerModal .card-title');
-        
+
         if (memberId) {
             if (dataContainer) dataContainer.style.display = 'none';
             if (titleEl) titleEl.innerHTML = '✏️ Versenyző Szerkesztése';
@@ -543,27 +618,27 @@ export class RaceManager {
         document.getElementById('edit-id').value = racer.id;
         document.getElementById('edit-bib').value = racer.bib || '';
         document.getElementById('edit-status').value = racer.status || 'registered';
-        
+
         const distanceVal = racer.distance || '11km';
         const editDistanceEl = document.getElementById('edit-distance');
         if (editDistanceEl) {
             editDistanceEl.value = distanceVal;
         }
-        
+
         this.updateEditCategoryOptions(distanceVal, racer.category);
         document.getElementById('edit-email').value = racer.email || '';
         document.getElementById('edit-phone').value = racer.phone || '';
         document.getElementById('edit-is_series').checked = !!racer.is_series;
-        document.getElementById('edit-is_paid').value = racer.is_paid ? "1" : "0";
+        document.getElementById('edit-is_paid').value = racer.is_paid ? '1' : '0';
 
         const editDragonTeamContainer = document.getElementById('edit-dragon-team-container');
         const editDragonTeamSelect = document.getElementById('edit-dragon-team');
-        
+
         if (editDragonTeamContainer && editDragonTeamSelect) {
             if (/s[aá]rk[aá]ny/i.test(racer.category || '')) {
                 editDragonTeamContainer.style.display = 'block';
                 editDragonTeamSelect.innerHTML = '<option value="">-- Jelenlegi állapot megtartása --</option>';
-                
+
                 const teams = [];
                 this.data.racers.forEach(r => {
                     if (/s[aá]rk[aá]ny/i.test(r.category || '')) {
@@ -573,12 +648,16 @@ export class RaceManager {
                         }
                     }
                 });
-                
-                teams.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
-                    if (t.id !== racer.id) {
-                        editDragonTeamSelect.appendChild(new Option(`${t.name} (#${t.bib || '-'})`, JSON.stringify(t)));
-                    }
-                });
+
+                teams
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .forEach(t => {
+                        if (t.id !== racer.id) {
+                            editDragonTeamSelect.appendChild(
+                                new Option(`${t.name} (#${t.bib || '-'})`, JSON.stringify(t))
+                            );
+                        }
+                    });
             } else {
                 editDragonTeamContainer.style.display = 'none';
                 editDragonTeamSelect.innerHTML = '';
@@ -588,9 +667,11 @@ export class RaceManager {
         const container = document.getElementById('edit-members-container');
         if (container) {
             container.innerHTML = '';
-            
-            let membersToShow = [];
-            const isTeam = racer.id.startsWith('DRAGON_') || (racer.members && racer.members.some(m => m.otproba_id === 'CSAPATNEV'));
+
+            let membersToShow;
+            const isTeam =
+                racer.id.startsWith('DRAGON_') ||
+                (racer.members && racer.members.some(m => m.otproba_id === 'CSAPATNEV'));
 
             if (memberId) {
                 // Csak az adott tagot szerkesztjük
@@ -614,11 +695,12 @@ export class RaceManager {
                 let birth = m.birth_date || '';
                 if (birth && birth.includes('.')) {
                     const parts = birth.split('.');
-                    if (parts.length === 3) birth = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                    if (parts.length === 3)
+                        birth = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                 }
-                
+
                 const isTeamName = m.otproba_id === 'CSAPATNEV';
-                
+
                 row.innerHTML = `
                     <div style="display: flex; flex-direction: column;">
                         <label style="font-size: 0.7rem; color: ${isTeamName ? 'var(--accent-primary)' : 'var(--text-secondary)'}; margin-bottom: 2px;">${isTeamName ? 'Csapat Név' : 'Név'}</label>
@@ -630,7 +712,7 @@ export class RaceManager {
                     </div>
                     <div style="display: flex; flex-direction: column; ${isTeamName ? 'display: none;' : ''}">
                         <label style="font-size: 0.7rem; color: var(--accent-primary); margin-bottom: 2px;">5Próba ID</label>
-                        <input type="text" class="edit-m-otproba" value="${isTeamName ? 'CSAPATNEV' : (m.otproba_id || '')}" placeholder="Nincs">
+                        <input type="text" class="edit-m-otproba" value="${isTeamName ? 'CSAPATNEV' : m.otproba_id || ''}" placeholder="Nincs">
                     </div>
                 `;
                 container.appendChild(row);
@@ -654,8 +736,8 @@ export class RaceManager {
         const id = document.getElementById('edit-id').value;
         const racer = window.currentEditingRacer;
         const memberId = window.currentEditingMemberId;
-        
-        let membersToSend = [];
+
+        let membersToSend;
 
         if (memberId) {
             // Egy adott tagot szerkesztünk
@@ -672,13 +754,15 @@ export class RaceManager {
                 return m;
             });
         } else {
-            const isTeam = racer.id.startsWith('DRAGON_') || (racer.members && racer.members.some(m => m.otproba_id === 'CSAPATNEV'));
-            
+            const isTeam =
+                racer.id.startsWith('DRAGON_') ||
+                (racer.members && racer.members.some(m => m.otproba_id === 'CSAPATNEV'));
+
             if (isTeam) {
                 // Csapatot szerkesztünk (csak a csapatnév van a formon)
                 const row = document.querySelector('.member-edit-row');
                 const updatedName = row ? row.querySelector('.edit-m-name').value : '';
-                
+
                 let teamMemberFound = false;
                 membersToSend = (racer.members || []).map(m => {
                     if (m.otproba_id === 'CSAPATNEV') {
@@ -687,7 +771,7 @@ export class RaceManager {
                     }
                     return m;
                 });
-                
+
                 if (!teamMemberFound && updatedName) {
                     membersToSend.push({ name: updatedName, birth_date: '1900-01-01', otproba_id: 'CSAPATNEV' });
                 }
@@ -695,12 +779,12 @@ export class RaceManager {
                 // Sima versenyzőt szerkesztünk, a formon minden tag ott van
                 const membersRows = document.querySelectorAll('.member-edit-row');
                 membersToSend = Array.from(membersRows).map((row, index) => {
-                    const originalMember = (racer.members && racer.members[index]) ? racer.members[index] : {};
+                    const originalMember = racer.members && racer.members[index] ? racer.members[index] : {};
                     return {
                         id: originalMember.id, // Supabase allows it, if not it will ignore or fail
                         name: row.querySelector('.edit-m-name').value,
                         birth_date: row.querySelector('.edit-m-birth').value,
-                        otproba_id: row.querySelector('.edit-m-otproba').value
+                        otproba_id: row.querySelector('.edit-m-otproba').value,
                     };
                 });
             }
@@ -708,7 +792,7 @@ export class RaceManager {
 
         let finalCategory = racer.category; // Megtartjuk, ha csak tagot szerkesztünk
         let targetCategoryChanged = false;
-        
+
         if (!memberId) {
             finalCategory = document.getElementById('edit-category').value;
             if (finalCategory === '__custom__') {
@@ -731,48 +815,50 @@ export class RaceManager {
         }
 
         const data = {
-            members: membersToSend
+            members: membersToSend,
         };
 
         if (!memberId) {
-            data.bib = document.getElementById('edit-bib').value ? parseInt(document.getElementById('edit-bib').value) : null;
+            data.bib = document.getElementById('edit-bib').value
+                ? parseInt(document.getElementById('edit-bib').value)
+                : null;
             data.status = document.getElementById('edit-status').value;
             data.category = finalCategory;
             data.distance = document.getElementById('edit-distance').value;
             data.email = document.getElementById('edit-email').value;
             data.phone = document.getElementById('edit-phone').value;
             data.is_series = document.getElementById('edit-is_series').checked;
-            data.is_paid = document.getElementById('edit-is_paid').value === "1";
+            data.is_paid = document.getElementById('edit-is_paid').value === '1';
         }
         try {
             const response = await apiCall(`racer/${id}`, 'PUT', data, this.adminPassword);
             if (!response) return;
-            
+
             const result = await response.json();
-            
+
             if (response.ok) {
                 // Ha tagot szerkesztettünk, de megváltoztattuk a kategóriáját, akkor ki kell venni a csapatból
                 if (memberId && targetCategoryChanged) {
                     const distSelect = document.getElementById('edit-distance');
                     const targetDist = distSelect ? distSelect.value : '11km';
-                    
+
                     try {
                         await fetch(`${API_URL}/remove-from-dragon-team`, {
                             method: 'POST',
-                            headers: { 
+                            headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${this.adminPassword}`
+                                Authorization: `Bearer ${this.adminPassword}`,
                             },
-                            body: JSON.stringify({ 
+                            body: JSON.stringify({
                                 memberIds: [memberId],
                                 targetCategory: finalCategory,
-                                targetDistance: targetDist
-                            })
+                                targetDistance: targetDist,
+                            }),
                         });
-                        showToast("A versenyző kikerült a csapatból az új kategóriába!", "success");
+                        showToast('A versenyző kikerült a csapatból az új kategóriába!', 'success');
                     } catch (e) {
-                        console.error("Csapatból kivételi hiba kategóriaváltás miatt:", e);
-                        showToast("Sikerült a mentés, de hiba a csapatból való leválasztáskor!", "warning");
+                        console.error('Csapatból kivételi hiba kategóriaváltás miatt:', e);
+                        showToast('Sikerült a mentés, de hiba a csapatból való leválasztáskor!', 'warning');
                     }
                 }
 
@@ -782,36 +868,36 @@ export class RaceManager {
                         const targetTeam = JSON.parse(editDragonTeamSelect.value);
                         await fetch(`${API_URL}/create-dragon-team`, {
                             method: 'POST',
-                            headers: { 
+                            headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${this.adminPassword}`
+                                Authorization: `Bearer ${this.adminPassword}`,
                             },
-                            body: JSON.stringify({ 
-                                memberIds: [memberId], 
-                                bib: targetTeam.bib, 
-                                name: targetTeam.name 
-                            })
+                            body: JSON.stringify({
+                                memberIds: [memberId],
+                                bib: targetTeam.bib,
+                                name: targetTeam.name,
+                            }),
                         });
-                        showToast("A versenyző sikeresen átkerült a kiválasztott csapatba!", "success");
+                        showToast('A versenyző sikeresen átkerült a kiválasztott csapatba!', 'success');
                     } catch (e) {
-                        console.error("Csapat áthelyezési hiba:", e);
-                        showToast("Hiba a csapatba helyezés során!", "error");
+                        console.error('Csapat áthelyezési hiba:', e);
+                        showToast('Hiba a csapatba helyezés során!', 'error');
                     }
                 } else if (!targetCategoryChanged) {
                     if (result.warning) {
-                        showToast(result.warning, "warning");
+                        showToast(result.warning, 'warning');
                     } else {
-                        showToast("Sikeres mentés!", "success");
+                        showToast('Sikeres mentés!', 'success');
                     }
                 }
-                
+
                 this.closeEditModal();
                 await this.refreshUI();
             } else {
-                showToast(result.error || "Hiba a mentés során!", "error");
+                showToast(result.error || 'Hiba a mentés során!', 'error');
             }
         } catch (err) {
-            showToast("Hiba a szerver kapcsolatban!", "error");
+            showToast('Hiba a szerver kapcsolatban!', 'error');
         }
     }
 
@@ -822,10 +908,10 @@ export class RaceManager {
                 if (!response) return;
                 if (response.ok) {
                     await this.refreshUI();
-                    showToast("Minden adat törölve!", 'error');
+                    showToast('Minden adat törölve!', 'error');
                 }
             } catch (err) {
-                showToast("Hiba a törlés során!", "error");
+                showToast('Hiba a törlés során!', 'error');
             }
         }
     }
@@ -837,10 +923,10 @@ export class RaceManager {
                 if (!response) return;
                 if (response.ok) {
                     await this.refreshUI();
-                    showToast("Minden időeredmény nullázva!", 'success');
+                    showToast('Minden időeredmény nullázva!', 'success');
                 }
             } catch (err) {
-                showToast("Hálózati hiba a nullázás során!", "error");
+                showToast('Hálózati hiba a nullázás során!', 'error');
             }
         }
     }
@@ -851,13 +937,13 @@ export class RaceManager {
         if (id === 'MASS_START_ALL') return '🚀 Tömegrajt - Mindenki';
         if (id.startsWith('DISTANCE_')) {
             const dist = id.replace('DISTANCE_', '');
-            const distName = dist === '11km' ? 'Rövid táv' : (dist === '22km' ? 'Hosszú táv' : '4 km-es táv');
-            return `📏 ${dist} - ${distName} (Összesített)`;
+            const distName = dist === '11km' ? 'Rövid táv' : dist === '22km' ? 'Hosszú táv' : 'SUP 4 km';
+            return `📏 ${distName} (Összesített)`;
         }
         if (this.groupMap[id]) return this.groupMap[id];
-        
+
         if (this.categoryMap[id]) return this.categoryMap[id];
-        
+
         if (id.includes('_')) {
             const parts = id.split('_');
             const dist = parts[parts.length - 1];
@@ -916,12 +1002,14 @@ export class RaceManager {
         container.innerHTML = '';
 
         if (size > 1) {
-            const isSarkany = catId && (catId.toLowerCase().includes('sarkany') || catId.toLowerCase().includes('dragon'));
-            
+            const isSarkany =
+                catId && (catId.toLowerCase().includes('sarkany') || catId.toLowerCase().includes('dragon'));
+
             // Csapatnév mező (Egység neve)
             const teamDiv = document.createElement('div');
             teamDiv.className = 'member-entry team-name-entry';
-            teamDiv.style = "margin-bottom: 25px; padding: 15px; border: 1px solid var(--accent-primary); border-radius: 12px; background: rgba(0, 145, 255, 0.05);";
+            teamDiv.style =
+                'margin-bottom: 25px; padding: 15px; border: 1px solid var(--accent-primary); border-radius: 12px; background: rgba(0, 145, 255, 0.05);';
             teamDiv.innerHTML = `
                 <div>
                     <label style="color: var(--accent-primary); font-weight: bold; font-size: 1.1rem;">Egység / Csapat neve (${isSarkany ? 'kötelező' : 'opcionális'})</label>
@@ -931,7 +1019,7 @@ export class RaceManager {
                 </div>
             `;
             container.appendChild(teamDiv);
-            
+
             // Tagok felirata
             const tagokCimke = document.createElement('h4');
             tagokCimke.textContent = 'Az egység tagjai:';
@@ -942,7 +1030,8 @@ export class RaceManager {
         for (let i = 1; i <= size; i++) {
             const memberDiv = document.createElement('div');
             memberDiv.className = 'member-entry';
-            memberDiv.style = "margin-bottom: 25px; padding: 15px; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(255, 255, 255, 0.05);";
+            memberDiv.style =
+                'margin-bottom: 25px; padding: 15px; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(255, 255, 255, 0.05);';
             memberDiv.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: var(--accent-secondary);">${size > 1 ? i + '. Tag' : 'Versenyző'}</div>
                 <div>
@@ -986,22 +1075,27 @@ export class RaceManager {
         containers.forEach(container => {
             const hasActive = activeCategories.length > 0 || runningRacers.length > 0;
             if (hasActive) {
-                const safeId = (id) => id.replace(/[^a-z0-9]/gi, '_');
-                
+                const safeId = id => id.replace(/[^a-z0-9]/gi, '_');
+
                 // Ellenőrizzük, hogy minden aktív kategóriához és futó versenyzőhöz megvan-e a timer elem
-                const missingTimers = activeCategories.some(cat => !container.querySelector(`[data-cat-id="${cat.id}"]`));
-                const missingRacerTimers = runningRacers.some(r => !container.querySelector(`[data-racer-id="${r.id}"]`));
+                const missingTimers = activeCategories.some(
+                    cat => !container.querySelector(`[data-cat-id="${cat.id}"]`)
+                );
+                const missingRacerTimers = runningRacers.some(
+                    r => !container.querySelector(`[data-racer-id="${r.id}"]`)
+                );
                 const expectedTotal = activeCategories.length + runningRacers.length;
-                const needsRebuild = container.children.length !== expectedTotal || 
-                                   container.querySelector('.empty-text') !== null ||
-                                   (activeCategories.length > 0 && container.querySelector('[data-cat-id]') === null) ||
-                                   (runningRacers.length > 0 && container.querySelector('[data-racer-id]') === null) ||
-                                   missingTimers ||
-                                   missingRacerTimers;
+                const needsRebuild =
+                    container.children.length !== expectedTotal ||
+                    container.querySelector('.empty-text') !== null ||
+                    (activeCategories.length > 0 && container.querySelector('[data-cat-id]') === null) ||
+                    (runningRacers.length > 0 && container.querySelector('[data-racer-id]') === null) ||
+                    missingTimers ||
+                    missingRacerTimers;
 
                 if (needsRebuild) {
                     container.innerHTML = '';
-                    
+
                     // 1. Kategória órák
                     activeCategories.forEach(cat => {
                         const div = document.createElement('div');
@@ -1024,7 +1118,10 @@ export class RaceManager {
                         div.setAttribute('data-racer-id', r.id);
                         const isAdmin = container.classList.contains('admin-timer-grid');
                         const displayId = `${container.id || 'timer'}-racer-val-${r.id}`;
-                        const racerName = r.members && r.members.length > 0 ? r.members.map(m => m.name).join(', ') : (r.name || 'Névtelen');
+                        const racerName =
+                            r.members && r.members.length > 0
+                                ? r.members.map(m => m.name).join(', ')
+                                : r.name || 'Névtelen';
                         div.innerHTML = `
                             <div class="cat-name" style="color: var(--accent-secondary); font-weight: bold;">👤 #${r.bib} - ${racerName}</div>
                             <div class="cat-time" id="${displayId}">00:00:00.000</div>
@@ -1033,7 +1130,7 @@ export class RaceManager {
                         container.appendChild(div);
                     });
                 }
-                
+
                 // Frissítés
                 activeCategories.forEach(cat => {
                     const displayId = `${container.id || 'timer'}-val-${safeId(cat.id)}`;
@@ -1053,8 +1150,13 @@ export class RaceManager {
                     }
                 });
             } else {
-                if (container.children.length === 0 || container.querySelector('.cat-timer') !== null || container.querySelector('.empty-text') === null) {
-                    container.innerHTML = '<div class="empty-text" style="text-align:center; color: var(--text-secondary); width:100%; padding:20px;">Még nincs aktív futam</div>';
+                if (
+                    container.children.length === 0 ||
+                    container.querySelector('.cat-timer') !== null ||
+                    container.querySelector('.empty-text') === null
+                ) {
+                    container.innerHTML =
+                        '<div class="empty-text" style="text-align:center; color: var(--text-secondary); width:100%; padding:20px;">Még nincs aktív futam</div>';
                 }
             }
         });
@@ -1076,18 +1178,21 @@ export class RaceManager {
         }
 
         const bibNum = parseInt(newBib);
-        
+
         let swap = false;
-        
+
         // Helyi duplikáció ellenőrzés
         const existing = this.data.racers.find(r => r.bib === bibNum && r.id !== id);
         if (existing) {
-            const existingName = existing.members && existing.members.length > 0 
-                ? existing.members.map(m => m.name).join(', ') 
-                : 'Ismeretlen';
+            const existingName =
+                existing.members && existing.members.length > 0
+                    ? existing.members.map(m => m.name).join(', ')
+                    : 'Ismeretlen';
             const currentRacer = this.data.racers.find(r => r.id === id);
             const originalBib = currentRacer ? currentRacer.bib : '?';
-            const wantSwap = confirm(`A #${bibNum} rajtszám már foglalt (${existingName} által)!\n\nSzeretnéd felcserélni a két rajtszámot? (A(z) ${existingName} megkapja a(z) #${originalBib} rajtszámot.)`);
+            const wantSwap = confirm(
+                `A #${bibNum} rajtszám már foglalt (${existingName} által)!\n\nSzeretnéd felcserélni a két rajtszámot? (A(z) ${existingName} megkapja a(z) #${originalBib} rajtszámot.)`
+            );
             if (!wantSwap) {
                 return;
             }
@@ -1097,23 +1202,24 @@ export class RaceManager {
         // Tagok neveinek lekérése a történethez
         const racer = this.data.racers.find(r => r.id === id);
         const originalBib = racer ? racer.bib : '?';
-        const racerName = racer && racer.members && racer.members.length > 0 
-            ? racer.members.map(m => m.name).join(', ') 
-            : 'Ismeretlen';
+        const racerName =
+            racer && racer.members && racer.members.length > 0
+                ? racer.members.map(m => m.name).join(', ')
+                : 'Ismeretlen';
 
         try {
             const response = await fetch(`${API_URL}/racer/${id}`, {
                 method: 'PUT',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.adminPassword}`
+                    Authorization: `Bearer ${this.adminPassword}`,
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     bib: bibNum,
                     oldBib: originalBib,
                     racerName: racerName,
-                    swap: swap
-                })
+                    swap: swap,
+                }),
             });
 
             const data = await response.json();
@@ -1136,11 +1242,11 @@ export class RaceManager {
         try {
             const response = await fetch(`${API_URL}/racer/${id}`, {
                 method: 'PUT',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.adminPassword}`
+                    Authorization: `Bearer ${this.adminPassword}`,
                 },
-                body: JSON.stringify({ [field]: value })
+                body: JSON.stringify({ [field]: value }),
             });
 
             if (response.ok) {
@@ -1148,7 +1254,7 @@ export class RaceManager {
                 // Frissítjük a helyi adatot és az UI-t
                 const racer = this.data.racers.find(r => r.id === id);
                 if (racer) racer[field] = value;
-                
+
                 // Ha megjelent állapot változott, frissítsük a listákat
                 if (field === 'checked_in' || field === 'is_paid') {
                     this.renderWaitingListCards();
@@ -1156,7 +1262,7 @@ export class RaceManager {
                     this.renderFinishedListCards();
                     if (typeof window.renderAdminTable === 'function') window.renderAdminTable();
                 }
-                
+
                 return true;
             } else {
                 const err = await response.json();
@@ -1215,10 +1321,17 @@ export class RaceManager {
         const cpStatsContainer = document.getElementById('admin-checkpoint-stats');
         if (cpStatsContainer) {
             const running22km = this.data.racers.filter(r => r.status === 'running' && r.distance === '22km').length;
-            const megfordult = (this.data.checkpoints || []).filter(c => c.checkpoint_name === '22km_tav_11km_fordulo').length;
+            const megfordult = (this.data.checkpoints || []).filter(
+                c => c.checkpoint_name === '22km_tav_11km_fordulo'
+            ).length;
             const cpData = this.data.checkpoints || [];
-            const nem_fordult = this.data.racers.filter(r => r.status === 'running' && r.distance === '22km' && !cpData.some(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo')).length;
-            
+            const nem_fordult = this.data.racers.filter(
+                r =>
+                    r.status === 'running' &&
+                    r.distance === '22km' &&
+                    !cpData.some(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo')
+            ).length;
+
             cpStatsContainer.innerHTML = `
                 <div style="display: flex; gap: 20px;">
                     <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(255, 153, 0, 0.1)';" onclick="window.toggleRunningListCards(true)">
@@ -1235,17 +1348,24 @@ export class RaceManager {
 
     renderWaitingListCards() {
         const containers = [
-            { content: document.getElementById('waiting-list-content-starts'), card: document.getElementById('waiting-list-container-starts') },
-            { content: document.getElementById('waiting-list-content-live'), card: document.getElementById('waiting-list-container-live') }
+            {
+                content: document.getElementById('waiting-list-content-starts'),
+                card: document.getElementById('waiting-list-container-starts'),
+            },
+            {
+                content: document.getElementById('waiting-list-content-live'),
+                card: document.getElementById('waiting-list-container-live'),
+            },
         ].filter(item => item.content && item.card && !item.card.classList.contains('hidden'));
 
         if (containers.length === 0) return;
 
         const registered = this.data.racers.filter(r => r.status === 'registered');
-        
+
         let html = '';
         if (registered.length === 0) {
-            html = '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs várakozó versenyző.</div>';
+            html =
+                '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs várakozó versenyző.</div>';
         } else {
             html = `
                 <div class="table-responsive">
@@ -1259,36 +1379,50 @@ export class RaceManager {
                             </tr>
                         </thead>
                         <tbody>
-                            ${registered.sort((a,b) => (a.bib || 0) - (b.bib || 0)).map(r => `
+                            ${registered
+                                .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+                                .map(
+                                    r => `
                                 <tr>
                                     <td><strong style="color: var(--accent-primary);">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}</td>
+                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}</td>
                                     <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
                                     <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
                                 </tr>
-                            `).join('')}
+                            `
+                                )
+                                .join('')}
                         </tbody>
                     </table>
                 </div>
             `;
         }
 
-        containers.forEach(item => { item.content.innerHTML = html; });
+        containers.forEach(item => {
+            item.content.innerHTML = html;
+        });
     }
 
     renderRunningListCards() {
         const containers = [
-            { content: document.getElementById('running-list-content-starts'), card: document.getElementById('running-list-container-starts') },
-            { content: document.getElementById('running-list-content-live'), card: document.getElementById('running-list-container-live') }
+            {
+                content: document.getElementById('running-list-content-starts'),
+                card: document.getElementById('running-list-container-starts'),
+            },
+            {
+                content: document.getElementById('running-list-content-live'),
+                card: document.getElementById('running-list-container-live'),
+            },
         ].filter(item => item.content && item.card && !item.card.classList.contains('hidden'));
 
         if (containers.length === 0) return;
 
         const runningRacers = this.data.racers.filter(r => r.status === 'running');
-        
+
         let html = '';
         if (runningRacers.length === 0) {
-            html = '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs futó versenyző.</div>';
+            html =
+                '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs futó versenyző.</div>';
         } else {
             html = `
                 <div class="table-responsive">
@@ -1303,41 +1437,53 @@ export class RaceManager {
                             </tr>
                         </thead>
                         <tbody>
-                            ${runningRacers.sort((a,b) => (a.bib || 0) - (b.bib || 0)).map(r => {
-                                const now = Date.now() + (this.serverTimeOffset || 0);
-                                const timeDisplay = formatTime(now - (r.start_time || 0));
-                                return `
+                            ${runningRacers
+                                .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+                                .map(r => {
+                                    const now = Date.now() + (this.serverTimeOffset || 0);
+                                    const timeDisplay = formatTime(now - (r.start_time || 0));
+                                    return `
                                 <tr class="status-running">
                                     <td><strong style="color: var(--accent-primary);">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}</td>
+                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}</td>
                                     <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
                                     <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
                                     <td style="text-align: right; font-weight: bold; color: #00ff88; font-family: 'Space Mono', monospace;" class="time" data-start="${r.start_time || 0}">${timeDisplay}</td>
                                 </tr>
                             `;
-                            }).join('')}
+                                })
+                                .join('')}
                         </tbody>
                     </table>
                 </div>
             `;
         }
 
-        containers.forEach(item => { item.content.innerHTML = html; });
+        containers.forEach(item => {
+            item.content.innerHTML = html;
+        });
     }
 
     renderFinishedListCards() {
         const containers = [
-            { content: document.getElementById('finished-list-content-starts'), card: document.getElementById('finished-list-container-starts') },
-            { content: document.getElementById('finished-list-content-live'), card: document.getElementById('finished-list-container-live') }
+            {
+                content: document.getElementById('finished-list-content-starts'),
+                card: document.getElementById('finished-list-container-starts'),
+            },
+            {
+                content: document.getElementById('finished-list-content-live'),
+                card: document.getElementById('finished-list-container-live'),
+            },
         ].filter(item => item.content && item.card && !item.card.classList.contains('hidden'));
 
         if (containers.length === 0) return;
 
         const finishedRacers = this.data.racers.filter(r => r.status === 'finished');
-        
+
         let html = '';
         if (finishedRacers.length === 0) {
-            html = '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs célba érkezett versenyző.</div>';
+            html =
+                '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs célba érkezett versenyző.</div>';
         } else {
             html = `
                 <div class="table-responsive">
@@ -1352,25 +1498,30 @@ export class RaceManager {
                             </tr>
                         </thead>
                         <tbody>
-                            ${finishedRacers.sort((a,b) => (a.total_time || 0) - (b.total_time || 0)).map(r => {
-                                const timeDisplay = formatTime(r.total_time || 0);
-                                return `
+                            ${finishedRacers
+                                .sort((a, b) => (a.total_time || 0) - (b.total_time || 0))
+                                .map(r => {
+                                    const timeDisplay = formatTime(r.total_time || 0);
+                                    return `
                                 <tr class="status-finished">
                                     <td><strong style="color: #00ff88;">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}</td>
+                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}</td>
                                     <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
                                     <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
                                     <td style="text-align: right; font-weight: bold; color: #00ff88; font-family: 'Space Mono', monospace;">${timeDisplay}</td>
                                 </tr>
                             `;
-                            }).join('')}
+                                })
+                                .join('')}
                         </tbody>
                     </table>
                 </div>
             `;
         }
 
-        containers.forEach(item => { item.content.innerHTML = html; });
+        containers.forEach(item => {
+            item.content.innerHTML = html;
+        });
     }
 
     renderNotTurnedListCards() {
@@ -1384,9 +1535,10 @@ export class RaceManager {
             return !checkpoints.some(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo');
         });
 
-        let html = '';
+        let html;
         if (notTurnedRacers.length === 0) {
-            html = '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs ilyen versenyző.</div>';
+            html =
+                '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs ilyen versenyző.</div>';
         } else {
             html = `
                 <div class="table-responsive">
@@ -1400,14 +1552,19 @@ export class RaceManager {
                             </tr>
                         </thead>
                         <tbody>
-                            ${notTurnedRacers.sort((a,b) => (a.bib || 0) - (b.bib || 0)).map(r => `
+                            ${notTurnedRacers
+                                .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+                                .map(
+                                    r => `
                                 <tr>
                                     <td><strong style="color: var(--accent-primary);">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}</td>
+                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}</td>
                                     <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
                                     <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
                                 </tr>
-                            `).join('')}
+                            `
+                                )
+                                .join('')}
                         </tbody>
                     </table>
                 </div>
@@ -1426,9 +1583,11 @@ export class RaceManager {
     belongsToGroup(racer, groupId) {
         const cat = racer.category.toLowerCase();
         const dist = racer.distance;
-        if (groupId === 'kajak_hosszu') return (cat.includes('kajak') || cat.includes('surfski') || cat.includes('mk_1')) && dist === '22km';
+        if (groupId === 'kajak_hosszu')
+            return (cat.includes('kajak') || cat.includes('surfski') || cat.includes('mk_1')) && dist === '22km';
         if (groupId === 'kajak_rovid') return (cat.includes('kajak') || cat.includes('surfski')) && dist === '11km';
-        if (groupId === 'kenu_hosszu') return (cat.includes('kenu') || cat.includes('outrigger') || cat.includes('sup')) && dist === '22km';
+        if (groupId === 'kenu_hosszu')
+            return (cat.includes('kenu') || cat.includes('outrigger') || cat.includes('sup')) && dist === '22km';
         if (groupId === 'kenu_rovid') return (cat.includes('kenu') || cat.includes('outrigger')) && dist === '11km';
         if (groupId === 'sup_4km') return cat.includes('sup') && dist === '4km';
         if (groupId === 'sarkanyhajo_11km') return /s[aá]rk[aá]ny/i.test(cat) && dist === '11km';
@@ -1441,7 +1600,8 @@ export class RaceManager {
         container.innerHTML = '';
 
         if (!this.data.racers || this.data.racers.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color: var(--text-secondary); width:100%;">Nincsenek nevezett versenyzők</div>';
+            container.innerHTML =
+                '<div style="text-align:center; color: var(--text-secondary); width:100%;">Nincsenek nevezett versenyzők</div>';
             return;
         }
 
@@ -1452,24 +1612,34 @@ export class RaceManager {
             catGroups[groupKey].push(r);
         });
 
-        Object.keys(catGroups).sort().forEach(groupKey => {
-            const racers = catGroups[groupKey];
-            if (!racers.some(r => r.status === 'finished' || r.status === 'running')) return;
-            const sortedRacers = racers.sort((a, b) => {
-                if (a.status === 'finished' && b.status !== 'finished') return -1;
-                if (a.status !== 'finished' && b.status === 'finished') return 1;
-                if (a.status === 'finished' && b.status === 'finished') return a.total_time - b.total_time;
-                return a.bib - b.bib;
+        Object.keys(catGroups)
+            .sort()
+            .forEach(groupKey => {
+                const racers = catGroups[groupKey];
+                if (!racers.some(r => r.status === 'finished' || r.status === 'running')) return;
+                const sortedRacers = racers.sort((a, b) => {
+                    if (a.status === 'finished' && b.status !== 'finished') return -1;
+                    if (a.status !== 'finished' && b.status === 'finished') return 1;
+                    if (a.status === 'finished' && b.status === 'finished') return a.total_time - b.total_time;
+                    return a.bib - b.bib;
+                });
+                const distStr = sortedRacers[0].distance || '';
+                const cleanDist = distStr.replace(/km/i, '').trim();
+                const distDisplay = cleanDist ? `${cleanDist} km` : '';
+                const catTitle = distDisplay
+                    ? `${this.formatCategoryName(groupKey)} - ${distDisplay}`
+                    : this.formatCategoryName(groupKey);
+                this.createResultsTable(container, catTitle, sortedRacers, false);
             });
-            const distStr = sortedRacers[0].distance || '';
-            const cleanDist = distStr.replace(/km/i, '').trim();
-            const distDisplay = cleanDist ? `${cleanDist} km` : '';
-            const catTitle = distDisplay ? `${this.formatCategoryName(groupKey)} - ${distDisplay}` : this.formatCategoryName(groupKey);
-            this.createResultsTable(container, catTitle, sortedRacers, false);
-        });
 
-        [{ id: '22km', title: 'hosszútáv sorrend' }, { id: '11km', title: 'rövidtáv sorrend' }, { id: '4km', title: '4 km sorrend' }].forEach(dist => {
-            const distRacers = this.data.racers.filter(r => r.distance === dist.id && (r.status === 'finished' || r.status === 'running'));
+        [
+            { id: '22km', title: 'Hosszú táv összetett' },
+            { id: '11km', title: 'Rövid táv összetett' },
+            { id: '4km', title: 'SUP 4 km összetett' },
+        ].forEach(dist => {
+            const distRacers = this.data.racers.filter(
+                r => r.distance === dist.id && (r.status === 'finished' || r.status === 'running')
+            );
             if (distRacers.length === 0) return;
             const sortedDistRacers = distRacers.sort((a, b) => {
                 if (a.status === 'finished' && b.status !== 'finished') return -1;
@@ -1478,7 +1648,8 @@ export class RaceManager {
                 return a.bib - b.bib;
             });
             const hr = document.createElement('hr');
-            hr.style = 'margin: 3rem 0 1rem 0; border: none; height: 1px; background: linear-gradient(to right, transparent, var(--accent-primary), transparent);';
+            hr.style =
+                'margin: 3rem 0 1rem 0; border: none; height: 1px; background: linear-gradient(to right, transparent, var(--accent-primary), transparent);';
             container.appendChild(hr);
             this.createResultsTable(container, dist.title, sortedDistRacers, true);
         });
@@ -1495,7 +1666,9 @@ export class RaceManager {
         racers.forEach(r => {
             const tr = document.createElement('tr');
             tr.className = `status-${r.status}`;
-            let timeDisplay = "folyamatban...", dataStartAttr = "", rankDisplay = "-";
+            let timeDisplay = 'folyamatban...',
+                dataStartAttr = '',
+                rankDisplay = '-';
             if (r.status === 'running') {
                 const now = Date.now() + (this.serverTimeOffset || 0);
                 timeDisplay = formatTime(now - (r.start_time || 0));
@@ -1507,9 +1680,11 @@ export class RaceManager {
 
             let cpHtml = '';
             if (hasKöridő) {
-                let lapTimeStr = r.status === 'finished' ? "nincs adat" : "-";
+                let lapTimeStr = r.status === 'finished' ? 'nincs adat' : '-';
                 if (this.data.checkpoints) {
-                    const cp = this.data.checkpoints.find(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo');
+                    const cp = this.data.checkpoints.find(
+                        c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo'
+                    );
                     if (cp) {
                         lapTimeStr = formatTime(cp.timestamp - (r.start_time || 0));
                     }
@@ -1517,9 +1692,13 @@ export class RaceManager {
                 cpHtml = `<td style="font-family: 'Space Mono', monospace; font-size: 0.85rem; color: #ff9900;">${lapTimeStr}</td>`;
             }
 
-            const rowColor = r.status === 'finished' ? '#00ff88' : (r.status === 'running' ? 'var(--accent-primary)' : 'inherit');
-            const diplomaBtnHtml = r.status === 'finished' ? `<button onclick="window.generateDiploma('${r.bib}')" class="btn-primary" style="display:inline-flex; align-items:center; gap:5px; margin-left:12px; padding: 3px 8px; font-size: 0.7rem; background: #007bff; border: none; border-radius: 4px; cursor: pointer; color: white; vertical-align: middle; font-family: inherit;">🎓 Oklevél</button>` : '';
-            const namesDisplay = `${r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-')}${diplomaBtnHtml}`;
+            const rowColor =
+                r.status === 'finished' ? '#00ff88' : r.status === 'running' ? 'var(--accent-primary)' : 'inherit';
+            const diplomaBtnHtml =
+                r.status === 'finished'
+                    ? `<button onclick="window.generateDiploma('${r.bib}')" class="btn-primary" style="display:inline-flex; align-items:center; gap:5px; margin-left:12px; padding: 3px 8px; font-size: 0.7rem; background: #007bff; border: none; border-radius: 4px; cursor: pointer; color: white; vertical-align: middle; font-family: inherit;">🎓 Oklevél</button>`
+                    : '';
+            const namesDisplay = `${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}${diplomaBtnHtml}`;
             tr.innerHTML = `<td style="color:${rowColor}; font-weight:bold;">${rankDisplay}</td><td>#${(r.bib || 0).toString().padStart(3, '0')}</td><td>${namesDisplay}</td>${showCategory ? `<td style="font-size: 0.8rem; color: #888;">${this.categoryMap[r.category] || r.category}</td>` : ''}${cpHtml}<td class="time" style="color:${rowColor}; font-family: 'Space Mono', monospace; text-align:right;" ${dataStartAttr}>${timeDisplay}</td>`;
             tbody.appendChild(tr);
         });
@@ -1539,25 +1718,27 @@ export class RaceManager {
                     type: 'checkpoint',
                     time: cp.timestamp,
                     bib: cp.racer_bib,
-                    msg: `📍 KÖR rögzítve: #${cp.racer_bib} (${cp.checkpoint_name.replace('22km_tav_11km_fordulo', 'Forduló')})`
+                    msg: `📍 KÖR rögzítve: #${cp.racer_bib} (${cp.checkpoint_name.replace('22km_tav_11km_fordulo', 'Forduló')})`,
                 });
             });
         }
 
         // Finishers feldolgozása
         if (this.data.racers) {
-            this.data.racers.filter(r => r.status === 'finished').forEach(r => {
-                const finishTime = (r.start_time || 0) + (r.total_time || 0);
-                events.push({
-                    type: 'finish',
-                    time: finishTime,
-                    bib: r.bib,
-                    msg: `🎯 BEÉRKEZETT: #${r.bib} - Idő: ${formatTime(r.total_time)}`
+            this.data.racers
+                .filter(r => r.status === 'finished')
+                .forEach(r => {
+                    const finishTime = (r.start_time || 0) + (r.total_time || 0);
+                    events.push({
+                        type: 'finish',
+                        time: finishTime,
+                        bib: r.bib,
+                        msg: `🎯 BEÉRKEZETT: #${r.bib} - Idő: ${formatTime(r.total_time)}`,
+                    });
                 });
-            });
         }
 
-        events.sort((a,b) => b.time - a.time);
+        events.sort((a, b) => b.time - a.time);
         const recentEvents = events.slice(0, 15);
 
         if (recentEvents.length === 0) {
@@ -1565,24 +1746,28 @@ export class RaceManager {
             return;
         }
 
-        logContainer.innerHTML = recentEvents.map(e => `
+        logContainer.innerHTML = recentEvents
+            .map(
+                e => `
             <div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: ${e.type === 'checkpoint' ? '#ff9900' : '#00ffcc'}">
                 <span style="color: #888; font-size: 0.75rem;">[${new Date(e.time).toLocaleTimeString('hu-HU')}]</span> ${e.msg}
             </div>
-        `).join('');
+        `
+            )
+            .join('');
     }
 
     async loadUnassignedTimes() {
         try {
             const response = await fetch(`${API_URL}/unassigned-times`, {
-                headers: { 'Authorization': `Bearer ${this.adminPassword}` }
+                headers: { Authorization: `Bearer ${this.adminPassword}` },
             });
             if (response.ok) {
                 const times = await response.json();
                 this.renderUnassignedTimes(times);
             }
         } catch (err) {
-            console.error("Failed to load unassigned times", err);
+            console.error('Failed to load unassigned times', err);
         }
     }
 
@@ -1596,11 +1781,12 @@ export class RaceManager {
         }
 
         // Legújabb elöl
-        times.sort((a,b) => b.timestamp - a.timestamp);
+        times.sort((a, b) => b.timestamp - a.timestamp);
 
-        container.innerHTML = times.map(t => {
-            const timeStr = new Date(t.timestamp).toLocaleTimeString('hu-HU');
-            return `
+        container.innerHTML = times
+            .map(t => {
+                const timeStr = new Date(t.timestamp).toLocaleTimeString('hu-HU');
+                return `
                 <div style="display: flex; gap: 10px; align-items: center; background: rgba(255, 184, 0, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 184, 0, 0.2);">
                     <div style="flex: 1;">
                         <div style="color: var(--text-secondary); font-size: 0.75rem;">Időpont:</div>
@@ -1613,7 +1799,8 @@ export class RaceManager {
                     </div>
                 </div>
             `;
-        }).join('');
+            })
+            .join('');
     }
 
     async assignTime(id) {
@@ -1621,47 +1808,47 @@ export class RaceManager {
         if (!bibInput) return;
         const bib = parseInt(bibInput.value);
         if (isNaN(bib)) {
-            showToast("Kérlek adj meg egy érvényes rajtszámot!", "error");
+            showToast('Kérlek adj meg egy érvényes rajtszámot!', 'error');
             return;
         }
 
         try {
             const response = await fetch(`${API_URL}/assign-time`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.adminPassword}` 
+                    Authorization: `Bearer ${this.adminPassword}`,
                 },
-                body: JSON.stringify({ id, bib })
+                body: JSON.stringify({ id, bib }),
             });
             const data = await response.json();
             if (response.ok && data.success) {
-                showToast("Sikeresen párosítva!", "success");
+                showToast('Sikeresen párosítva!', 'success');
                 this.loadUnassignedTimes();
             } else {
-                showToast(data.error || "Hiba a párosítás során!", "error");
+                showToast(data.error || 'Hiba a párosítás során!', 'error');
             }
         } catch (err) {
-            showToast("Hálózati hiba!", "error");
+            showToast('Hálózati hiba!', 'error');
         }
     }
 
     async deleteUnassignedTime(id) {
-        if (!confirm("Biztosan törlöd ezt az időt? Ezt nem lehet visszavonni!")) return;
+        if (!confirm('Biztosan törlöd ezt az időt? Ezt nem lehet visszavonni!')) return;
         try {
             const response = await fetch(`${API_URL}/unassigned-time/${id}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${this.adminPassword}` }
+                headers: { Authorization: `Bearer ${this.adminPassword}` },
             });
             const data = await response.json();
             if (response.ok && data.success) {
-                showToast("Idő törölve!", "success");
+                showToast('Idő törölve!', 'success');
                 this.loadUnassignedTimes();
             } else {
-                showToast(data.error || "Hiba a törlés során!", "error");
+                showToast(data.error || 'Hiba a törlés során!', 'error');
             }
         } catch (err) {
-            showToast("Hálózati hiba!", "error");
+            showToast('Hálózati hiba!', 'error');
         }
     }
 }

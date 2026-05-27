@@ -42,7 +42,6 @@
                 <a href="registered_list.html" class="nav-btn">Eddig nevezettek</a>
                 <a href="management.html?view=eredmenyek" class="nav-btn">Eredmények</a>
                 <a href="versenykiiras.html" class="nav-btn">Versenykiírás</a>
-                <a href="management.html?view=admin" class="nav-btn">Admin</a>
             </nav>
         </div>
     </header>
@@ -78,22 +77,7 @@
         </div>
     </section>
 
-    <!-- Login Modal -->
-    <div class="modal" id="loginModal">
-        <div class="login-card">
-            <h2>Admin Belépés</h2>
-            <form onsubmit="event.preventDefault(); performLogin();"
-                style="display:flex; flex-direction:column; gap:15px;">
-                <div class="input-group">
-                    <label>Jelszó</label>
-                    <input type="password" id="adminPasswordInput" placeholder="••••••••">
-                </div>
-                <button type="submit" class="cta-button" style="width:100%;">Belépés</button>
-            </form>
-            <button style="background: none; border: none; color: var(--text-muted); margin-top: 15px; cursor: pointer;"
-                onclick="toggleModal('loginModal', false)">Bezárás</button>
-        </div>
-    </div>
+
 
     <footer class="site-footer">
         <img src="admin_landingpage_4_0_png.png" alt="DragonWave Logo" class="footer-logo">

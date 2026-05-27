@@ -25,15 +25,15 @@ export function showToast(message, type = 'info') {
 
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    const bgColors = { 
-        'success': 'rgba(0, 255, 136, 0.9)', 
-        'error': 'rgba(255, 0, 60, 0.9)', 
-        'info': 'rgba(0, 240, 255, 0.9)',
-        'warning': 'rgba(255, 165, 0, 0.9)'
+    const bgColors = {
+        success: 'rgba(0, 255, 136, 0.9)',
+        error: 'rgba(255, 0, 60, 0.9)',
+        info: 'rgba(0, 240, 255, 0.9)',
+        warning: 'rgba(255, 165, 0, 0.9)',
     };
-    
+
     toast.style.background = bgColors[type] || 'rgba(50,50,50,0.9)';
-    toast.style.color = (type === 'success' || type === 'info') ? '#000' : '#fff';
+    toast.style.color = type === 'success' || type === 'info' ? '#000' : '#fff';
     toast.style.padding = '12px 20px';
     toast.style.borderRadius = '8px';
     toast.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
@@ -45,11 +45,11 @@ export function showToast(message, type = 'info') {
     toast.textContent = message;
     container.appendChild(toast);
 
-    setTimeout(() => { 
-        toast.style.transform = 'translateX(0)'; 
-        toast.style.opacity = '1'; 
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+        toast.style.opacity = '1';
     }, 10);
-    
+
     setTimeout(() => {
         toast.style.transform = 'translateX(100%)';
         toast.style.opacity = '0';
@@ -68,9 +68,9 @@ export function switchTab(tab) {
     const adminView = document.getElementById('admin-view');
     const clockContainer = document.getElementById('local-time-container');
     const btns = document.querySelectorAll('.nav-btn');
-    
+
     btns.forEach(b => b.classList.remove('active'));
-    
+
     // Vizualizáció vezérlése (Hero szekció mutatása/elrejtése)
     const heroSection = document.getElementById('main-hero-section');
     if (heroSection) {
@@ -108,10 +108,10 @@ export function switchTab(tab) {
         if (clockContainer) clockContainer.classList.remove('hidden');
         const btn = document.getElementById('btn-admin');
         if (btn) btn.classList.add('active');
-        
+
         const loginPanel = document.getElementById('admin-login-panel');
         const dashboardPanel = document.getElementById('admin-dashboard-panel');
-        
+
         if (window.raceManager && window.raceManager.adminPassword) {
             if (loginPanel) loginPanel.classList.add('hidden');
             if (dashboardPanel) dashboardPanel.classList.remove('hidden');
@@ -132,7 +132,7 @@ export function updateRegFormContext(isAdmin) {
     const title = document.getElementById('reg-form-title');
     const sectionTitle = document.getElementById('reg-form-section-title');
     const notice = document.getElementById('reg-form-payment-notice');
-    
+
     const nameInput = document.getElementById('reg-name');
     const emailInput = document.getElementById('reg-email');
     const phoneInput = document.getElementById('reg-phone');
@@ -142,7 +142,7 @@ export function updateRegFormContext(isAdmin) {
         if (title) title.textContent = 'Admin nevezés';
         if (sectionTitle) sectionTitle.classList.add('hidden');
         if (notice) notice.classList.add('hidden');
-        
+
         if (nameInput) nameInput.removeAttribute('required');
         if (emailInput) emailInput.removeAttribute('required');
         if (phoneInput) phoneInput.removeAttribute('required');
@@ -154,7 +154,7 @@ export function updateRegFormContext(isAdmin) {
             sectionTitle.textContent = 'Online Nevezés és Fizetés';
         }
         if (notice) notice.classList.remove('hidden');
-        
+
         if (nameInput) nameInput.setAttribute('required', 'required');
         if (emailInput) emailInput.setAttribute('required', 'required');
         if (phoneInput) phoneInput.setAttribute('required', 'required');
@@ -213,17 +213,27 @@ export function formatMemberListHtml(racer) {
     const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
     const rm = racer.members.filter(m => m.otproba_id !== 'CSAPATNEV');
     let html = '';
-    
+
     if (t) {
         html += `<details style="cursor: pointer; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 6px;">
                     <summary style="font-weight:bold; color:var(--accent-primary); outline: none;">${t.name} <span style="font-size: 0.8em;">▼</span></summary>
                     <div style="margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--accent-secondary);">`;
-        html += rm.map(m => `<div style="margin-bottom:6px;"><strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--accent-primary);" title="Versenyző/Csapat szerkesztése">${m.name || '?'}</strong> <br><span style="font-size:0.75rem; color:#aaa;">Szül: ${m.birth_date || '?'} | 5P: ${m.otproba_id || '-'}</span></div>`).join('');
+        html += rm
+            .map(
+                m =>
+                    `<div style="margin-bottom:6px;"><strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--accent-primary);" title="Versenyző/Csapat szerkesztése">${m.name || '?'}</strong> <br><span style="font-size:0.75rem; color:#aaa;">Szül: ${m.birth_date || '?'} | 5P: ${m.otproba_id || '-'}</span></div>`
+            )
+            .join('');
         html += `</div></details>`;
     } else {
-        html += rm.map(m => `<div style="margin-bottom:2px;"><strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--text-primary);" title="Versenyző szerkesztése">${m.name || '?'}</strong> <span style="font-size:0.7rem; color:#888;">(${m.birth_date || '?'})</span></div>`).join('');
+        html += rm
+            .map(
+                m =>
+                    `<div style="margin-bottom:2px;"><strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--text-primary);" title="Versenyző szerkesztése">${m.name || '?'}</strong> <span style="font-size:0.7rem; color:#888;">(${m.birth_date || '?'})</span></div>`
+            )
+            .join('');
     }
-    return html || (racer.name || '-');
+    return html || racer.name || '-';
 }
 
 /**
@@ -248,7 +258,7 @@ export function formatOtprobaListHtml(racer) {
     if (!racer.members || racer.members.length === 0) return racer.otproba_id || '-';
     const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
     const rm = racer.members.filter(m => m.otproba_id !== 'CSAPATNEV');
-    
+
     if (t) {
         return `<span style="color:#888; font-size: 0.8rem;">(Lásd a neveknél)</span>`;
     }

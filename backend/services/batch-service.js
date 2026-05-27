@@ -13,16 +13,16 @@ const { CATEGORY_GROUPS } = require('../utils/validation');
  */
 function getGroupQuery(query, batchKey) {
     console.log(`[getGroupQuery] batchKey: ${batchKey}`);
-    
+
     // 1. Tömegrajt
     if (batchKey === 'MASS_START_ALL') return query;
-    
+
     // 2. Távolság Rajt
     if (batchKey.startsWith('DISTANCE_')) {
         const dist = batchKey.split('_')[1];
         return query.eq('distance', dist);
     }
- 
+
     // 3. Előre definiált csoportok (Slug alapú szűrés)
     if (batchKey === 'kajak_hosszu') return query.in('category', CATEGORY_GROUPS.KAJAK).eq('distance', '22km');
     if (batchKey === 'kajak_rovid') return query.in('category', CATEGORY_GROUPS.KAJAK).eq('distance', '11km');
@@ -32,14 +32,15 @@ function getGroupQuery(query, batchKey) {
             'sup_noi_1_22km',
             'sup_ferfi_1_22km',
             'sup_noi_1',
-            'sup_ferfi_1'
+            'sup_ferfi_1',
         ];
         return query.in('category', kenuHosszuCategories).eq('distance', '22km');
     }
     if (batchKey === 'kenu_rovid') return query.in('category', CATEGORY_GROUPS.KENU).eq('distance', '11km');
     if (batchKey === 'sup_4km') return query.in('category', CATEGORY_GROUPS.SUP).eq('distance', '4km');
-    if (batchKey === 'sarkanyhajo_11km') return query.in('category', CATEGORY_GROUPS.SARKANYHAJO).eq('distance', '11km');
-    
+    if (batchKey === 'sarkanyhajo_11km')
+        return query.in('category', CATEGORY_GROUPS.SARKANYHAJO).eq('distance', '11km');
+
     // 4. Egyéni kategória/távolság páros
     if (batchKey.includes('_')) {
         const parts = batchKey.split('_');
@@ -61,30 +62,32 @@ async function checkAndStopEmptyBatchTimers() {
         if (tError) throw tError;
         if (!activeTimers || activeTimers.length === 0) return;
 
-        const results = await Promise.all(activeTimers.map(async (timer) => {
-            const batchKey = timer.key;
-            let query = supabase.from('racers').select('id, status', { count: 'exact' });
-            query = getGroupQuery(query, batchKey);
+        await Promise.all(
+            activeTimers.map(async timer => {
+                const batchKey = timer.key;
+                let query = supabase.from('racers').select('id, status', { count: 'exact' });
+                query = getGroupQuery(query, batchKey);
 
-            const { data: participants, error: qError } = await query;
-            if (qError) return null;
+                const { data: participants, error: qError } = await query;
+                if (qError) return null;
 
-            const runningCount = (participants || []).filter(p => p.status === 'running').length;
-            const registeredCount = (participants || []).filter(p => p.status === 'registered').length;
-            const finishedCount = (participants || []).filter(p => p.status === 'finished').length;
+                const runningCount = (participants || []).filter(p => p.status === 'running').length;
+                const registeredCount = (participants || []).filter(p => p.status === 'registered').length;
+                const finishedCount = (participants || []).filter(p => p.status === 'finished').length;
 
-            if (runningCount === 0 && registeredCount === 0 && finishedCount > 0) {
-                console.log(`[AUTO-STOP] >>> LEÁLLÍTÁS: ${batchKey} (mindenki beért).`);
-                return supabase.from('categories').delete().eq('key', batchKey);
-            }
-            return null;
-        }));
+                if (runningCount === 0 && registeredCount === 0 && finishedCount > 0) {
+                    console.log(`[AUTO-STOP] >>> LEÁLLÍTÁS: ${batchKey} (mindenki beért).`);
+                    return supabase.from('categories').delete().eq('key', batchKey);
+                }
+                return null;
+            })
+        );
     } catch (err) {
-        console.error("[TimerCheck] Kritikus hiba:", err);
+        console.error('[TimerCheck] Kritikus hiba:', err);
     }
 }
 
 module.exports = {
     getGroupQuery,
-    checkAndStopEmptyBatchTimers
+    checkAndStopEmptyBatchTimers,
 };

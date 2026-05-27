@@ -51,7 +51,7 @@
         }
 
         header h1 {
-            font-size: 1.6rem;
+            font-size: 1.35rem;
             font-weight: 800;
             color: var(--primary);
             text-transform: uppercase;
@@ -65,6 +65,18 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 600;
+        }
+
+        .login-logo {
+            max-width: 120px;
+            margin: 10px auto 15px auto;
+            display: block;
+            filter: drop-shadow(0 0 12px rgba(0, 228, 255, 0.4));
+        }
+
+        .mobile-header-logo {
+            max-height: 30px;
+            filter: drop-shadow(0 0 8px rgba(0, 228, 255, 0.3));
         }
 
         .stats-container {
@@ -381,8 +393,11 @@
 <body>
 
     <header>
-        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-            <h1>DragonWave</h1>
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:center; padding: 0 5px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <img src="admin_landingpage_4_0_png.png" alt="DragonWave Logo" class="mobile-header-logo">
+                <h1>DragonWave</h1>
+            </div>
             <div style="display: flex; align-items: center;">
                 <button class="sun-toggle-btn" onclick="toggleSunMode()" title="Napsütés mód">☀️</button>
             </div>
@@ -400,6 +415,7 @@
     <div class="container">
         <!-- LOGIN VIEW -->
         <div id="login-view">
+            <img src="admin_landingpage_4_0_png.png" alt="DragonWave Logo" class="login-logo">
             <h2>Admin Belépés</h2>
             <form id="login-form" onsubmit="event.preventDefault();" style="width: 100%; display: flex; flex-direction: column;">
                 <div class="input-group">

@@ -18,7 +18,7 @@ function rateLimiter(req, res, next) {
     if (ip === '::1' || ip === '127.0.0.1' || ip.includes('localhost')) {
         return next();
     }
-    
+
     if (!requestCounts.has(ip)) {
         requestCounts.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
         return next();
@@ -40,5 +40,5 @@ function rateLimiter(req, res, next) {
 }
 
 module.exports = {
-    rateLimiter
+    rateLimiter,
 };

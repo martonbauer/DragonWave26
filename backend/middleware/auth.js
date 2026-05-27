@@ -14,7 +14,7 @@ function authenticateAdmin(req, res, next) {
         console.warn(`UNAUTHORIZED: Nincs hitelesítés az endpointon: ${req.method} ${req.url}`);
         return res.status(401).json({ error: 'Nincs hitelesítés!' });
     }
-    
+
     const password = authHeader.replace('Bearer ', '');
     if (password === ADMIN_PASSWORD) {
         next();
@@ -26,5 +26,5 @@ function authenticateAdmin(req, res, next) {
 
 module.exports = {
     ADMIN_PASSWORD,
-    authenticateAdmin
+    authenticateAdmin,
 };

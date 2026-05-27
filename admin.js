@@ -1,22 +1,31 @@
 /**
- * DragonWave - Fő belépési pont (Entry Point)
- * v2.2.1 modularizált verzió
+ * DragonWave - Adminisztrációs Rendszer Főmodul (admin.js)
+ * v2.3.0 különválasztott verzió
  */
 
 import { RaceManager } from './js/RaceManager.js';
-import { switchTab, showToast, formatTime, updateRegFormContext, showConfirmModal, closeConfirmModal, executeConfirmedAction } from './js/ui-utils.js';
-import { renderAdminTable, renderAdminControlButtons, exportResultsToExcel, exportFilteredTableToExcel, renderAdminCategoryList, renderAdminCategoryDetail, renderBibManagementTable, renderResultsCategoryList } from './js/admin-ui.js';
+import {
+    showToast,
+    formatTime,
+    updateRegFormContext,
+    showConfirmModal,
+    closeConfirmModal,
+    executeConfirmedAction,
+} from './js/ui-utils.js';
+import {
+    renderAdminTable,
+    renderAdminControlButtons,
+    exportResultsToExcel,
+    exportFilteredTableToExcel,
+    renderAdminCategoryList,
+    renderAdminCategoryDetail,
+    renderBibManagementTable,
+    renderResultsCategoryList,
+    renderResultsCategoryDetail,
+} from './js/admin-ui.js';
 import { API_URL, APP_VERSION } from './js/api.js';
 
-// --- Globális hatókör biztosítása a HTML onclick eseményekhez ---
-window.switchTab = (tabId) => {
-    // Ha az adminba váltunk, reseteljük a dashboardot a főoldalra
-    if (tabId === 'admin' && typeof window.showAdminLanding === 'function') {
-        window.showAdminLanding();
-    }
-    // Eredeti tab váltás hívása
-    switchTab(tabId);
-};
+// --- Globális ablak-szintű függvények a HTML eseménykezelőkhöz ---
 window.showToast = showToast;
 window.formatTime = formatTime;
 window.showConfirmModal = showConfirmModal;
@@ -25,38 +34,43 @@ window.executeConfirmedAction = executeConfirmedAction;
 window.renderAdminTable = renderAdminTable;
 window.renderAdminControlButtons = renderAdminControlButtons;
 window.exportResultsToExcel = exportResultsToExcel;
-window.renderResultsCategoryList = renderResultsCategoryList;
 
 // Inicializálás
 window.raceManager = new RaceManager();
 
-// --- Adminisztrációs Funkciók (Bejelentkezés / Kijelentkezés) ---
+// --- Adminisztrációs Hitelesítés ---
 window.loginAdmin = async () => {
     const password = document.getElementById('admin-pass').value;
     try {
         const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
+            body: JSON.stringify({ password }),
         });
         const result = await response.json();
         if (response.ok && result.success) {
+            console.log('Login successful');
             window.raceManager.adminPassword = password;
             sessionStorage.setItem('dragonAdminPassword', password);
-            document.getElementById('admin-login-panel').classList.add('hidden');
-            document.getElementById('admin-dashboard-panel').classList.remove('hidden');
-            
-            // Alapértelmezett nézet beállítása
+
+            const loginPanel = document.getElementById('admin-login-panel');
+            const dashboardPanel = document.getElementById('admin-dashboard-panel');
+
+            if (loginPanel) loginPanel.classList.add('hidden');
+            if (dashboardPanel) dashboardPanel.classList.remove('hidden');
+
             window.showAdminLanding();
-            
-            window.renderAdminTable();
+
+            if (typeof window.renderAdminTable === 'function') window.renderAdminTable();
             window.raceManager.renderUI();
             showToast('Sikeres belépés!', 'success');
         } else {
-            showToast(result.error || 'Hibás jelszó!', 'error');
+            console.error('Login failed:', result.message || result.error || 'Unknown error');
+            showToast(result.message || result.error || 'Hibás jelszó!', 'error');
         }
     } catch (err) {
-        showToast("Hiba a belépés során!", "error");
+        console.error('Login error:', err);
+        showToast('Hiba a belépés során!', 'error');
     }
 };
 
@@ -66,35 +80,31 @@ window.logoutAdmin = () => {
     document.getElementById('admin-login-panel').classList.remove('hidden');
     document.getElementById('admin-dashboard-panel').classList.add('hidden');
     document.getElementById('admin-pass').value = '';
-    
+
     // Minden al-szekció elrejtése
     document.querySelectorAll('.admin-sub-section').forEach(s => s.classList.add('hidden'));
     document.getElementById('admin-landing-view').classList.remove('hidden');
-    
+
     showToast('Sikeres kijelentkezés', 'info');
 };
 
-// --- Admin Navigációs Logika ---
-window.showAdminSection = (sectionId) => {
-    // Elrejtjük a landing oldalt és az összes többi szekciót
+// --- Navigáció ---
+window.showAdminSection = sectionId => {
     document.getElementById('admin-landing-view').classList.add('hidden');
     document.querySelectorAll('.admin-sub-section').forEach(s => s.classList.add('hidden'));
-    
-    // Megjelenítjük a kért szekciót
+
     const target = document.getElementById(sectionId);
     if (target) target.classList.remove('hidden');
-    
-    // Ha az adatkezelés szekcióba lépünk, frissítsük a táblázatot és mutassuk a landingjét
+
     if (sectionId === 'admin-section-data') {
         window.showDataLanding();
         window.renderAdminTable();
     }
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.showAdminLanding = () => {
-    // Visszahozzuk a regisztrációs űrlapot a helyére, ha épp kint volt
     const regForm = document.getElementById('registration-form');
     const regHome = document.getElementById('registration-form-home');
     if (regForm && regHome) {
@@ -103,23 +113,19 @@ window.showAdminLanding = () => {
         regForm.classList.add('hidden');
     }
 
-    // Elrejtünk minden al-szekciót és data-al-szekciót
     document.querySelectorAll('.admin-sub-section').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('.admin-data-sub').forEach(s => s.classList.add('hidden'));
-    // Megjelenítjük a landing view-t
     document.getElementById('admin-landing-view').classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// --- Segédfüggvény a fejléc frissítéséhez ---
 window.updateAdminDataHeader = (title, backAction = null, useLocalBack = false) => {
     const mainTitle = document.getElementById('admin-data-main-title');
     const backBtn = document.getElementById('btn-data-back-to-landing');
-    
+
     if (mainTitle) mainTitle.textContent = title;
-    
+
     if (backBtn) {
-        // Ha van megadva helyi vissza gomb a HTML-ben, elrejtjük a központi vissza gombot
         if (useLocalBack || !backAction) {
             backBtn.classList.add('hidden');
         } else {
@@ -130,13 +136,10 @@ window.updateAdminDataHeader = (title, backAction = null, useLocalBack = false) 
     }
 };
 
-// --- Adatkezelés Al-navigáció ---
-window.showDataSubSection = async (subId) => {
-    // Elrejtjük a data landinget és minden más data al-szekciót
+window.showDataSubSection = async subId => {
     document.getElementById('admin-data-landing-view').classList.add('hidden');
     document.querySelectorAll('.admin-data-sub').forEach(s => s.classList.add('hidden'));
-    
-    // Megjelenítjük a cél szekciót
+
     const target = document.getElementById(subId);
     if (target) target.classList.remove('hidden');
 
@@ -146,12 +149,11 @@ window.showDataSubSection = async (subId) => {
         'admin-data-section-table': '👥 Versenyzői Adatbázis',
         'admin-data-section-export': '📊 Eredmények Listázása',
         'admin-data-section-system': '⚙️ Rendszerkezelés',
-        'admin-data-section-bibs': '🔢 Rajtszámok Újraosztása'
+        'admin-data-section-bibs': '🔢 Rajtszámok Újraosztása',
     };
 
     window.updateAdminDataHeader(titles[subId] || '📂 Adatkezelés', window.showDataLanding);
 
-    // Ha a regisztrációs űrlapot kérik az adminban
     if (subId === 'admin-data-section-nevezes') {
         const regForm = document.getElementById('registration-form');
         if (regForm && target) {
@@ -160,23 +162,20 @@ window.showDataSubSection = async (subId) => {
             regForm.classList.remove('hidden');
         }
     }
-    
-    // Ha a rajtszám módosítás szekciót kérik
+
     if (subId === 'admin-data-section-bibs') {
         renderBibManagementTable();
     }
 
-    // Ha a sárkányhajó építő szekciót kérik
     if (subId === 'admin-data-section-teams') {
         const { renderTeamManager } = await import('./js/admin-ui.js');
         renderTeamManager();
     }
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.showDataLanding = () => {
-    // Visszahozzuk a regisztrációs űrlapot a helyére
     const regForm = document.getElementById('registration-form');
     const regHome = document.getElementById('registration-form-home');
     if (regForm && regHome) {
@@ -185,45 +184,48 @@ window.showDataLanding = () => {
         regForm.classList.add('hidden');
     }
 
-    // Elrejtünk minden data al-szekciót és megmutatjuk a fő data landinget
     document.querySelectorAll('.admin-data-sub').forEach(s => s.classList.add('hidden'));
     document.getElementById('admin-data-landing-view').classList.remove('hidden');
 
-    // Alaphelyzetbe állítjuk a címet és elrejtjük a vissza gombot
     window.updateAdminDataHeader('📂 Adatkezelés & Adatbázis', null);
-    
-    // Csendes reset a táblázat és eredmény nézetek belső állapotához
+
     document.getElementById('admin-table-content-view').classList.add('hidden');
     document.getElementById('admin-table-category-list-view').classList.add('hidden');
+    const otprobaView = document.getElementById('admin-table-otproba-view');
+    if (otprobaView) otprobaView.classList.add('hidden');
     document.getElementById('admin-table-landing-view').classList.remove('hidden');
-    
+
     document.getElementById('admin-results-content-view').classList.add('hidden');
     document.getElementById('admin-results-category-list-view').classList.add('hidden');
     document.getElementById('admin-results-landing-view').classList.remove('hidden');
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// --- Versenyzői Adatbázis Al-navigáció ---
-window.showTableSubSection = (mode) => {
-    // Elrejtünk minden táblázattal kapcsolatos nézetet
+window.showTableSubSection = mode => {
     document.getElementById('admin-table-landing-view').classList.add('hidden');
     document.getElementById('admin-table-content-view').classList.add('hidden');
     document.getElementById('admin-table-category-list-view').classList.add('hidden');
     document.getElementById('admin-data-section-bibs').classList.add('hidden');
-    
+    const otprobaView = document.getElementById('admin-table-otproba-view');
+    if (otprobaView) otprobaView.classList.add('hidden');
+
     if (mode === 'category-list') {
         document.getElementById('admin-table-category-list-view').classList.remove('hidden');
         window.updateAdminDataHeader('🏷️ Nevezettek Kategóriánként', window.showTableLanding);
-        window.backToCategorySelector(); 
+        window.backToCategorySelector();
     } else if (mode === 'admin-data-section-bibs') {
         document.getElementById('admin-data-section-bibs').classList.remove('hidden');
         window.updateAdminDataHeader('🔢 Rajtszámok Újraosztása', window.showTableLanding);
         window.renderBibManagementTable();
+    } else if (mode === 'otproba') {
+        if (otprobaView) otprobaView.classList.remove('hidden');
+        window.updateAdminDataHeader('🏅 Nevezettek 5Próba Azonosítóval', window.showTableLanding);
+        if (typeof window.renderOtprobaList === 'function') window.renderOtprobaList();
     } else {
         document.getElementById('admin-table-content-view').classList.remove('hidden');
         const filterCtrls = document.getElementById('admin-table-filter-ctrls');
-        
+
         if (mode === 'all') {
             window.currentTableFilter = 'all';
             window.updateAdminDataHeader('👥 Összes Versenyző Listája', null, true);
@@ -233,27 +235,25 @@ window.showTableSubSection = (mode) => {
             window.currentTableFilter = '22km';
             window.updateAdminDataHeader('🔍 Nevezettek Távonként', null, true);
             filterCtrls.classList.remove('hidden');
-            window.filterAdminTable('22km'); 
+            window.filterAdminTable('22km');
         }
     }
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.showTableLanding = () => {
-    // Elrejtjük a tartalom nézeteket
     document.getElementById('admin-table-content-view').classList.add('hidden');
     document.getElementById('admin-table-category-list-view').classList.add('hidden');
     document.getElementById('admin-data-section-bibs').classList.add('hidden');
-    // Megjelenítjük a landinget
+    const otprobaView = document.getElementById('admin-table-otproba-view');
+    if (otprobaView) otprobaView.classList.add('hidden');
     document.getElementById('admin-table-landing-view').classList.remove('hidden');
-    
+
     window.updateAdminDataHeader('👥 Versenyzői Adatbázis', window.showDataLanding);
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Kategória részletek megjelenítése
 window.showCategoryDetail = (distId, catId) => {
     document.getElementById('admin-category-selector-view').classList.add('hidden');
     document.getElementById('admin-category-detail-view').classList.remove('hidden');
@@ -262,7 +262,6 @@ window.showCategoryDetail = (distId, catId) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Visszalépés a kategória választóhoz
 window.backToCategorySelector = () => {
     document.getElementById('admin-category-detail-view').classList.add('hidden');
     document.getElementById('admin-category-selector-view').classList.remove('hidden');
@@ -271,11 +270,10 @@ window.backToCategorySelector = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.filterAdminTable = (type) => {
+window.filterAdminTable = type => {
     window.currentTableFilter = type;
     window.renderAdminTable(type);
-    
-    // Frissítjük a szűrőgombok vizuális kiemelését (zöld szín)
+
     const container = document.getElementById('admin-table-filter-ctrls');
     if (container) {
         const buttons = container.querySelectorAll('.btn-secondary');
@@ -300,22 +298,21 @@ window.exportSpecificCategoryExcel = (distId, catId) => {
 
 window.currentTableFilter = 'all';
 
-// --- Eredmények Al-navigáció ---
+// --- Eredmények al-navigáció ---
 window.showResultsLanding = () => {
     document.getElementById('admin-results-landing-view').classList.remove('hidden');
     document.getElementById('admin-results-content-view').classList.add('hidden');
     document.getElementById('admin-results-category-list-view').classList.add('hidden');
-    
+
     window.updateAdminDataHeader('🏆 Eredmények Listázása', window.showDataLanding);
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.showResultsSubSection = (mode) => {
+window.showResultsSubSection = mode => {
     document.getElementById('admin-results-landing-view').classList.add('hidden');
     document.getElementById('admin-results-content-view').classList.add('hidden');
     document.getElementById('admin-results-category-list-view').classList.add('hidden');
-    
+
     if (mode === 'category-list') {
         document.getElementById('admin-results-category-list-view').classList.remove('hidden');
         window.updateAdminDataHeader('🥇 Kategória Eredmények', null, true);
@@ -324,7 +321,7 @@ window.showResultsSubSection = (mode) => {
         document.getElementById('admin-results-content-view').classList.remove('hidden');
         const filterCtrls = document.getElementById('admin-results-filter-ctrls');
         const allCtrls = document.getElementById('admin-results-all-ctrls');
-        
+
         if (mode === 'all') {
             window.currentResultsFilter = 'all';
             window.updateAdminDataHeader('🏆 Összes Eredménylista', null, true);
@@ -332,7 +329,7 @@ window.showResultsSubSection = (mode) => {
             allCtrls.classList.remove('hidden');
             window.renderResultsTable('all');
         } else {
-            window.currentResultsFilter = '22km'; // Alapértelmezett táv
+            window.currentResultsFilter = '22km';
             window.updateAdminDataHeader('📏 Távonkénti Összetett', null, true);
             filterCtrls.classList.remove('hidden');
             allCtrls.classList.add('hidden');
@@ -342,11 +339,10 @@ window.showResultsSubSection = (mode) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.filterResultsTable = (type) => {
+window.filterResultsTable = type => {
     window.currentResultsFilter = type;
     window.renderResultsTable(type);
-    
-    // Gomb kiemelés (zöld)
+
     const container = document.getElementById('admin-results-filter-ctrls');
     if (container) {
         const buttons = container.querySelectorAll('.btn-secondary');
@@ -394,11 +390,12 @@ window.currentResultsFilter = 'all';
 
 // --- Eseménykezelő Wrapper-ek ---
 window.startCategory = (cat, dist, group) => window.raceManager.startCategory(cat, dist, group);
-window.startIndividual = (bib) => window.raceManager.startIndividual(bib);
+window.startIndividual = bib => window.raceManager.startIndividual(bib);
 window.startMass = () => window.raceManager.startMass();
-window.startDistance = (dist) => window.raceManager.startDistance(dist);
+window.startDistance = dist => window.raceManager.startDistance(dist);
 window.stopCategory = (cat, dist, group) => window.raceManager.stopCategory(cat, dist, group);
 window.resetCategory = (cat, dist, group) => window.raceManager.resetCategory(cat, dist, group);
+
 window.stopRacer = () => {
     const input = document.getElementById('bib-input');
     if (input && input.value) {
@@ -406,7 +403,7 @@ window.stopRacer = () => {
         input.value = '';
         input.focus();
     } else {
-        showToast("Kérem adja meg a rajtszámot!", 'error');
+        showToast('Kérem adja meg a rajtszámot!', 'error');
     }
 };
 
@@ -416,11 +413,11 @@ window.recordCheckpoint = () => {
     if (input && input.value && select && select.value) {
         window.raceManager.recordCheckpoint(input.value, select.value);
     } else {
-        showToast("Kérem adja meg a rajtszámot és az ellenőrzőpontot!", 'error');
+        showToast('Kérem adja meg a rajtszámot és az ellenőrzőpontot!', 'error');
     }
 };
 
-window.toggleWaitingListCards = (show) => {
+window.toggleWaitingListCards = show => {
     const ids = ['waiting-list-container-starts', 'waiting-list-container-live'];
     ids.forEach(id => {
         const el = document.getElementById(id);
@@ -432,7 +429,6 @@ window.toggleWaitingListCards = (show) => {
 
     if (show && window.raceManager) {
         window.raceManager.renderWaitingListCards();
-        // Scroll to the first visible card
         const firstVisible = document.querySelector('.admin-card:not(.hidden)[id^="waiting-list-container"]');
         if (firstVisible) {
             firstVisible.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -440,7 +436,7 @@ window.toggleWaitingListCards = (show) => {
     }
 };
 
-window.toggleRunningListCards = (show) => {
+window.toggleRunningListCards = show => {
     const ids = ['running-list-container-starts', 'running-list-container-live'];
     ids.forEach(id => {
         const el = document.getElementById(id);
@@ -459,7 +455,7 @@ window.toggleRunningListCards = (show) => {
     }
 };
 
-window.toggleFinishedListCards = (show) => {
+window.toggleFinishedListCards = show => {
     const ids = ['finished-list-container-starts', 'finished-list-container-live'];
     ids.forEach(id => {
         const el = document.getElementById(id);
@@ -478,7 +474,7 @@ window.toggleFinishedListCards = (show) => {
     }
 };
 
-window.toggleNotTurnedListCards = (show) => {
+window.toggleNotTurnedListCards = show => {
     const el = document.getElementById('not-turned-list-container-live');
     if (el) {
         if (show) el.classList.remove('hidden');
@@ -493,18 +489,18 @@ window.toggleNotTurnedListCards = (show) => {
     }
 };
 
-// --- CSV Importálás ---
+// --- CSV Import ---
 window.uploadCsv = async () => {
     const fileInput = document.getElementById('csv-upload');
     if (!fileInput || fileInput.files.length === 0) {
-        showToast("Válasszon ki egy CSV fájlt!", "error");
+        showToast('Válasszon ki egy CSV fájlt!', 'error');
         return;
     }
     const file = fileInput.files[0];
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = async e => {
         const buffer = e.target.result;
-        let csvData = "";
+        let csvData;
         try {
             const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
             csvData = utf8Decoder.decode(buffer);
@@ -515,11 +511,11 @@ window.uploadCsv = async () => {
         try {
             const response = await fetch(`${API_URL}/upload-csv`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    ...window.raceManager.getAuthHeader()
+                    ...window.raceManager.getAuthHeader(),
                 },
-                body: JSON.stringify({ csvData })
+                body: JSON.stringify({ csvData }),
             });
             const result = await response.json();
             if (response.ok) {
@@ -527,34 +523,34 @@ window.uploadCsv = async () => {
                 if (result.duplicatesCount > 0) {
                     msg += ` (${result.duplicatesCount} ütközés: Admin jóváhagyás szükséges)`;
                 }
-                showToast(msg, "success");
-                
+                showToast(msg, 'success');
+
                 if (result.logs && result.logs.length > 0) {
-                    alert("Importálási napló:\n\n" + result.logs.join("\n"));
+                    alert('Importálási napló:\n\n' + result.logs.join('\n'));
                 }
-                
+
                 await window.raceManager.loadData();
                 window.raceManager.renderUI();
                 fileInput.value = '';
             } else {
-                showToast(result.error, "error");
+                showToast(result.error, 'error');
             }
         } catch (err) {
-            showToast("Hiba a feltöltés során!", "error");
+            showToast('Hiba a feltöltés során!', 'error');
         }
     };
     reader.readAsArrayBuffer(file);
 };
 
-// --- Alkalmazás Indítása és Globális Események ---
+// --- Alkalmazás Indítás ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Verzió megjelenítése
+    // Verziószám kijelzés
     const versionEl = document.createElement('div');
-    versionEl.style = "position:fixed; bottom:5px; left:5px; font-size:10px; color:#444; z-index:9999;";
+    versionEl.style = 'position:fixed; bottom:5px; left:5px; font-size:10px; color:#444; z-index:9999;';
     versionEl.textContent = `System v${APP_VERSION}`;
     document.body.appendChild(versionEl);
 
-    // Kategória választó frissítése
+    // Kategória választó modul adminisztrátori nevezéshez
     window.updateCategorySelect = () => {
         const dist = document.getElementById('versenytav').value;
         const catSelect = document.getElementById('kategoria');
@@ -568,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'kenu_2_nyitott_11km', name: 'Kenu-2 nyitott' },
                 { id: 'kenu_3_nyitott_11km', name: 'Kenu-3 nyitott' },
                 { id: 'kenu_4_nyitott_11km', name: 'Kenu-4 nyitott' },
-                { id: 'sarkanyhajo_otproba', name: 'Sárkányhajó' }
+                { id: 'sarkanyhajo_otproba', name: 'Sárkányhajó' },
             ],
             '22km': [
                 { id: 'versenykajak_noi_1_22km', name: 'Versenykajak női-1 (38 cm)' },
@@ -588,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'kenu_3_nyitott_22km', name: 'Kenu-3 (nyitott)' },
                 { id: 'kenu_4_nyitott_22km', name: 'Kenu-4 (nyitott)' },
                 { id: 'sup_noi_1_22km', name: 'SUP női-1' },
-                { id: 'sup_ferfi_1_22km', name: 'SUP férfi-1' }
+                { id: 'sup_ferfi_1_22km', name: 'SUP férfi-1' },
             ],
             '4km': [
                 { id: 'sup_noi_1_merev_39_alatt_4km', name: 'SUP női-1- merev deszka 39 év alatt' },
@@ -600,8 +596,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'sup_ferfi_1_felfujhato_39_alatt_4km', name: 'SUP férfi-1- felfújható deszka 39 év alatt' },
                 { id: 'sup_ferfi_1_felfujhato_40_felett_4km', name: 'SUP férfi-1- felfújható deszka 40 év felett' },
                 { id: 'sup_ferfi_1_felfujhato_16_alatt_4km', name: 'SUP férfi-1- felfújható deszka 16 év alatt' },
-                { id: 'sup_noi_1_felfujhato_16_alatt_4km', name: 'SUP női-1- felfújható deszka 16 év alatt' }
-            ]
+                { id: 'sup_noi_1_felfujhato_16_alatt_4km', name: 'SUP női-1- felfújható deszka 16 év alatt' },
+            ],
         };
 
         if (categories[dist]) {
@@ -612,22 +608,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 catSelect.appendChild(opt);
             });
         }
-        document.getElementById('members-container').innerHTML = '<div style="text-align: center; padding: 20px; color: #888; border: 1px dashed #444; border-radius: 8px; margin: 15px 0;">Válassz kategóriát...</div>';
+        document.getElementById('members-container').innerHTML =
+            '<div style="text-align: center; padding: 20px; color: #888; border: 1px dashed #444; border-radius: 8px; margin: 15px 0;">Válassz kategóriát...</div>';
     };
 
-    // Registration Form Submit
+    // Adminisztrátori Nevezés Submit
     document.getElementById('nevezesForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         const kategoria = document.getElementById('kategoria').value;
         const tav = document.getElementById('versenytav').value;
-        const email = document.getElementById('reg-email').value.trim();
-        const phone = document.getElementById('reg-phone').value.trim();
-        const contactName = document.getElementById('reg-name').value.trim();
-
-        if (!email || !phone || !contactName) {
-            showToast("Kérjük adja meg az összes kapcsolattartói adatot!", "error");
-            return;
-        }
+        const email = document.getElementById('reg-email').value.trim() || 'admin@dragonwave.hu';
+        const phone = document.getElementById('reg-phone').value.trim() || '0000';
+        const contactName = document.getElementById('reg-name').value.trim() || 'Adminisztrátor';
 
         const members = [];
         try {
@@ -635,99 +627,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = entry.querySelector('.member-name').value.trim();
                 const birth_date = entry.querySelector('.member-birth').value;
                 const otprobaInp = entry.querySelector('.member-otproba');
-                const otproba_id = otprobaInp.disabled ? "Nincs" : otprobaInp.value;
+                const otproba_id = otprobaInp.disabled ? 'Nincs' : otprobaInp.value;
+
+                if (entry.classList.contains('team-name-entry') && !name) return;
                 if (!name || !birth_date) throw new Error(`Kérjük adja meg a(z) ${idx + 1}. versenyző minden adatát!`);
                 members.push({ name, birth_date, otproba_id });
             });
-            const payModal = document.getElementById('payment-modal');
-            const notice = document.getElementById('reg-form-payment-notice');
-            const isAdmin = notice && notice.classList.contains('hidden');
 
-            if(payModal && !isAdmin) {
-                const actualMembersCount = members.filter(m => m.otproba_id !== 'CSAPATNEV').length;
-                const finalAmount = actualMembersCount * 7000;
-                
-                const paymentAmountEl = document.getElementById('payment-amount');
-                if (paymentAmountEl) {
-                    paymentAmountEl.textContent = `${finalAmount.toLocaleString('hu-HU')} Ft`;
+            const regResult = await window.raceManager.registerRacer(
+                members,
+                kategoria,
+                tav,
+                false,
+                email,
+                phone,
+                contactName,
+                true // isAdmin
+            );
+            this.reset();
+            window.updateCategorySelect();
+
+            if (regResult && regResult.id) {
+                const wantsTeam = confirm(
+                    'Sikeres adminisztrátori nevezés! Szeretnéd a most felvitt versenyző(ke)t közvetlenül beosztani egy csapatba/egységbe?'
+                );
+                if (wantsTeam) {
+                    window.newlyRegisteredRacerId = regResult.id;
+                    window.showDataSubSection('admin-data-section-teams');
                 }
-
-                payModal.classList.add('active');
-                
-                const btnPaySuccess = document.getElementById('btn-pay-success');
-                const newBtn = btnPaySuccess.cloneNode(true);
-                btnPaySuccess.parentNode.replaceChild(newBtn, btnPaySuccess);
-                
-                newBtn.onclick = async () => {
-                    newBtn.disabled = true;
-                    newBtn.textContent = 'Feldolgozás...';
-                    try {
-                        // 1. Regisztráció a szerveren
-                        const formRes = await window.raceManager.registerRacer(members, kategoria, tav, false, email, phone, contactName, true);
-                        
-                        if (!formRes) {
-                            newBtn.disabled = false;
-                            newBtn.textContent = 'Tovább a fizetésre ➔';
-                            return;
-                        }
-
-                        // 2. Átirányítás a cél URL-re
-                        showToast('Sikeres nevezés! Átirányítás a fizetési oldalra...', 'success');
-                        setTimeout(() => {
-                            window.location.href = 'https://sarkanyhajozz.hu/termek/dunakeszi-futam-elonevezes/';
-                        }, 1500);
-                    } catch (submitErr) {
-                        showToast(submitErr.message || "Hiba a mentésnél", "error");
-                        newBtn.disabled = false;
-                        newBtn.textContent = 'Tovább a fizetésre ➔';
-                    }
-                };
-            } else {
-                await window.raceManager.registerRacer(members, kategoria, tav, false, email, phone, contactName, isAdmin);
-                this.reset();
-                window.updateCategorySelect();
             }
         } catch (err) {
-            showToast(err.message, "error");
+            showToast(err.message, 'error');
         }
     });
 
-    // Ha a URL-ben payment=success van visszatéréskor
-    if (window.location.search.includes('payment=success')) {
-        setTimeout(() => {
-            showToast('Sikeres Barion Fizetés! A nevezésed megerősítve.', 'success');
-            // Tisztítjuk a címsort anélkül, hogy oldalfrissítés történne
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }, 500);
-    }
-
     // Enter gomb a rajtszám rögzítéshez
     const bibInput = document.getElementById('bib-input');
-    if (bibInput) bibInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') window.stopRacer(); });
+    if (bibInput)
+        bibInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') window.stopRacer();
+        });
 
     // Enter gomb az ellenőrzőponthoz
     const cpBibInput = document.getElementById('checkpoint-bib-input');
-    if (cpBibInput) cpBibInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') window.recordCheckpoint(); });
+    if (cpBibInput)
+        cpBibInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') window.recordCheckpoint();
+        });
 
-    // Mobil menü kezelés
-    const menuToggle = document.getElementById('menuToggle');
-    const mainNav = document.getElementById('main-nav');
-    if (menuToggle && mainNav) {
-        menuToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            menuToggle.classList.toggle('active');
-            mainNav.classList.toggle('active');
-        });
-        document.addEventListener('click', () => {
-            menuToggle.classList.remove('active');
-            mainNav.classList.remove('active');
-        });
+    // Automatikus session belépés ha a jelszó már tárolva van
+    const savedPassword = sessionStorage.getItem('dragonAdminPassword');
+    if (savedPassword) {
+        document.getElementById('admin-pass').value = savedPassword;
+        window.loginAdmin();
     }
-
-    // Routing kezelése
-    const handleURLRouting = () => {
-        const view = new URLSearchParams(window.location.search).get('view');
-        if (view) setTimeout(() => window.switchTab(view), 200);
-    };
-    handleURLRouting();
 });

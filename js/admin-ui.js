@@ -1,9 +1,9 @@
-import { showToast, showConfirmModal, formatTime, formatMemberListHtml, formatRacerName, formatOtprobaListHtml } from './ui-utils.js';
+import { showToast, formatTime, formatMemberListHtml, formatRacerName, formatOtprobaListHtml } from './ui-utils.js';
 import { API_URL } from './api.js';
 
 /**
  * --- ADMINISZTRÁCIÓS FELÜLET RÉTEG (ADMIN UI LAYER) ---
- * Az adminisztrátori felület specifikus megjelenítési logikája, 
+ * Az adminisztrátori felület specifikus megjelenítési logikája,
  * táblázatok és vezérlőgombok kezelése.
  */
 
@@ -19,51 +19,61 @@ export function renderAdminCharts() {
 
     const ctxDist = document.getElementById('chart-distances');
     const ctxStat = document.getElementById('chart-status');
-    
+
     if (!ctxDist || !ctxStat || typeof Chart === 'undefined') return;
 
     const racers = rm.data.racers;
-    
+
     const distCount = { '22km': 0, '11km': 0, '4km': 0 };
-    racers.forEach(r => { if(distCount[r.distance] !== undefined) distCount[r.distance]++; });
-    
+    racers.forEach(r => {
+        if (distCount[r.distance] !== undefined) distCount[r.distance]++;
+    });
+
     const distData = {
         labels: ['22km Hosszú', '11km Rövid', '4km SUP'],
-        datasets: [{
-            data: [distCount['22km'], distCount['11km'], distCount['4km']],
-            backgroundColor: ['#00A3FF', '#FF4D4D', '#00FFCC'],
-            borderWidth: 0
-        }]
+        datasets: [
+            {
+                data: [distCount['22km'], distCount['11km'], distCount['4km']],
+                backgroundColor: ['#00A3FF', '#FF4D4D', '#00FFCC'],
+                borderWidth: 0,
+            },
+        ],
     };
 
-    const statCount = { 'registered': 0, 'running': 0, 'finished': 0 };
-    racers.forEach(r => { if(statCount[r.status] !== undefined) statCount[r.status]++; });
+    const statCount = { registered: 0, running: 0, finished: 0 };
+    racers.forEach(r => {
+        if (statCount[r.status] !== undefined) statCount[r.status]++;
+    });
 
     const statData = {
         labels: ['Regisztrált (Vár)', 'Futó (Pályán)', 'Befutott'],
-        datasets: [{
-            data: [statCount['registered'], statCount['running'], statCount['finished']],
-            backgroundColor: ['#555555', '#00A3FF', '#00FFCC'],
-            borderWidth: 0
-        }]
+        datasets: [
+            {
+                data: [statCount['registered'], statCount['running'], statCount['finished']],
+                backgroundColor: ['#555555', '#00A3FF', '#00FFCC'],
+                borderWidth: 0,
+            },
+        ],
     };
 
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { position: 'right', labels: { color: 'white' } }
-        }
+            legend: { position: 'right', labels: { color: 'white' } },
+        },
     };
 
     if (chartDistances) {
-        chartDistances.data = distData; chartDistances.update();
+        chartDistances.data = distData;
+        chartDistances.update();
     } else {
         chartDistances = new Chart(ctxDist, { type: 'doughnut', data: distData, options: chartOptions });
     }
 
     if (chartStatus) {
-        chartStatus.data = statData; chartStatus.update();
+        chartStatus.data = statData;
+        chartStatus.update();
     } else {
         chartStatus = new Chart(ctxStat, { type: 'pie', data: statData, options: chartOptions });
     }
@@ -87,7 +97,7 @@ export function renderAdminTable(filterType = 'all') {
         racers = racers.filter(r => r.distance === '22km');
     } else if (filterType === '11km') {
         // 11km-esek, kivéve a sárkányhajó kategóriát
-        racers = racers.filter(r => r.distance === '11km' && !(/s[aá]rk[aá]ny/i.test(r.category || '')));
+        racers = racers.filter(r => r.distance === '11km' && !/s[aá]rk[aá]ny/i.test(r.category || ''));
     } else if (filterType === '4km') {
         racers = racers.filter(r => r.distance === '4km');
     } else if (filterType === 'sarkany') {
@@ -102,7 +112,8 @@ export function renderAdminTable(filterType = 'all') {
         racers = racers.filter(r => {
             const nameMatch = formatRacerName(r).toLowerCase().includes(query);
             const bibMatch = r.bib && r.bib.toString().includes(query);
-            const catMatch = r.category && window.raceManager.formatCategoryName(r.category).toLowerCase().includes(query);
+            const catMatch =
+                r.category && window.raceManager.formatCategoryName(r.category).toLowerCase().includes(query);
             return nameMatch || bibMatch || catMatch;
         });
     }
@@ -121,7 +132,7 @@ export function renderAdminTable(filterType = 'all') {
                     displayRacers.push({
                         ...r,
                         members: [m],
-                        team_size_was_larger: true
+                        team_size_was_larger: true,
                     });
                 });
             } else {
@@ -132,41 +143,43 @@ export function renderAdminTable(filterType = 'all') {
         }
     });
 
-    displayRacers.sort((a, b) => (a.bib || 0) - (b.bib || 0)).forEach(r => {
-        const tr = document.createElement('tr');
-        let statusColor = "white";
-        let dataStartAttr = "";
+    displayRacers
+        .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+        .forEach(r => {
+            const tr = document.createElement('tr');
+            let statusColor = 'white';
+            let dataStartAttr = '';
 
-        if (r.status === 'running') {
-            statusColor = 'var(--accent-primary)';
-            tr.className = "status-running";
-            dataStartAttr = `data-start="${r.start_time || 0}"`;
-        } else if (r.status === 'finished') {
-            statusColor = '#00FFCC';
-        } else if (r.status === 'duplicate') {
-            statusColor = '#FFA500'; // Narancs
-            tr.style.background = 'rgba(255, 165, 0, 0.15)';
-        }
+            if (r.status === 'running') {
+                statusColor = 'var(--accent-primary)';
+                tr.className = 'status-running';
+                dataStartAttr = `data-start="${r.start_time || 0}"`;
+            } else if (r.status === 'finished') {
+                statusColor = '#00FFCC';
+            } else if (r.status === 'duplicate') {
+                statusColor = '#FFA500'; // Narancs
+                tr.style.background = 'rgba(255, 165, 0, 0.15)';
+            }
 
-        let timeStr = "00:00:00.000";
-        if (r.status === 'running') {
-            timeStr = formatTime(Date.now() + (window.raceManager.serverTimeOffset || 0) - (r.start_time || 0));
-        } else if (r.status === 'finished') {
-            timeStr = formatTime(r.total_time || 0);
-        }
+            let timeStr = '00:00:00.000';
+            if (r.status === 'running') {
+                timeStr = formatTime(Date.now() + (window.raceManager.serverTimeOffset || 0) - (r.start_time || 0));
+            } else if (r.status === 'finished') {
+                timeStr = formatTime(r.total_time || 0);
+            }
 
-        const memberList = formatMemberListHtml(r);
-        const otprobaList = formatOtprobaListHtml(r);
-        
-        const isChecked = !!r.checked_in;
-        const isPaid = !!r.is_paid;
-        
-        const checkInHtml = `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateRacerStatus('${r.id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`;
-        const paidHtml = isPaid ? 
-            `<span style="background:#5BB226; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;" onclick="if(confirm('Mégis visszaállítod fizetetlenre?')) window.raceManager.updateRacerStatus('${r.id}', 'is_paid', false).then(() => renderAdminTable(window.currentTableFilter))">Befizetve</span>` : 
-            `<button onclick="window.raceManager.updateRacerStatus('${r.id}', 'is_paid', true).then(() => renderAdminTable(window.currentTableFilter))" class="action-btn" style="background:transparent; border:1px solid #5BB226; color:#5BB226; padding:2px 8px; font-size:0.8rem;">Függőben</button>`;
+            const memberList = formatMemberListHtml(r);
+            const otprobaList = formatOtprobaListHtml(r);
 
-        tr.innerHTML = `
+            const isChecked = !!r.checked_in;
+            const isPaid = !!r.is_paid;
+
+            const checkInHtml = `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateRacerStatus('${r.id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`;
+            const paidHtml = isPaid
+                ? `<span style="background:#5BB226; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;" onclick="if(confirm('Mégis visszaállítod fizetetlenre?')) window.raceManager.updateRacerStatus('${r.id}', 'is_paid', false).then(() => renderAdminTable(window.currentTableFilter))">Befizetve</span>`
+                : `<button onclick="window.raceManager.updateRacerStatus('${r.id}', 'is_paid', true).then(() => renderAdminTable(window.currentTableFilter))" class="action-btn" style="background:transparent; border:1px solid #5BB226; color:#5BB226; padding:2px 8px; font-size:0.8rem;">Függőben</button>`;
+
+            tr.innerHTML = `
             <td data-label="Rajtszám"><strong>#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
             <td data-label="Egység Tagjai">${memberList}</td>
             <td data-label="Ötpróba ID">${otprobaList}</td>
@@ -179,22 +192,30 @@ export function renderAdminTable(filterType = 'all') {
             <td data-label="Művelet" style="white-space: nowrap; text-align:center;">
                 <button class="action-btn edit" onclick="window.raceManager.openEditModal('${r.id}', ${r.members && r.members.length === 1 && /s[aá]rk[aá]ny/i.test(r.category || '') && (r.id.startsWith('DRAGON_') || r.team_size_was_larger) ? `'${r.members[0].id}'` : 'null'})" style="background:var(--accent-secondary); padding: 5px 8px; font-size: 1rem; border-radius: 6px; margin-right: 5px;" title="Szerkesztés">✏️</button>
                 <button class="action-btn delete" onclick="window.raceManager.deleteRacer('${r.id}', ${r.bib || 'null'})" style="background:#dc3545; padding: 5px 8px; font-size: 1rem; border-radius: 6px; margin-right: 5px;" title="Törlés">🗑️</button>
-                ${r.status === 'duplicate' ? `
+                ${
+                    r.status === 'duplicate'
+                        ? `
                 <button class="action-btn" onclick="if(confirm('Biztosan érvényesíted a nevezést?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'registered').then(() => renderAdminTable(window.currentTableFilter))" style="background:#5BB226; color:white; padding: 5px 8px; font-size: 0.8rem; border-radius: 6px; font-weight:bold;" title="Érvényesítés">✅ ÉRVÉNYESÍT</button>
-                ` : ''}
-                ${r.status === 'running' ? `
+                `
+                        : ''
+                }
+                ${
+                    r.status === 'running'
+                        ? `
                 <button class="action-btn" onclick="if(confirm('Biztosan DNF (Feladta) státuszba teszed?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'dnf').then(() => renderAdminTable(window.currentTableFilter))" style="background:#FFA500; color:black; padding: 5px 8px; font-size: 0.8rem; border-radius: 6px; margin-right: 5px; font-weight:bold;" title="Feladta">DNF</button>
                 <button class="action-btn" onclick="if(confirm('Biztosan DSQ (Kizárva) státuszba teszed?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'dsq').then(() => renderAdminTable(window.currentTableFilter))" style="background:#800080; color:white; padding: 5px 8px; font-size: 0.8rem; border-radius: 6px; font-weight:bold;" title="Kizárva">DSQ</button>
-                ` : ''}
+                `
+                        : ''
+                }
             </td>
         `;
-        tbody.appendChild(tr);
-    });
+            tbody.appendChild(tr);
+        });
 }
 
 // globális kereső támogatása
 window.adminSearchQuery = '';
-window.handleTableSearch = (query) => {
+window.handleTableSearch = query => {
     window.adminSearchQuery = query;
     window.renderAdminTable(window.currentTableFilter);
 };
@@ -215,11 +236,15 @@ export function renderAdminControlButtons() {
                 <button onclick="window.startMass()" class="btn-primary" style="width: 100%; min-height: 54px; background: linear-gradient(135deg, #ff4444, #f00); box-shadow: 0 8px 25px rgba(255,0,0,0.3);" ${isRunning ? 'disabled' : ''}>
                     🚀 ÖSSZES INDÍTÁSA
                 </button>
-                ${isRunning ? `
+                ${
+                    isRunning
+                        ? `
                     <button onclick="window.stopCategory(null, null, 'MASS_START_ALL')" class="btn-stop" style="width: 100%; margin: 0; min-height: 42px; border-radius: 10px; font-weight: 700;">
                         🛑 STOP
                     </button>
-                ` : ''}
+                `
+                        : ''
+                }
             </div>
         `;
     }
@@ -229,9 +254,10 @@ export function renderAdminControlButtons() {
     if (distanceContainer) {
         distanceContainer.innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
-                ${['11km', '22km', '4km'].map(dist => {
-                    const isRunning = !!rm.data.categories[`DISTANCE_${dist}`];
-                    return `
+                ${['11km', '22km', '4km']
+                    .map(dist => {
+                        const isRunning = !!rm.data.categories[`DISTANCE_${dist}`];
+                        return `
                         <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,228,255,0.03); padding: 10px; border-radius: var(--border-radius-md); border: 1px solid rgba(0,228,255,0.1);">
                             <button onclick="window.startDistance('${dist}')" class="btn-start" style="flex:2; height: 45px; font-weight: 700; ${isRunning ? 'opacity:0.4;' : ''}" ${isRunning ? 'disabled' : ''}>
                                 ${dist} RAJT
@@ -239,7 +265,8 @@ export function renderAdminControlButtons() {
                             ${isRunning ? `<button onclick="window.stopCategory(null, null, 'DISTANCE_${dist}')" class="btn-stop" style="flex:1; height: 45px; font-weight: 700; border-radius: 10px;">STOP</button>` : ''}
                         </div>
                     `;
-                }).join('')}
+                    })
+                    .join('')}
             </div>
         `;
     }
@@ -265,7 +292,12 @@ export function renderAdminControlButtons() {
 
         Object.keys(rm.groupMap).forEach(groupId => {
             const isRunning = !!rm.data.categories[groupId];
-            availableStarts.push({ id: groupId, name: rm.groupMap[groupId].replace('Összes ', ''), type: 'group', isRunning });
+            availableStarts.push({
+                id: groupId,
+                name: rm.groupMap[groupId].replace('Összes ', ''),
+                type: 'group',
+                isRunning,
+            });
         });
 
         Object.keys(rm.categoryMap).forEach(catId => {
@@ -274,22 +306,31 @@ export function renderAdminControlButtons() {
                 const isSup = catId.includes('sup');
                 const isSarkany = /s[aá]rk[aá]ny/i.test(catId || '');
                 const hasDistSuffix = catId.endsWith(`_${dist}`);
-                const hasOtherDistSuffix = (dist !== '11km' && catId.endsWith('_11km')) || 
-                                           (dist !== '22km' && catId.endsWith('_22km')) || 
-                                           (dist !== '4km' && catId.endsWith('_4km'));
-                
-                let isDistanceMatch = false;
+                const hasOtherDistSuffix =
+                    (dist !== '11km' && catId.endsWith('_11km')) ||
+                    (dist !== '22km' && catId.endsWith('_22km')) ||
+                    (dist !== '4km' && catId.endsWith('_4km'));
+
+                let isDistanceMatch;
                 if (hasDistSuffix) isDistanceMatch = true;
                 else if (hasOtherDistSuffix) isDistanceMatch = false;
-                else if (isSup) isDistanceMatch = (dist === '4km' || dist === '22km' || dist === '11km'); // SUP can be multiple
-                else if (isSarkany) isDistanceMatch = (dist === '11km');
-                else isDistanceMatch = (dist === '11km' || dist === '22km');
+                else if (isSup)
+                    isDistanceMatch = dist === '4km' || dist === '22km' || dist === '11km'; // SUP can be multiple
+                else if (isSarkany) isDistanceMatch = dist === '11km';
+                else isDistanceMatch = dist === '11km' || dist === '22km';
 
                 if (isDistanceMatch) {
                     const isRunning = !!rm.data.categories[key];
-                    const inExistingGroup = availableStarts.some(s => s.type === 'group' && rm.belongsToGroup({category: catId, distance: dist}, s.id));
+                    const inExistingGroup = availableStarts.some(
+                        s => s.type === 'group' && rm.belongsToGroup({ category: catId, distance: dist }, s.id)
+                    );
                     if (!inExistingGroup) {
-                        availableStarts.push({ id: key, name: rm.formatCategoryName(key), type: 'category', isRunning });
+                        availableStarts.push({
+                            id: key,
+                            name: rm.formatCategoryName(key),
+                            type: 'category',
+                            isRunning,
+                        });
                     }
                 }
             });
@@ -302,7 +343,8 @@ export function renderAdminControlButtons() {
             groupContainer.style.overflowY = 'auto';
             availableStarts.forEach(start => {
                 const div = document.createElement('div');
-                div.style = 'display:flex; gap:10px; margin-bottom:10px; background:rgba(0,228,255,0.03); padding:8px; border-radius:10px; border:1px solid rgba(0,228,255,0.08);';
+                div.style =
+                    'display:flex; gap:10px; margin-bottom:10px; background:rgba(0,228,255,0.03); padding:8px; border-radius:10px; border:1px solid rgba(0,228,255,0.08);';
                 div.innerHTML = `
                     <button onclick="window.startCategory(null, null, '${start.id}')" class="btn-start" style="flex:2; text-align:left; font-weight:700; font-size:0.8rem; padding:10px; margin-bottom:0; opacity: ${start.isRunning ? 0.4 : 1};" ${start.isRunning ? 'disabled' : ''}>
                         ${start.name} RAJT
@@ -329,14 +371,16 @@ export function exportResultsToExcel() {
 
     // 1. Munkalapok létrehozása kategóriánként, Távolság szerinti sorrendben (11km, 22km, 4km)
     const distancePriority = ['11km', '22km', '4km'];
-    
+
     distancePriority.forEach(distId => {
         // Keressük ki az összes kategóriát ebben a távban (kivéve sárkányhajó)
-        const categoriesInDist = [...new Set(
-            rm.data.racers
-                .filter(r => r.distance === distId && !(/s[aá]rk[aá]ny/i.test(r.category || '')))
-                .map(r => r.category)
-        )].sort();
+        const categoriesInDist = [
+            ...new Set(
+                rm.data.racers
+                    .filter(r => r.distance === distId && !/s[aá]rk[aá]ny/i.test(r.category || ''))
+                    .map(r => r.category)
+            ),
+        ].sort();
 
         categoriesInDist.forEach(catId => {
             const finishers = rm.data.racers.filter(r => r.category === catId && r.distance === distId);
@@ -346,12 +390,13 @@ export function exportResultsToExcel() {
             const sorted = finishers.sort((a, b) => {
                 if (a.status === 'finished' && b.status !== 'finished') return -1;
                 if (a.status !== 'finished' && b.status === 'finished') return 1;
-                if (a.status === 'finished' && b.status === 'finished') return (a.total_time || 0) - (b.total_time || 0);
+                if (a.status === 'finished' && b.status === 'finished')
+                    return (a.total_time || 0) - (b.total_time || 0);
                 return (a.bib || 0) - (b.bib || 0);
             });
 
             const rows = [[`KATEGÓRIA EREDMÉNYEK: ${rm.formatCategoryName(catId)} (${distId})`]];
-            rows.push(["Helyezés", "Rajtszám", "Név (Csapattagok)", "Ötpróba ID-k", "Táv", "Státusz", "Időeredmény"]);
+            rows.push(['Helyezés', 'Rajtszám', 'Név (Csapattagok)', 'Ötpróba ID-k', 'Táv', 'Státusz', 'Időeredmény']);
 
             let rank = 1;
             sorted.forEach(r => {
@@ -359,19 +404,29 @@ export function exportResultsToExcel() {
                     r.status === 'finished' ? rank++ : '-',
                     r.bib,
                     formatRacerName(r),
-                    r.members ? r.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.otproba_id || '').filter(id => id).join(', ') : (r.otproba_id || '-'),
+                    r.members
+                        ? r.members
+                              .filter(m => m.otproba_id !== 'CSAPATNEV')
+                              .map(m => m.otproba_id || '')
+                              .filter(id => id)
+                              .join(', ')
+                        : r.otproba_id || '-',
                     r.distance,
                     r.status,
-                    r.status === 'finished' ? formatTime(r.total_time) : (r.status === 'running' ? 'Folyamatban' : 'Regisztrálva')
+                    r.status === 'finished'
+                        ? formatTime(r.total_time)
+                        : r.status === 'running'
+                          ? 'Folyamatban'
+                          : 'Regisztrálva',
                 ]);
             });
 
             // Munkalap név tisztítása és rövidítése (Excel limit 31 karakter)
             // Megpróbáljuk a kategória nevét használni, ha túl hosszú, levágjuk
-            let rawBaseName = rm.formatCategoryName(catId).replace(/[\\/?*\[\]]/g, '');
+            let rawBaseName = rm.formatCategoryName(catId).replace(/[\\/?*[\]]/g, '');
             let sheetName = rawBaseName.substring(0, 25) + `_${distId}`;
             let finalSheetName = sheetName.substring(0, 31);
-            
+
             let counter = 1;
             while (wb.SheetNames.includes(finalSheetName)) {
                 finalSheetName = rawBaseName.substring(0, 20) + `_${distId}_${counter++}`;
@@ -383,11 +438,9 @@ export function exportResultsToExcel() {
     });
 
     // 2. Sárkányhajó munkalap(ok) a végére
-    const sarkanyCategories = [...new Set(
-        rm.data.racers
-            .filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''))
-            .map(r => r.category)
-    )].sort();
+    const sarkanyCategories = [
+        ...new Set(rm.data.racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || '')).map(r => r.category)),
+    ].sort();
 
     sarkanyCategories.forEach(catId => {
         const gamers = rm.data.racers.filter(r => r.category === catId);
@@ -401,7 +454,7 @@ export function exportResultsToExcel() {
         });
 
         const sRows = [[`SÁRKÁNYHAJÓ EREDMÉNYEK: ${rm.formatCategoryName(catId)}`]];
-        sRows.push(["Helyezés", "Rajtszám", "Név / Egység", "Ötpróba ID-k", "Státusz", "Időeredmény"]);
+        sRows.push(['Helyezés', 'Rajtszám', 'Név / Egység', 'Ötpróba ID-k', 'Státusz', 'Időeredmény']);
 
         let sRank = 1;
         sortedS.forEach(r => {
@@ -409,21 +462,31 @@ export function exportResultsToExcel() {
                 r.status === 'finished' ? sRank++ : '-',
                 r.bib,
                 formatRacerName(r),
-                r.members ? r.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.otproba_id || '').filter(id => id).join(', ') : (r.otproba_id || '-'),
+                r.members
+                    ? r.members
+                          .filter(m => m.otproba_id !== 'CSAPATNEV')
+                          .map(m => m.otproba_id || '')
+                          .filter(id => id)
+                          .join(', ')
+                    : r.otproba_id || '-',
                 r.status,
-                r.status === 'finished' ? formatTime(r.total_time) : (r.status === 'running' ? 'Folyamatban' : 'Regisztrálva')
+                r.status === 'finished'
+                    ? formatTime(r.total_time)
+                    : r.status === 'running'
+                      ? 'Folyamatban'
+                      : 'Regisztrálva',
             ]);
         });
 
-        let rawSarkanyName = rm.formatCategoryName(catId).replace(/[\\/?*\[\]]/g, '');
-        let sName = "S_Hajó_" + rawSarkanyName;
+        let rawSarkanyName = rm.formatCategoryName(catId).replace(/[\\/?*[\]]/g, '');
+        let sName = 'S_Hajó_' + rawSarkanyName;
         let finalSName = sName.substring(0, 31);
-        
+
         let sCounter = 1;
         while (wb.SheetNames.includes(finalSName)) {
-            finalSName = ("S_Hajó_" + rawSarkanyName).substring(0, 27) + `_${sCounter++}`;
+            finalSName = ('S_Hajó_' + rawSarkanyName).substring(0, 27) + `_${sCounter++}`;
         }
-        
+
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sRows), finalSName);
     });
 
@@ -442,7 +505,7 @@ export function exportFilteredTableToExcel(filterType, specificCatId = null) {
     }
 
     let racers = [...rm.data.racers].filter(r => r && r.status);
-    let titlePrefix = "Szurt_Lista";
+    let titlePrefix = 'Szurt_Lista';
 
     if (specificCatId) {
         racers = racers.filter(r => r.category === specificCatId && r.distance === filterType);
@@ -450,37 +513,65 @@ export function exportFilteredTableToExcel(filterType, specificCatId = null) {
     } else {
         if (filterType === '22km') {
             racers = racers.filter(r => r.distance === '22km');
-            titlePrefix = "22km_Nevezettek";
+            titlePrefix = '22km_Nevezettek';
         } else if (filterType === '11km') {
-            racers = racers.filter(r => r.distance === '11km' && !(/s[aá]rk[aá]ny/i.test(r.category || '')));
-            titlePrefix = "11km_Nevezettek";
+            racers = racers.filter(r => r.distance === '11km' && !/s[aá]rk[aá]ny/i.test(r.category || ''));
+            titlePrefix = '11km_Nevezettek';
         } else if (filterType === '4km') {
             racers = racers.filter(r => r.distance === '4km');
-            titlePrefix = "4km_Nevezettek";
+            titlePrefix = '4km_Nevezettek';
         } else if (filterType === 'sarkany') {
             racers = racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
-            titlePrefix = "Sarkanyhajo_Nevezettek";
+            titlePrefix = 'Sarkanyhajo_Nevezettek';
         }
     }
 
     const wb = XLSX.utils.book_new();
-    const rows = [["Rajtszám", "Név (Egység tagjai)", "Születési dátumok", "Ötpróba ID-k", "Kategória", "Táv", "Sorozat", "Státusz", "Időeredmény"]];
-    
+    const rows = [
+        [
+            'Rajtszám',
+            'Név (Egység tagjai)',
+            'Születési dátumok',
+            'Ötpróba ID-k',
+            'Kategória',
+            'Táv',
+            'Sorozat',
+            'Státusz',
+            'Időeredmény',
+        ],
+    ];
+
     racers.forEach(r => {
         rows.push([
             r.bib,
             formatRacerName(r),
-            r.members ? r.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.birth_date || '').filter(d => d).join(', ') : '-',
-            r.members ? r.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.otproba_id || '').filter(id => id).join(', ') : (r.otproba_id || '-'),
+            r.members
+                ? r.members
+                      .filter(m => m.otproba_id !== 'CSAPATNEV')
+                      .map(m => m.birth_date || '')
+                      .filter(d => d)
+                      .join(', ')
+                : '-',
+            r.members
+                ? r.members
+                      .filter(m => m.otproba_id !== 'CSAPATNEV')
+                      .map(m => m.otproba_id || '')
+                      .filter(id => id)
+                      .join(', ')
+                : r.otproba_id || '-',
             rm.formatCategoryName(r.category),
             r.distance,
             r.is_series ? 'Igen' : 'Nem',
             r.status,
-            r.status === 'finished' ? formatTime(r.total_time) : (r.status === 'running' ? 'Folyamatban' : 'Regisztrálva')
+            r.status === 'finished'
+                ? formatTime(r.total_time)
+                : r.status === 'running'
+                  ? 'Folyamatban'
+                  : 'Regisztrálva',
         ]);
     });
 
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "Nevezettek");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Nevezettek');
     XLSX.writeFile(wb, `${titlePrefix}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     showToast('Szűrt Excel sikeresen exportálva!', 'success');
 }
@@ -496,28 +587,30 @@ export function renderAdminCategoryList() {
     container.innerHTML = '';
 
     const distances = [
-        { id: '11km', title: '📐 Rövid' },
-        { id: '22km', title: '📏 Hosszú' },
-        { id: '4km', title: '🛶 SUP 4 km' }
+        { id: '11km', title: '📐 Rövid táv' },
+        { id: '22km', title: '📏 Hosszú táv' },
+        { id: '4km', title: '🛶 SUP 4 km' },
     ];
 
     distances.forEach(dist => {
         const distHeader = document.createElement('h2');
         distHeader.className = 'section-title';
-        distHeader.style = 'margin-top: 30px; border-left: 5px solid var(--accent-primary); padding-left: 15px; background: rgba(0,228,255,0.05); padding: 10px 15px; border-radius: 4px;';
+        distHeader.style =
+            'margin-top: 30px; border-left: 5px solid var(--accent-primary); padding-left: 15px; background: rgba(0,228,255,0.05); padding: 10px 15px; border-radius: 4px;';
         distHeader.textContent = dist.title;
         container.appendChild(distHeader);
 
         const grid = document.createElement('div');
-        grid.style = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;';
-        
+        grid.style =
+            'display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;';
+
         const validCategories = Object.keys(rm.categoryMap).filter(catId => {
             // Szigorú ellenőrzés: csak ha az ID a megfelelő távval végződik
             if (catId.endsWith(`_${dist.id}`)) return true;
-            
+
             // Kivételek (olyan kategóriák, amiknek nincs fix táv-suffixe az ID-ban)
             if (dist.id === '11km' && catId === 'sarkanyhajo_otproba') return true;
-            
+
             return false;
         });
 
@@ -530,7 +623,7 @@ export function renderAdminCategoryList() {
             });
 
             const card = document.createElement('div');
-            card.className = 'admin-card'; 
+            card.className = 'admin-card';
             card.style = `
                 cursor: pointer; 
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
@@ -546,7 +639,7 @@ export function renderAdminCategoryList() {
                 overflow: hidden;
             `;
             card.onclick = () => window.showCategoryDetail(dist.id, catId);
-            
+
             // Hover effects
             card.onmouseenter = () => {
                 card.style.background = 'rgba(255,255,255,0.05)';
@@ -564,13 +657,16 @@ export function renderAdminCategoryList() {
             const hasRacers = racers.length > 0;
             const badgeColor = hasRacers ? 'var(--accent-primary)' : 'rgba(255,255,255,0.3)';
             const badgeBg = hasRacers ? 'rgba(0, 228, 255, 0.1)' : 'rgba(255,255,255,0.05)';
-            
-            let namesListHtml = '';
+
+            let namesListHtml;
             if (hasRacers) {
-                const names = racers.slice(0, 3).map(r => {
-                    const name = formatRacerName(r);
-                    return `<div style="font-size: 0.72rem; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;">• ${name}</div>`;
-                }).join('');
+                const names = racers
+                    .slice(0, 3)
+                    .map(r => {
+                        const name = formatRacerName(r);
+                        return `<div style="font-size: 0.72rem; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;">• ${name}</div>`;
+                    })
+                    .join('');
                 namesListHtml = `
                     <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
                         ${names}
@@ -636,7 +732,8 @@ export function renderAdminCategoryDetail(distId, catId) {
 
     if (racers.length === 0) {
         const noResults = document.createElement('div');
-        noResults.style = 'text-align: center; padding: 50px; background: rgba(255,255,255,0.02); border-radius: 15px; border: 1px dashed rgba(255,255,255,0.1);';
+        noResults.style =
+            'text-align: center; padding: 50px; background: rgba(255,255,255,0.02); border-radius: 15px; border: 1px dashed rgba(255,255,255,0.1);';
         noResults.innerHTML = `
             <div style="font-size: 3rem; margin-bottom: 15px;">🏜️</div>
             <h3 style="color: #888;">Még nem érkezett nevezés ebben a kategóriában.</h3>
@@ -667,40 +764,42 @@ export function renderAdminCategoryDetail(distId, catId) {
     `;
 
     const tbody = tableDiv.querySelector('tbody');
-    racers.sort((a,b) => (a.bib || 0) - (b.bib || 0)).forEach(r => {
-        const tr = document.createElement('tr');
-        let statusColor = "white";
-        let dataStartAttr = "";
+    racers
+        .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+        .forEach(r => {
+            const tr = document.createElement('tr');
+            let statusColor = 'white';
+            let dataStartAttr = '';
 
-        if (r.status === 'running') {
-            statusColor = 'var(--accent-primary)';
-            tr.className = "status-running";
-            dataStartAttr = `data-start="${r.start_time || 0}"`;
-        } else if (r.status === 'finished') {
-            statusColor = '#00FFCC';
-        } else if (r.status === 'duplicate') {
-            statusColor = '#FFA500';
-            tr.style.background = 'rgba(255, 165, 0, 0.15)';
-        }
+            if (r.status === 'running') {
+                statusColor = 'var(--accent-primary)';
+                tr.className = 'status-running';
+                dataStartAttr = `data-start="${r.start_time || 0}"`;
+            } else if (r.status === 'finished') {
+                statusColor = '#00FFCC';
+            } else if (r.status === 'duplicate') {
+                statusColor = '#FFA500';
+                tr.style.background = 'rgba(255, 165, 0, 0.15)';
+            }
 
-        let timeStr = "00:00:00.000";
-        if (r.status === 'running') {
-            timeStr = formatTime(Date.now() + (rm.serverTimeOffset || 0) - (r.start_time || 0));
-        } else if (r.status === 'finished') {
-            timeStr = formatTime(r.total_time || 0);
-        }
+            let timeStr = '00:00:00.000';
+            if (r.status === 'running') {
+                timeStr = formatTime(Date.now() + (rm.serverTimeOffset || 0) - (r.start_time || 0));
+            } else if (r.status === 'finished') {
+                timeStr = formatTime(r.total_time || 0);
+            }
 
-        const memberList = formatMemberListHtml(r);
-        const otprobaList = formatOtprobaListHtml(r);
-        const isChecked = !!r.checked_in;
-        const isPaid = !!r.is_paid;
-        
-        const checkInHtml = `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateRacerStatus('${r.id}', 'checked_in', this.checked)">`;
-        const paidHtml = isPaid ? 
-            `<span style="background:#5BB226; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;" onclick="if(confirm('Mégis visszaállítod fizetetlenre?')) window.raceManager.updateRacerStatus('${r.id}', 'is_paid', false).then(() => window.renderAdminCategoryDetail('${distId}', '${catId}'))">Befizetve</span>` : 
-            `<button onclick="window.raceManager.updateRacerStatus('${r.id}', 'is_paid', true).then(() => window.renderAdminCategoryDetail('${distId}', '${catId}'))" class="action-btn" style="background:transparent; border:1px solid #5BB226; color:#5BB226; padding:2px 8px; font-size:0.8rem;">Függőben</button>`;
+            const memberList = formatMemberListHtml(r);
+            const otprobaList = formatOtprobaListHtml(r);
+            const isChecked = !!r.checked_in;
+            const isPaid = !!r.is_paid;
 
-        tr.innerHTML = `
+            const checkInHtml = `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateRacerStatus('${r.id}', 'checked_in', this.checked)">`;
+            const paidHtml = isPaid
+                ? `<span style="background:#5BB226; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;" onclick="if(confirm('Mégis visszaállítod fizetetlenre?')) window.raceManager.updateRacerStatus('${r.id}', 'is_paid', false).then(() => window.renderAdminCategoryDetail('${distId}', '${catId}'))">Befizetve</span>`
+                : `<button onclick="window.raceManager.updateRacerStatus('${r.id}', 'is_paid', true).then(() => window.renderAdminCategoryDetail('${distId}', '${catId}'))" class="action-btn" style="background:transparent; border:1px solid #5BB226; color:#5BB226; padding:2px 8px; font-size:0.8rem;">Függőben</button>`;
+
+            tr.innerHTML = `
             <td data-label="Rajtszám"><strong>#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
             <td data-label="Egység Tagjai">${memberList}</td>
             <td data-label="Ötpróba ID">${otprobaList}</td>
@@ -713,14 +812,18 @@ export function renderAdminCategoryDetail(distId, catId) {
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                     <button class="action-btn edit" style="margin:0; padding: 6px 12px; font-size: 0.75rem;" onclick="window.raceManager.openEditModal('${r.id}')">Szerkesztés</button>
                     <button class="action-btn delete" style="margin:0; padding: 6px 12px; font-size: 0.75rem;" onclick="window.raceManager.deleteRacer('${r.id}', ${r.bib || 'null'})">Törlés</button>
-                    ${r.status === 'duplicate' ? `
+                    ${
+                        r.status === 'duplicate'
+                            ? `
                     <button class="action-btn" onclick="if(confirm('Biztosan érvényesíted a nevezést?')) window.raceManager.updateRacerStatus('${r.id}', 'status', 'registered').then(() => window.renderAdminCategoryDetail('${distId}', '${catId}'))" style="background:#5BB226; color:white; padding: 6px 12px; font-size: 0.75rem; border-radius: 6px; font-weight:bold; margin:0;" title="Érvényesítés">✅ ÉRVÉNYESÍT</button>
-                    ` : ''}
+                    `
+                            : ''
+                    }
                 </div>
             </td>
         `;
-        tbody.appendChild(tr);
-    });
+            tbody.appendChild(tr);
+        });
 
     contentEl.appendChild(tableDiv);
 }
@@ -731,7 +834,7 @@ export function renderAdminCategoryDetail(distId, catId) {
 export function renderBibManagementTable() {
     const container = document.getElementById('bib-modification-container');
     if (!container) return;
-    
+
     // Alaphelyzetbe állítás: egyetlen üres sor
     container.innerHTML = '';
     window.addBibEditRow();
@@ -743,17 +846,17 @@ export function renderBibManagementTable() {
 window.addBibEditRow = () => {
     const container = document.getElementById('bib-modification-container');
     const currentRows = container.querySelectorAll('.bib-mod-row').length;
-    
+
     if (currentRows >= 3) {
-        showToast("Egyszerre maximum 3 módosítási sor lehet nyitva!", "error");
+        showToast('Egyszerre maximum 3 módosítási sor lehet nyitva!', 'error');
         return;
     }
 
     const rowIdx = Date.now(); // Egyedi azonosító a sornak
     const div = document.createElement('div');
     div.className = 'bib-mod-row admin-card';
-    div.style = "padding: 20px; position: relative; animation: fadeIn 0.3s ease-out;";
-    
+    div.style = 'padding: 20px; position: relative; animation: fadeIn 0.3s ease-out;';
+
     div.innerHTML = `
         <div style="display: grid; grid-template-columns: 150px 1fr 150px; gap: 20px; align-items: start;">
             <!-- Bal oldal: Keresés -->
@@ -783,7 +886,7 @@ window.addBibEditRow = () => {
         </div>
         ${container.children.length > 0 ? `<button onclick="this.parentElement.remove()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #ff4d4d; cursor: pointer; font-size: 1.2rem;" title="Sor törlése">✕</button>` : ''}
     `;
-    
+
     container.appendChild(div);
 };
 
@@ -796,7 +899,8 @@ window.searchRacerByBib = (bib, rowIdx) => {
     if (!infoContainer || !saveCtrl) return;
 
     if (!bib) {
-        infoContainer.innerHTML = '<span style="color: var(--text-secondary); font-style: italic; font-size: 0.9rem;">Írj be egy rajtszámot a kereséshez...</span>';
+        infoContainer.innerHTML =
+            '<span style="color: var(--text-secondary); font-style: italic; font-size: 0.9rem;">Írj be egy rajtszámot a kereséshez...</span>';
         saveCtrl.classList.add('hidden');
         return;
     }
@@ -816,15 +920,16 @@ window.searchRacerByBib = (bib, rowIdx) => {
                 </div>
             </div>
         `;
-        infoContainer.style.border = "1px solid rgba(0, 145, 255, 0.2)";
-        infoContainer.style.background = "rgba(0, 145, 255, 0.05)";
+        infoContainer.style.border = '1px solid rgba(0, 145, 255, 0.2)';
+        infoContainer.style.background = 'rgba(0, 145, 255, 0.05)';
         saveCtrl.classList.remove('hidden');
         // Eltároljuk az azonosítót a mentéshez
         saveCtrl.dataset.racerId = racer.id;
     } else {
-        infoContainer.innerHTML = '<span style="color: #ff4d4d; font-size: 0.9rem;">⚠️ Nincs ilyen rajtszámú versenyző!</span>';
-        infoContainer.style.border = "1px dashed rgba(255, 77, 77, 0.3)";
-        infoContainer.style.background = "rgba(255, 77, 77, 0.05)";
+        infoContainer.innerHTML =
+            '<span style="color: #ff4d4d; font-size: 0.9rem;">⚠️ Nincs ilyen rajtszámú versenyző!</span>';
+        infoContainer.style.border = '1px dashed rgba(255, 77, 77, 0.3)';
+        infoContainer.style.background = 'rgba(255, 77, 77, 0.05)';
         saveCtrl.classList.add('hidden');
     }
 };
@@ -832,13 +937,13 @@ window.searchRacerByBib = (bib, rowIdx) => {
 /**
  * Mentés wrapper
  */
-window.saveBibChange = async (rowIdx) => {
+window.saveBibChange = async rowIdx => {
     const saveCtrl = document.getElementById(`save-ctrl-${rowIdx}`);
     const racerId = saveCtrl.dataset.racerId;
     const newBib = document.getElementById(`new-bib-${rowIdx}`).value;
 
     if (!newBib) {
-        showToast("Kérlek adj meg egy új rajtszámot!", "error");
+        showToast('Kérlek adj meg egy új rajtszámot!', 'error');
         return;
     }
 
@@ -846,8 +951,8 @@ window.saveBibChange = async (rowIdx) => {
         const success = await window.raceManager.updateRacerBib(racerId, newBib);
         if (success) {
             const row = saveCtrl.closest('.bib-mod-row');
-            row.style.opacity = "0.5";
-            row.style.pointerEvents = "none";
+            row.style.opacity = '0.5';
+            row.style.pointerEvents = 'none';
             row.innerHTML = `<div style="text-align: center; padding: 20px; color: #28a745; font-weight: bold;">✓ SIKERESEN MÓDOSÍTVA: ${newBib}</div>`;
             setTimeout(() => {
                 row.remove();
@@ -859,8 +964,8 @@ window.saveBibChange = async (rowIdx) => {
             }, 2000);
         }
     } catch (err) {
-        console.error("Save error in admin-ui:", err);
-        showToast("Hiba a mentés során!", "error");
+        console.error('Save error in admin-ui:', err);
+        showToast('Hiba a mentés során!', 'error');
     }
 };
 
@@ -870,7 +975,7 @@ window.saveBibChange = async (rowIdx) => {
 export function toggleBibHistory() {
     const panel = document.getElementById('bib-history-panel');
     const icon = document.getElementById('bib-history-toggle-icon');
-    
+
     if (panel.classList.contains('hidden')) {
         panel.classList.remove('hidden');
         icon.textContent = '▲';
@@ -891,32 +996,39 @@ export async function renderBibHistory() {
 
     try {
         const response = await fetch(`${API_URL}/bib-history`, {
-            headers: { 'Authorization': `Bearer ${window.raceManager.adminPassword}` }
+            headers: { Authorization: `Bearer ${window.raceManager.adminPassword}` },
         });
-        
+
         if (!response.ok) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #ff4d4d;">Hiba az adatok lekérésekor</td></tr>';
+            tbody.innerHTML =
+                '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #ff4d4d;">Hiba az adatok lekérésekor</td></tr>';
             return;
         }
 
         const history = await response.json();
 
         if (!Array.isArray(history) || history.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-secondary);">Nincsenek előzmények</td></tr>';
+            tbody.innerHTML =
+                '<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-secondary);">Nincsenek előzmények</td></tr>';
             return;
         }
 
-        tbody.innerHTML = history.map(entry => `
+        tbody.innerHTML = history
+            .map(
+                entry => `
             <tr>
                 <td>${new Date(entry.timestamp).toLocaleString('hu-HU')}</td>
                 <td style="font-weight: bold;">${entry.racerName}</td>
                 <td style="text-align: center; color: var(--text-secondary);">${entry.oldBib}</td>
                 <td style="text-align: center; color: var(--accent-primary); font-weight: bold;">${entry.newBib}</td>
             </tr>
-        `).join('');
+        `
+            )
+            .join('');
     } catch (err) {
-        console.error("History render error:", err);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #ff4d4d; padding: 20px;">Hiba az előzmények betöltésekor</td></tr>';
+        console.error('History render error:', err);
+        tbody.innerHTML =
+            '<tr><td colspan="4" style="text-align:center; color: #ff4d4d; padding: 20px;">Hiba az előzmények betöltésekor</td></tr>';
     }
 }
 window.renderBibHistory = renderBibHistory;
@@ -925,25 +1037,22 @@ window.renderBibHistory = renderBibHistory;
  * Előzmények törlése megerősítéssel
  */
 export function clearBibHistory() {
-    window.showConfirmModal(
-        "Biztosan törölni akarod a rajtszám módosítási előzményeket?",
-        async () => {
-            try {
-                const response = await fetch(`${API_URL}/bib-history`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${window.raceManager.adminPassword}` }
-                });
-                if (response.ok) {
-                    showToast("Előzmények törölve.", "success");
-                    renderBibHistory();
-                } else {
-                    showToast("Sikertelen törlés.", "error");
-                }
-            } catch (err) {
-                showToast("Szerver hiba a törléskor.", "error");
+    window.showConfirmModal('Biztosan törölni akarod a rajtszám módosítási előzményeket?', async () => {
+        try {
+            const response = await fetch(`${API_URL}/bib-history`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${window.raceManager.adminPassword}` },
+            });
+            if (response.ok) {
+                showToast('Előzmények törölve.', 'success');
+                renderBibHistory();
+            } else {
+                showToast('Sikertelen törlés.', 'error');
             }
+        } catch (err) {
+            showToast('Szerver hiba a törléskor.', 'error');
         }
-    );
+    });
 }
 window.clearBibHistory = clearBibHistory;
 
@@ -969,7 +1078,7 @@ export function renderResultsTable(filterType = 'all') {
         if (filterType === 'sarkany') {
             racers = racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || ''));
         } else {
-            racers = racers.filter(r => r.distance === filterType && !(/s[aá]rk[aá]ny/i.test(r.category || '')));
+            racers = racers.filter(r => r.distance === filterType && !/s[aá]rk[aá]ny/i.test(r.category || ''));
         }
     }
 
@@ -977,13 +1086,14 @@ export function renderResultsTable(filterType = 'all') {
     racers.sort((a, b) => (a.total_time || 0) - (b.total_time || 0));
 
     if (racers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Nincs beérkezett eredmény a szűrésnek megfelelően</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Nincs beérkezett eredmény a szűrésnek megfelelően</td></tr>';
         return;
     }
 
     const thead = document.querySelector('#admin-results-table thead tr');
     const showFordulo = filterType === '22km' || filterType === 'all';
-    
+
     if (thead) {
         thead.innerHTML = `
             <th style="width: 8%">Helyezés</th>
@@ -1000,13 +1110,17 @@ export function renderResultsTable(filterType = 'all') {
 
     racers.forEach((r, idx) => {
         const tr = document.createElement('tr');
-        const memberList = r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-');
+        const memberList = r.members ? r.members.map(m => m.name).join(', ') : r.name || '-';
         const rank = idx + 1;
-        const rankDecor = rank <= 3 ? `font-weight: 800; color: ${rank === 1 ? '#FFD700' : rank === 2 ? '#C0C0C0' : '#CD7F32'}` : '';
+        const rankDecor =
+            rank <= 3 ? `font-weight: 800; color: ${rank === 1 ? '#FFD700' : rank === 2 ? '#C0C0C0' : '#CD7F32'}` : '';
 
-        const cp = (rm.data.checkpoints || []).find(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo');
-        const forduloTd = showFordulo ? 
-            `<td data-label="Forduló (11km)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>` : '';
+        const cp = (rm.data.checkpoints || []).find(
+            c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo'
+        );
+        const forduloTd = showFordulo
+            ? `<td data-label="Forduló (11km)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>`
+            : '';
 
         const gapStr = idx === 0 ? 'Leader' : `+${formatTime(r.total_time - racers[0].total_time)}`;
 
@@ -1060,11 +1174,14 @@ export function renderResultsCategoryList() {
         const sortedCats = Array.from(relevantCats).sort();
 
         sortedCats.forEach(catId => {
-            const finishers = rm.data.racers.filter(r => r.category === catId && r.distance === dist && r.status === 'finished');
-            
+            const finishers = rm.data.racers.filter(
+                r => r.category === catId && r.distance === dist && r.status === 'finished'
+            );
+
             const card = document.createElement('div');
             card.className = 'landing-card';
-            card.style = 'padding: 20px; text-align: left; align-items: flex-start; cursor: pointer; min-height: auto; transition: all 0.2s;';
+            card.style =
+                'padding: 20px; text-align: left; align-items: flex-start; cursor: pointer; min-height: auto; transition: all 0.2s;';
             card.onclick = () => window.showResultsCategoryDetail(dist, catId);
 
             const badgeColor = finishers.length > 0 ? 'var(--accent-primary)' : 'rgba(255,255,255,0.3)';
@@ -1081,7 +1198,7 @@ export function renderResultsCategoryList() {
             `;
             grid.appendChild(card);
         });
-        
+
         if (grid.children.length > 0) {
             distSection.appendChild(grid);
             container.appendChild(distSection);
@@ -1089,16 +1206,18 @@ export function renderResultsCategoryList() {
     });
 
     // Sárkányhajó külön szekció
-    const finishersSarkany = rm.data.racers.filter(r => /s[aá]rk[aá]ny/i.test(r.category || '') && r.status === 'finished');
+    const finishersSarkany = rm.data.racers.filter(
+        r => /s[aá]rk[aá]ny/i.test(r.category || '') && r.status === 'finished'
+    );
     if (finishersSarkany.length >= 0) {
         const sarkanySection = document.createElement('div');
         sarkanySection.style = 'margin-bottom: 2.5rem;';
         sarkanySection.innerHTML = `<h4 style="color:#FFD700; margin-bottom:1.2rem; border-left:4px solid #FFD700; padding-left:12px; font-size:1.1rem; text-transform:uppercase; letter-spacing:1px;">🐉 Sárkányhajó</h4>`;
-        
+
         const grid = document.createElement('div');
         grid.className = 'admin-landing-grid';
         grid.style = 'grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin:0;';
-        
+
         const card = document.createElement('div');
         card.className = 'landing-card';
         card.style = 'padding: 20px; text-align: left; align-items: flex-start; cursor: pointer; min-height: auto;';
@@ -1149,7 +1268,7 @@ export function renderResultsCategoryDetail(distId, catId) {
     let finishers = [];
     if (catId === 'sarkany') {
         finishers = rm.data.racers.filter(r => {
-            if (!(/s[aá]rk[aá]ny/i.test(r.category || '')) || r.status !== 'finished') return false;
+            if (!/s[aá]rk[aá]ny/i.test(r.category || '') || r.status !== 'finished') return false;
             // Csak a már csapatba beosztottak jelennek meg az eredményeknél:
             const isTeam = r.id.startsWith('DRAGON_') || (r.members && r.members.length > 1);
             return isTeam;
@@ -1166,14 +1285,15 @@ export function renderResultsCategoryDetail(distId, catId) {
     finishers.sort((a, b) => (a.total_time || 0) - (b.total_time || 0));
 
     if (finishers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Még nincs beérkezett eredmény ebben a kategóriában.</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Még nincs beérkezett eredmény ebben a kategóriában.</td></tr>';
         return;
     }
 
     const thead = document.querySelector('.results-table thead tr');
     const theadCategory = document.querySelector('#admin-results-category-detail thead tr');
     const targetThead = theadCategory || thead;
-    
+
     if (targetThead) {
         targetThead.innerHTML = `
             <th style="width: 10%">Helyezés</th>
@@ -1188,13 +1308,18 @@ export function renderResultsCategoryDetail(distId, catId) {
 
     finishers.forEach((r, idx) => {
         const tr = document.createElement('tr');
-        const memberList = r.members ? r.members.map(m => m.name).join(', ') : (r.name || '-');
+        const memberList = r.members ? r.members.map(m => m.name).join(', ') : r.name || '-';
         const rank = idx + 1;
-        const rankDecor = rank <= 3 ? `font-weight: 800; color: ${rank === 1 ? '#FFD700' : rank === 2 ? '#C0C0C0' : '#CD7F32'}` : '';
+        const rankDecor =
+            rank <= 3 ? `font-weight: 800; color: ${rank === 1 ? '#FFD700' : rank === 2 ? '#C0C0C0' : '#CD7F32'}` : '';
 
-        const cp = (rm.data.checkpoints || []).find(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo');
-        const forduloTd = (distId === '22km') ? 
-            `<td data-label="Forduló (11km)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>` : '';
+        const cp = (rm.data.checkpoints || []).find(
+            c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo'
+        );
+        const forduloTd =
+            distId === '22km'
+                ? `<td data-label="Forduló (11km)" style="font-family:'Space Mono'; color:#ff9900;">${cp ? formatTime(cp.timestamp - r.start_time) : '-'}</td>`
+                : '';
 
         const gapStr = idx === 0 ? 'Leader' : `+${formatTime(r.total_time - finishers[0].total_time)}`;
 
@@ -1226,19 +1351,19 @@ export function renderTeamManager() {
     if (!rm || !rm.data.racers) return;
 
     const allRacers = rm.data.racers;
-    
+
     // Szűrő lekérése
     const filterSelect = document.getElementById('team-builder-category-filter');
-    
+
     if (window.newlyRegisteredRacerId) {
         const newlyRegisteredRacer = allRacers.find(r => r.id === window.newlyRegisteredRacerId);
-        if (newlyRegisteredRacer && !(/s[aá]rk[aá]ny/i.test(newlyRegisteredRacer.category || ''))) {
+        if (newlyRegisteredRacer && !/s[aá]rk[aá]ny/i.test(newlyRegisteredRacer.category || '')) {
             if (filterSelect) filterSelect.value = 'all';
         }
     }
-    
+
     const filterValue = filterSelect ? filterSelect.value : 'sarkanyhajo';
-    
+
     // Meglévő csapatok összegyűjtése a dropdown számára (minden olyan egység, aminek van CSAPATNEV tagja)
     // Ezt nem szűrjük, hogy bármilyen kategóriájú csapatba be lehessen osztani!
     const existingTeams = allRacers.filter(r => r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV'));
@@ -1250,25 +1375,31 @@ export function renderTeamManager() {
             const teamName = teamMember ? teamMember.name : `Ismeretlen Csapat #${team.bib}`;
             // Jelezzük a kategóriát is a legördülőben, hogy egyértelmű legyen, melyik csapat melyik kategóriában van
             const categoryName = rm.formatCategoryName(team.category) || 'Ismeretlen kategória';
-            const opt = new Option(`${teamName} (#${team.bib} - ${categoryName})`, JSON.stringify({bib: team.bib, name: teamName}));
-            
-            const membersList = team.members.filter(m => m.otproba_id !== 'CSAPATNEV').map(m => m.name).join(', ');
+            const opt = new Option(
+                `${teamName} (#${team.bib} - ${categoryName})`,
+                JSON.stringify({ bib: team.bib, name: teamName })
+            );
+
+            const membersList = team.members
+                .filter(m => m.otproba_id !== 'CSAPATNEV')
+                .map(m => m.name)
+                .join(', ');
             if (membersList) {
                 opt.title = `Tagok: ${membersList}`;
             } else {
                 opt.title = 'Még nincsenek tagok';
             }
-            
+
             teamSelect.appendChild(opt);
         });
     }
-    
+
     // Gyűjtsük össze az összes tagot ezekből a racer-ekből
     let allMembers = [];
     allRacers.forEach(r => {
         // Szűrés a kiválasztott érték alapján
         if (filterValue === 'sarkanyhajo') {
-            if (!(/s[aá]rk[aá]ny/i.test(r.category || ''))) {
+            if (!/s[aá]rk[aá]ny/i.test(r.category || '')) {
                 return; // Kihagyjuk, ha nem sárkányhajó kategória
             }
         }
@@ -1277,19 +1408,19 @@ export function renderTeamManager() {
         const isTeam = r.id.startsWith('DRAGON_') || hasTeamName || (r.members && r.members.length > 1);
         if (r.members) {
             const teamMember = hasTeamName ? r.members.find(x => x.otproba_id === 'CSAPATNEV') : null;
-            const teamName = teamMember ? teamMember.name : (isTeam ? `Csapat #${r.bib}` : null);
-            
+            const teamName = teamMember ? teamMember.name : isTeam ? `Csapat #${r.bib}` : null;
+
             r.members.forEach(m => {
                 if (m.otproba_id !== 'CSAPATNEV') {
-                    allMembers.push({ 
-                        ...m, 
-                        racerBib: r.bib, 
-                        racerStatus: r.status, 
-                        racerId: r.id, 
+                    allMembers.push({
+                        ...m,
+                        racerBib: r.bib,
+                        racerStatus: r.status,
+                        racerId: r.id,
                         teamSize: r.members.length,
                         teamName: teamName,
                         isTeam: isTeam,
-                        category: r.category
+                        category: r.category,
                     });
                 }
             });
@@ -1297,7 +1428,8 @@ export function renderTeamManager() {
     });
 
     if (allMembers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-secondary);">Nincs versenyző a rendszerben.</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-secondary);">Nincs versenyző a rendszerben.</td></tr>';
         return;
     }
 
@@ -1311,10 +1443,10 @@ export function renderTeamManager() {
 
     allMembers.forEach(m => {
         const tr = document.createElement('tr');
-        
-        const teamInfo = m.isTeam ? 
-            `<span style="color:#00e4ff; font-weight:bold;">${m.teamName || ('#' + m.racerBib)}</span>` : 
-            `<span style="color:#ff9800; font-weight:bold;">Egyéni jelentkező</span>`;
+
+        const teamInfo = m.isTeam
+            ? `<span style="color:#00e4ff; font-weight:bold;">${m.teamName || '#' + m.racerBib}</span>`
+            : `<span style="color:#ff9800; font-weight:bold;">Egyéni jelentkező</span>`;
 
         const isNewlyRegistered = window.newlyRegisteredRacerId && m.racerId === window.newlyRegisteredRacerId;
 
@@ -1338,12 +1470,12 @@ export function renderTeamManager() {
 }
 window.renderTeamManager = renderTeamManager;
 
-window.selectExistingDragonTeam = (val) => {
+window.selectExistingDragonTeam = val => {
     const bibInput = document.getElementById('new-team-bib');
     const nameInput = document.getElementById('new-team-name');
     const inputsContainer = document.getElementById('new-team-inputs-container');
     const submitBtn = document.getElementById('btn-submit-dragon-team');
-    
+
     if (val === 'REMOVE') {
         if (inputsContainer) inputsContainer.style.display = 'none';
         if (submitBtn) {
@@ -1355,17 +1487,19 @@ window.selectExistingDragonTeam = (val) => {
             const data = JSON.parse(val);
             if (bibInput) bibInput.value = data.bib || '';
             if (nameInput) nameInput.value = data.name || '';
-            
+
             if (inputsContainer) inputsContainer.style.display = 'none';
             if (submitBtn) {
                 submitBtn.innerHTML = `BEOSZTÁS A(Z) "${data.name}" CSAPATBA`;
                 submitBtn.style.background = '#28a745';
             }
-        } catch(e) {}
+        } catch (err) {
+            console.error('Hibás csapatadat formátum:', err);
+        }
     } else {
         if (bibInput) bibInput.value = '';
         if (nameInput) nameInput.value = '';
-        
+
         if (inputsContainer) inputsContainer.style.display = 'flex';
         if (submitBtn) {
             submitBtn.innerHTML = 'ÚJ EGYSÉG LÉTREHOZÁSA';
@@ -1374,8 +1508,8 @@ window.selectExistingDragonTeam = (val) => {
     }
 };
 
-window.selectAllDragonMembers = (checked) => {
-    document.querySelectorAll('.dragon-member-check:not(:disabled)').forEach(cb => cb.checked = checked);
+window.selectAllDragonMembers = checked => {
+    document.querySelectorAll('.dragon-member-check:not(:disabled)').forEach(cb => (cb.checked = checked));
 };
 
 window.createDragonTeam = async () => {
@@ -1389,54 +1523,55 @@ window.createDragonTeam = async () => {
 
     if (val === 'REMOVE') {
         if (selectedIds.length === 0) {
-            showToast("Válassz ki legalább egy versenyzőt az eltávolításhoz!", "error");
+            showToast('Válassz ki legalább egy versenyzőt az eltávolításhoz!', 'error');
             return;
         }
-        if (!confirm("Biztosan kiveszed a kijelölt versenyzőket a jelenlegi csapatukból? (Egyéni versenyzőkké válnak)")) return;
+        if (!confirm('Biztosan kiveszed a kijelölt versenyzőket a jelenlegi csapatukból? (Egyéni versenyzőkké válnak)'))
+            return;
 
         try {
             const response = await fetch(`${API_URL}/remove-from-dragon-team`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${window.raceManager.adminPassword}`
+                    Authorization: `Bearer ${window.raceManager.adminPassword}`,
                 },
-                body: JSON.stringify({ memberIds: selectedIds })
+                body: JSON.stringify({ memberIds: selectedIds }),
             });
             const result = await response.json();
             if (response.ok) {
-                showToast(`Sikeres eltávolítás!`, "success");
+                showToast(`Sikeres eltávolítás!`, 'success');
                 teamSelect.value = '';
                 window.selectExistingDragonTeam('');
                 await window.raceManager.loadData();
                 renderTeamManager();
                 window.renderAdminTable();
             } else {
-                showToast(result.error, "error");
+                showToast(result.error, 'error');
             }
         } catch (err) {
-            showToast("Hiba a hálózati kapcsolatban!", "error");
+            showToast('Hiba a hálózati kapcsolatban!', 'error');
         }
         return;
     }
 
     if (!bib && !name) {
-        showToast("Adja meg a csapat nevét vagy a rajtszámát!", "error");
+        showToast('Adja meg a csapat nevét vagy a rajtszámát!', 'error');
         return;
     }
 
     try {
         const response = await fetch(`${API_URL}/create-dragon-team`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${window.raceManager.adminPassword}`
+                Authorization: `Bearer ${window.raceManager.adminPassword}`,
             },
-            body: JSON.stringify({ memberIds: selectedIds, bib, name })
+            body: JSON.stringify({ memberIds: selectedIds, bib, name }),
         });
         const result = await response.json();
         if (response.ok) {
-            showToast(`Sikeres csapatépítés! #${result.bib || bib} egység feldolgozva.`, "success");
+            showToast(`Sikeres csapatépítés! #${result.bib || bib} egység feldolgozva.`, 'success');
             const teamSelect = document.getElementById('existing-dragon-teams-select');
             if (teamSelect) {
                 teamSelect.value = '';
@@ -1446,37 +1581,39 @@ window.createDragonTeam = async () => {
             renderTeamManager();
             window.renderAdminTable();
         } else {
-            showToast(result.error, "error");
+            showToast(result.error, 'error');
         }
     } catch (err) {
-        showToast("Hiba a szerver kapcsolatban!", "error");
+        showToast('Hiba a szerver kapcsolatban!', 'error');
     }
 };
 
-window.generateDiploma = async (bibStr) => {
+window.generateDiploma = async bibStr => {
     const bib = parseInt(bibStr);
     if (isNaN(bib)) {
-        showToast("Kérjük, adjon meg egy érvényes rajtszámot!", "error");
+        showToast('Kérjük, adjon meg egy érvényes rajtszámot!', 'error');
         return;
     }
 
     const rm = window.raceManager;
     if (!rm || !rm.data || !rm.data.racers) {
-        showToast("Az adatok még nem töltődtek be!", "error");
+        showToast('Az adatok még nem töltődtek be!', 'error');
         return;
     }
 
     const racer = rm.data.racers.find(r => r.bib === bib);
     if (!racer) {
-        showToast("Nincs ilyen rajtszámmal rendelkező versenyző!", "error");
+        showToast('Nincs ilyen rajtszámmal rendelkező versenyző!', 'error');
         return;
     }
 
-    showToast("Oklevél generálása folyamatban...", "info");
+    showToast('Oklevél generálása folyamatban...', 'info');
 
     try {
         // Helyezés kiszámítása
-        const categoryRacers = rm.data.racers.filter(r => r.category === racer.category && r.distance === racer.distance);
+        const categoryRacers = rm.data.racers.filter(
+            r => r.category === racer.category && r.distance === racer.distance
+        );
         const sorted = categoryRacers.sort((a, b) => {
             if (a.status === 'finished' && b.status !== 'finished') return -1;
             if (a.status !== 'finished' && b.status === 'finished') return 1;
@@ -1484,7 +1621,7 @@ window.generateDiploma = async (bibStr) => {
             return (a.bib || 0) - (b.bib || 0);
         });
 
-        let rankStr = "-";
+        let rankStr = '-';
         if (racer.status === 'finished') {
             const index = sorted.findIndex(r => r.bib === bib);
             if (index !== -1) rankStr = (index + 1).toString();
@@ -1496,17 +1633,17 @@ window.generateDiploma = async (bibStr) => {
 
         // PDF Letöltése és betöltése
         const existingPdfBytes = await fetch('Dunakeszi.pdf').then(res => {
-            if (!res.ok) throw new Error("Nem található a Dunakeszi.pdf fájl a szerveren!");
+            if (!res.ok) throw new Error('Nem található a Dunakeszi.pdf fájl a szerveren!');
             return res.arrayBuffer();
         });
 
         if (!window.PDFLib) {
-            throw new Error("A PDF-lib könyvtár nem töltődött be!");
+            throw new Error('A PDF-lib könyvtár nem töltődött be!');
         }
 
         const { PDFDocument, rgb } = window.PDFLib;
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
-        
+
         if (window.fontkit) {
             pdfDoc.registerFontkit(window.fontkit);
         }
@@ -1527,20 +1664,23 @@ window.generateDiploma = async (bibStr) => {
                 y: y,
                 size: size,
                 font: fontUsed,
-                color: color || rgb(0, 0, 0)
+                color: color || rgb(0, 0, 0),
             });
         };
 
         const darkBlue = rgb(0.05, 0.2, 0.35);
-        const isPlural = (racer.members && racer.members.length > 1) || /csapat/i.test(name) || /s[aá]rk[aá]ny/i.test(racer.category || '');
-        const reszereText = isPlural ? "részükre, akik" : "részére, aki";
-        const elerteText = isPlural ? "értek el" : "ért el";
+        const isPlural =
+            (racer.members && racer.members.length > 1) ||
+            /csapat/i.test(name) ||
+            /s[aá]rk[aá]ny/i.test(racer.category || '');
+        const reszereText = isPlural ? 'részükre, akik' : 'részére, aki';
+        const elerteText = isPlural ? 'értek el' : 'ért el';
 
-        let resultText = "";
-        if (rankStr !== "-") {
+        let resultText = '';
+        if (rankStr !== '-') {
             resultText = `${rankStr}. helyezést ${elerteText}`;
         } else {
-            resultText = isPlural ? "sikeresen teljesítették a távot" : "sikeresen teljesítette a távot";
+            resultText = isPlural ? 'sikeresen teljesítették a távot' : 'sikeresen teljesítette a távot';
         }
 
         const centerX = width * 0.71;
@@ -1556,12 +1696,17 @@ window.generateDiploma = async (bibStr) => {
         // Minden felirat betűméretét az elvárt egyedi méretekre állítjuk
         drawCenteredText(name, centerX, height * 0.73, nameSize, fontBold, darkBlue);
         drawCenteredText(reszereText, centerX, height * 0.68, 18, fontNormal, darkBlue);
-        drawCenteredText("az Országos Vízitúra Bajnokság", centerX, height * 0.62, 14, fontBold, darkBlue);
-        drawCenteredText("2. fordulóján a Dunakeszi Futam", centerX, height * 0.57, 14, fontNormal, darkBlue);
-        drawCenteredText(`${categoryName} (${distanceStr}) kategóriában`, centerX, height * 0.51, 14, fontBold, darkBlue);
+        drawCenteredText('az Országos Vízitúra Bajnokság', centerX, height * 0.62, 14, fontBold, darkBlue);
+        drawCenteredText('2. fordulóján a Dunakeszi Futam', centerX, height * 0.57, 14, fontNormal, darkBlue);
+        drawCenteredText(
+            `${categoryName} (${distanceStr}) kategóriában`,
+            centerX,
+            height * 0.51,
+            14,
+            fontBold,
+            darkBlue
+        );
         drawCenteredText(resultText, centerX, height * 0.45, 14, fontBold, darkBlue);
-
-
 
         const pdfBytes = await pdfDoc.save();
 
@@ -1575,11 +1720,10 @@ window.generateDiploma = async (bibStr) => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        showToast("Az oklevél sikeresen letöltve!", "success");
-
+        showToast('Az oklevél sikeresen letöltve!', 'success');
     } catch (err) {
-        console.error("PDF hiba:", err);
-        showToast("Hiba történt az oklevél generálása során: " + err.message, "error");
+        console.error('PDF hiba:', err);
+        showToast('Hiba történt az oklevél generálása során: ' + err.message, 'error');
     }
 };
 
@@ -1589,21 +1733,23 @@ export async function generateCertificate(racerId) {
     const racer = rm.data.racers.find(r => r.id === racerId);
     if (!racer) return;
 
-    showToast("Oklevél generálása...", "info");
+    showToast('Oklevél generálása...', 'info');
 
     // Dinamikusan betöltjük a jsPDF könyvtárat CDN-ről, ha még nincs betöltve
     if (typeof window.jspdf === 'undefined') {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
         document.head.appendChild(script);
-        await new Promise((resolve) => { script.onload = resolve; });
+        await new Promise(resolve => {
+            script.onload = resolve;
+        });
     }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: 'a4'
+        format: 'a4',
     });
 
     // 1. Háttér: Sötétkék arculat (#0B192C)
@@ -1628,63 +1774,63 @@ export async function generateCertificate(racerId) {
 
     // 4. Oklevél fejléce
     doc.setTextColor(0, 228, 255); // cián
-    doc.setFont("helvetica", "bold");
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(38);
-    doc.text("ELISMERŐ OKLEVÉL", 148, 45, { align: "center" });
+    doc.text('ELISMERŐ OKLEVÉL', 148, 45, { align: 'center' });
 
     // Aláírásos rész szövege
     doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "normal");
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(16);
-    doc.text("amelyet büszkén adományozunk a", 148, 65, { align: "center" });
+    doc.text('amelyet büszkén adományozunk a', 148, 65, { align: 'center' });
 
     // 5. Versenyző(k) neve
     const names = formatRacerName(racer);
     doc.setTextColor(255, 215, 0); // arany
-    doc.setFont("helvetica", "bold");
+    doc.setFont('helvetica', 'bold');
     if (names.length > 35) {
         doc.setFontSize(18);
     } else {
         doc.setFontSize(26);
     }
-    doc.text(names, 148, 85, { align: "center" });
+    doc.text(names, 148, 85, { align: 'center' });
 
     // 6. Távolság és kategória
     doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "normal");
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(16);
-    doc.text("részére, aki sikeresen teljesítette a", 148, 105, { align: "center" });
+    doc.text('részére, aki sikeresen teljesítette a', 148, 105, { align: 'center' });
 
     const categoryName = rm.formatCategoryName(racer.category);
     doc.setTextColor(0, 228, 255); // cián
-    doc.setFont("helvetica", "bold");
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text(`DUNAKESZI FUTAM 2026 - ${racer.distance} (${categoryName})`, 148, 125, { align: "center" });
+    doc.text(`DUNAKESZI FUTAM 2026 - ${racer.distance} (${categoryName})`, 148, 125, { align: 'center' });
 
     doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "normal");
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(16);
-    doc.text("versenytávot, az alábbi hivatalos időeredménnyel:", 148, 145, { align: "center" });
+    doc.text('versenytávot, az alábbi hivatalos időeredménnyel:', 148, 145, { align: 'center' });
 
     // 7. Célidő
     doc.setTextColor(0, 255, 194); // zöldes-cián
-    doc.setFont("helvetica", "bold");
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(30);
-    doc.text(formatTime(racer.total_time || 0), 148, 168, { align: "center" });
+    doc.text(formatTime(racer.total_time || 0), 148, 168, { align: 'center' });
 
     // 8. Dátum és hitelesítés
     doc.setTextColor(139, 168, 203);
-    doc.setFont("helvetica", "normal");
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    doc.text("Dunakeszi, 2026. május 26.", 30, 188);
+    doc.text('Dunakeszi, 2026. május 26.', 30, 188);
 
-    doc.text("__________________________", 240, 183, { align: "center" });
-    doc.text("DunakesziFutam Szervezőség", 240, 188, { align: "center" });
+    doc.text('__________________________', 240, 183, { align: 'center' });
+    doc.text('DunakesziFutam Szervezőség', 240, 188, { align: 'center' });
 
     // Letöltés indítása
-    const sanitized = names.replace(/[^a-zA-Z0-9]/g, "_");
+    const sanitized = names.replace(/[^a-zA-Z0-9]/g, '_');
     doc.save(`oklevel_${sanitized}.pdf`);
-    showToast("Oklevél sikeresen letöltve!", "success");
+    showToast('Oklevél sikeresen letöltve!', 'success');
 }
 window.generateCertificate = generateCertificate;
 
@@ -1695,7 +1841,7 @@ export function renderOtprobaList() {
 
     try {
         container.innerHTML = '';
-        
+
         if (!rm || !rm.data) {
             container.innerHTML = `
                 <div class="admin-card" style="padding: 25px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border);">
@@ -1706,16 +1852,16 @@ export function renderOtprobaList() {
         }
 
         const racers = rm.data.racers || [];
-        
+
         // Gyűjtsük össze az összes 5Próba tagot egyetlen listába
         const otprobaList = [];
 
         // Robust cleaner and identifier extractor for 5Próba ID (e.g. "5P123456", "5p 123456", "123456")
-        const cleanOtprobaId = (val) => {
+        const cleanOtprobaId = val => {
             if (val === undefined || val === null) return null;
             const s = String(val).trim();
             if (s.toLowerCase() === 'nincs' || s.toLowerCase() === 'csapatnev' || s === '') return null;
-            
+
             // Match optional '5P' prefix, optional separators (spaces, dashes, hashes), and then a series of digits
             const match = s.match(/^(?:5[Pp])?[-#\s]*(\d+)$/);
             if (match) {
@@ -1725,13 +1871,18 @@ export function renderOtprobaList() {
         };
 
         // Logging helper to diagnose what we have in the database (helpful if list is empty)
-        console.log("renderOtprobaList: processing", racers.length, "racers");
+        console.log('renderOtprobaList: processing', racers.length, 'racers');
         const rawIdsForDebug = [];
 
         racers.forEach(r => {
             if (!r.members || r.members.length === 0) {
                 if (r.otproba_id) {
-                    rawIdsForDebug.push({ source: 'racer', name: r.name, raw: r.otproba_id, cleaned: cleanOtprobaId(r.otproba_id) });
+                    rawIdsForDebug.push({
+                        source: 'racer',
+                        name: r.name,
+                        raw: r.otproba_id,
+                        cleaned: cleanOtprobaId(r.otproba_id),
+                    });
                 }
                 const cleanId = cleanOtprobaId(r.otproba_id);
                 if (cleanId) {
@@ -1742,13 +1893,18 @@ export function renderOtprobaList() {
                         category: r.category,
                         distance: r.distance,
                         status: r.status || 'registered',
-                        total_time: r.total_time
+                        total_time: r.total_time,
                     });
                 }
             } else {
                 r.members.forEach(m => {
                     if (m.otproba_id) {
-                        rawIdsForDebug.push({ source: 'member', name: m.name, raw: m.otproba_id, cleaned: cleanOtprobaId(m.otproba_id) });
+                        rawIdsForDebug.push({
+                            source: 'member',
+                            name: m.name,
+                            raw: m.otproba_id,
+                            cleaned: cleanOtprobaId(m.otproba_id),
+                        });
                     }
                     const cleanId = cleanOtprobaId(m.otproba_id);
                     if (cleanId) {
@@ -1759,15 +1915,15 @@ export function renderOtprobaList() {
                             category: r.category,
                             distance: r.distance,
                             status: r.status || 'registered',
-                            total_time: r.total_time
+                            total_time: r.total_time,
                         });
                     }
                 });
             }
         });
 
-        console.log("renderOtprobaList: scanned ids in database:", rawIdsForDebug);
-        console.log("renderOtprobaList: matched valid numeric 5Próba list:", otprobaList);
+        console.log('renderOtprobaList: scanned ids in database:', rawIdsForDebug);
+        console.log('renderOtprobaList: matched valid numeric 5Próba list:', otprobaList);
 
         // Rendezzük rajtszám szerint
         otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
@@ -1807,11 +1963,22 @@ export function renderOtprobaList() {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${otprobaList.map(item => {
-                                    const status = item.status || 'registered';
-                                    const statusColor = status === 'finished' ? '#00FFCC' : (status === 'running' ? 'var(--accent-primary)' : '#aaa');
-                                    const timeStr = status === 'finished' ? formatTime(item.total_time || 0) : (status === 'running' ? 'Futamban' : 'Regisztrálva');
-                                    return `
+                                ${otprobaList
+                                    .map(item => {
+                                        const status = item.status || 'registered';
+                                        const statusColor =
+                                            status === 'finished'
+                                                ? '#00FFCC'
+                                                : status === 'running'
+                                                  ? 'var(--accent-primary)'
+                                                  : '#aaa';
+                                        const timeStr =
+                                            status === 'finished'
+                                                ? formatTime(item.total_time || 0)
+                                                : status === 'running'
+                                                  ? 'Futamban'
+                                                  : 'Regisztrálva';
+                                        return `
                                         <tr>
                                             <td><strong style="color: var(--accent-primary);">#${(item.bib || 0).toString().padStart(3, '0')}</strong></td>
                                             <td style="font-weight: bold; color: #fff;">${item.name}</td>
@@ -1822,7 +1989,8 @@ export function renderOtprobaList() {
                                             <td style="text-align: right; font-family: 'Space Mono', monospace; font-weight: bold; color: ${status === 'finished' ? '#00ff88' : '#888'};">${timeStr}</td>
                                         </tr>
                                     `;
-                                }).join('')}
+                                    })
+                                    .join('')}
                             </tbody>
                         </table>
                     </div>
@@ -1832,7 +2000,7 @@ export function renderOtprobaList() {
 
         container.innerHTML = html;
     } catch (error) {
-        console.error("renderOtprobaList error:", error);
+        console.error('renderOtprobaList error:', error);
         container.innerHTML = `
             <div class="admin-card" style="padding: 25px; text-align: center; border-radius: 12px; border: 1px solid var(--glass-border); border-left: 4px solid var(--accent-primary); background: rgba(255, 0, 85, 0.03);">
                 <p style="color: var(--accent-primary); margin:0; font-weight: bold;">Hiba történt a megjelenítés közben:</p>
@@ -1853,11 +2021,11 @@ export function exportOtprobaExcel() {
     const racers = rm.data.racers || [];
     const otprobaList = [];
 
-    const cleanOtprobaId = (val) => {
+    const cleanOtprobaId = val => {
         if (val === undefined || val === null) return null;
         const s = String(val).trim();
         if (s.toLowerCase() === 'nincs' || s.toLowerCase() === 'csapatnev' || s === '') return null;
-        
+
         const match = s.match(/^(?:5[Pp])?[-#\s]*(\d+)$/);
         if (match) {
             return match[1];
@@ -1876,7 +2044,7 @@ export function exportOtprobaExcel() {
                     category: r.category,
                     distance: r.distance,
                     status: r.status || 'registered',
-                    total_time: r.total_time
+                    total_time: r.total_time,
                 });
             }
         } else {
@@ -1890,7 +2058,7 @@ export function exportOtprobaExcel() {
                         category: r.category,
                         distance: r.distance,
                         status: r.status || 'registered',
-                        total_time: r.total_time
+                        total_time: r.total_time,
                     });
                 }
             });
@@ -1906,11 +2074,16 @@ export function exportOtprobaExcel() {
     otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
 
     const wb = XLSX.utils.book_new();
-    const rows = [["Rajtszám", "Név", "5Próba Azonosító", "Kategória", "Táv", "Státusz", "Eredmény"]];
+    const rows = [['Rajtszám', 'Név', '5Próba Azonosító', 'Kategória', 'Táv', 'Státusz', 'Eredmény']];
 
     otprobaList.forEach(item => {
         const status = item.status || 'registered';
-        const timeStr = status === 'finished' ? formatTime(item.total_time || 0) : (status === 'running' ? 'Futamban' : 'Regisztrálva');
+        const timeStr =
+            status === 'finished'
+                ? formatTime(item.total_time || 0)
+                : status === 'running'
+                  ? 'Futamban'
+                  : 'Regisztrálva';
         rows.push([
             item.bib ? `#${String(item.bib).padStart(3, '0')}` : '-',
             item.name,
@@ -1918,13 +2091,12 @@ export function exportOtprobaExcel() {
             rm.formatCategoryName(item.category),
             item.distance || '-',
             status.toUpperCase(),
-            timeStr
+            timeStr,
         ]);
     });
 
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "5Próba Nevezettek");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '5Próba Nevezettek');
     XLSX.writeFile(wb, `5Proba_Nevezettek_${new Date().toISOString().slice(0, 10)}.xlsx`);
     showToast('5Próba Excel sikeresen exportálva!', 'success');
 }
 window.exportOtprobaExcel = exportOtprobaExcel;
-
