@@ -90,6 +90,17 @@ window.logoutAdmin = () => {
 
 // --- Navigáció ---
 window.showAdminSection = sectionId => {
+    if (sectionId === 'admin-section-teams') {
+        window.showAdminSection('admin-section-data');
+        window.showDataSubSection('admin-data-section-teams');
+        return;
+    }
+    if (sectionId === 'admin-section-system') {
+        window.showAdminSection('admin-section-data');
+        window.showDataSubSection('admin-data-section-system');
+        return;
+    }
+
     document.getElementById('admin-landing-view').classList.add('hidden');
     document.querySelectorAll('.admin-sub-section').forEach(s => s.classList.add('hidden'));
 
@@ -101,7 +112,69 @@ window.showAdminSection = sectionId => {
         window.renderAdminTable();
     }
 
+    if (sectionId === 'admin-section-stats') {
+        window.loadAnalyticsStats();
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.loadAnalyticsStats = async () => {
+    try {
+        const response = await fetch(`${API_URL}/analytics/stats`, {
+            headers: {
+                ...window.raceManager.getAuthHeader(),
+            },
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+            const s = result.stats;
+
+            document.getElementById('analytics-total-views').textContent = s.totalViews.toLocaleString('hu-HU');
+            document.getElementById('analytics-unique-visitors').textContent =
+                s.uniqueVisitorsCount.toLocaleString('hu-HU');
+            document.getElementById('analytics-avg-views').textContent = s.avgViewsPerVisitor;
+            document.getElementById('analytics-registered-count').textContent =
+                s.registeredCount.toLocaleString('hu-HU');
+
+            document.getElementById('analytics-breakdown-hourly').textContent =
+                s.breakdown.hourly.toLocaleString('hu-HU');
+            document.getElementById('analytics-breakdown-daily').textContent =
+                s.breakdown.daily.toLocaleString('hu-HU');
+            document.getElementById('analytics-breakdown-weekly').textContent =
+                s.breakdown.weekly.toLocaleString('hu-HU');
+            document.getElementById('analytics-breakdown-monthly').textContent =
+                s.breakdown.monthly.toLocaleString('hu-HU');
+            document.getElementById('analytics-breakdown-yearly').textContent =
+                s.breakdown.yearly.toLocaleString('hu-HU');
+
+            const tbody = document.getElementById('analytics-visitors-table-body');
+            if (tbody) {
+                if (s.visitorDetails.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #888;">Nincs még betöltött látogatói adat.</td></tr>`;
+                } else {
+                    tbody.innerHTML = s.visitorDetails
+                        .map(
+                            v => `
+                        <tr>
+                            <td style="font-family: 'Space Mono', monospace; font-size: 0.85rem;">👤 ${v.visitorId}</td>
+                            <td style="font-weight: 700; text-align: center;">${v.views}</td>
+                            <td style="font-size: 0.85rem; color: var(--text-secondary);">${v.pagesViewed}</td>
+                            <td style="text-align: center;">${v.hasRegistered ? '<span style="color: #00FFC2; font-weight: bold;">✅ IGEN</span>' : '<span style="color: #FF4D4D;">❌ NEM</span>'}</td>
+                            <td style="color: var(--text-secondary); font-size: 0.85rem;">${v.lastActive}</td>
+                        </tr>
+                    `
+                        )
+                        .join('');
+                }
+            }
+        } else {
+            showToast('Hiba az analitika betöltésekor: ' + (result.error || 'Ismeretlen'), 'error');
+        }
+    } catch (err) {
+        console.error('Analytics load error:', err);
+        showToast('Hálózati hiba a statisztikák betöltésekor!', 'error');
+    }
 };
 
 window.showAdminLanding = () => {

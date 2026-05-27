@@ -8,6 +8,31 @@ import { switchTab, showToast, formatTime } from './js/ui-utils.js';
 import { renderResultsCategoryList } from './js/admin-ui.js';
 import { APP_VERSION } from './js/api.js';
 
+// --- Látogatottság követése (Page View Tracking) ---
+function trackPageView(pageName) {
+    let visitorId = localStorage.getItem('dragonwave_visitor_id');
+    if (!visitorId) {
+        visitorId =
+            'visitor_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('dragonwave_visitor_id', visitorId);
+    }
+    const hasRegistered = localStorage.getItem('dragonwave_has_registered') === 'true';
+    const API_BASE =
+        window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+            ? 'http://localhost:3001/api'
+            : '/api';
+
+    fetch(API_BASE + '/analytics/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            page: pageName,
+            visitorId: visitorId,
+            hasRegistered: hasRegistered,
+        }),
+    }).catch(() => {});
+}
+
 // --- Globális hatókör biztosítása a HTML onclick eseményekhez ---
 window.switchTab = switchTab;
 window.showToast = showToast;
@@ -19,6 +44,9 @@ window.raceManager = new RaceManager();
 
 // --- Alkalmazás Indítása és Globális Események ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Oldalmegtekintés naplózása
+    trackPageView('Nevezés/Eredmények');
+
     // Verzió megjelenítése
     const versionEl = document.createElement('div');
     versionEl.style = 'position:fixed; bottom:5px; left:5px; font-size:10px; color:#444; z-index:9999;';
@@ -164,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
 
                         // 2. Átirányítás a cél URL-re
+                        localStorage.setItem('dragonwave_has_registered', 'true');
                         showToast('Sikeres nevezés! Átirányítás a fizetési oldalra...', 'success');
                         setTimeout(() => {
                             window.location.href = 'https://sarkanyhajozz.hu/termek/dunakeszi-futam-elonevezes/';

@@ -50,3 +50,40 @@ if (menuToggle && mainNav) {
         });
     });
 }
+
+// --- Látogatottság követése (Page View Tracking) ---
+function trackPageView(pageName) {
+    let visitorId = localStorage.getItem('dragonwave_visitor_id');
+    if (!visitorId) {
+        visitorId =
+            'visitor_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('dragonwave_visitor_id', visitorId);
+    }
+    const hasRegistered = localStorage.getItem('dragonwave_has_registered') === 'true';
+    const API_BASE =
+        window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+            ? 'http://localhost:3001/api'
+            : '/api';
+
+    fetch(API_BASE + '/analytics/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            page: pageName,
+            visitorId: visitorId,
+            hasRegistered: hasRegistered,
+        }),
+    }).catch(() => {});
+}
+
+// Oldal betöltésekor automatikus mérés indítása
+document.addEventListener('DOMContentLoaded', () => {
+    let pageName = 'Főoldal';
+    const path = window.location.pathname;
+    if (path.includes('registered_list.html')) {
+        pageName = 'Rajtlista';
+    } else if (path.includes('versenykiiras.html')) {
+        pageName = 'Versenykiírás';
+    }
+    trackPageView(pageName);
+});
