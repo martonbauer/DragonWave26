@@ -1687,20 +1687,35 @@ export function renderOtprobaList() {
     // Gyűjtsük össze az összes 5Próba tagot egyetlen listába
     const otprobaList = [];
 
-    const isInteger = (str) => {
-        if (typeof str !== 'string' && typeof str !== 'number') return false;
-        const s = String(str).trim();
-        return /^\d+$/.test(s);
+    // Robust cleaner and identifier extractor for 5Próba ID (e.g. "5P123456", "5p 123456", "123456")
+    const cleanOtprobaId = (val) => {
+        if (val === undefined || val === null) return null;
+        const s = String(val).trim();
+        if (s.toLowerCase() === 'nincs' || s.toLowerCase() === 'csapatnev' || s === '') return null;
+        
+        // Match optional '5P' prefix, optional separators (spaces, dashes, hashes), and then a series of digits
+        const match = s.match(/^(?:5[Pp])?[-#\s]*(\d+)$/);
+        if (match) {
+            return match[1]; // Return the clean digits
+        }
+        return null;
     };
+
+    // Logging helper to diagnose what we have in the database (helpful if list is empty)
+    console.log("renderOtprobaList: processing", racers.length, "racers");
+    const rawIdsForDebug = [];
 
     racers.forEach(r => {
         if (!r.members || r.members.length === 0) {
-            const otpId = r.otproba_id ? String(r.otproba_id).trim() : '';
-            if (isInteger(otpId)) {
+            if (r.otproba_id) {
+                rawIdsForDebug.push({ source: 'racer', name: r.name, raw: r.otproba_id, cleaned: cleanOtprobaId(r.otproba_id) });
+            }
+            const cleanId = cleanOtprobaId(r.otproba_id);
+            if (cleanId) {
                 otprobaList.push({
                     bib: r.bib,
                     name: r.name || 'Névtelen',
-                    otproba_id: otpId,
+                    otproba_id: cleanId,
                     category: r.category,
                     distance: r.distance,
                     status: r.status,
@@ -1709,12 +1724,15 @@ export function renderOtprobaList() {
             }
         } else {
             r.members.forEach(m => {
-                const otpId = m.otproba_id ? String(m.otproba_id).trim() : '';
-                if (isInteger(otpId)) {
+                if (m.otproba_id) {
+                    rawIdsForDebug.push({ source: 'member', name: m.name, raw: m.otproba_id, cleaned: cleanOtprobaId(m.otproba_id) });
+                }
+                const cleanId = cleanOtprobaId(m.otproba_id);
+                if (cleanId) {
                     otprobaList.push({
                         bib: r.bib,
-                        name: m.name,
-                        otproba_id: otpId,
+                        name: m.name || 'Névtelen',
+                        otproba_id: cleanId,
                         category: r.category,
                         distance: r.distance,
                         status: r.status,
@@ -1724,6 +1742,9 @@ export function renderOtprobaList() {
             });
         }
     });
+
+    console.log("renderOtprobaList: scanned ids in database:", rawIdsForDebug);
+    console.log("renderOtprobaList: matched valid numeric 5Próba list:", otprobaList);
 
     // Rendezzük rajtszám szerint
     otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
