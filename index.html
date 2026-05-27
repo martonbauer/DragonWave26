@@ -80,8 +80,17 @@
 
 
     <footer class="site-footer">
-        <img src="admin_landingpage_4_0_png.png" alt="DragonWave Logo" class="footer-logo">
-        <span>Az időmérő és regisztrációs rendszert a <strong>DragonWave</strong> biztosítja.</span>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 30px; flex-wrap: wrap; width: 100%;">
+                <img src="admin_landingpage_4_0_png.png" alt="DragonWave Logo" class="footer-logo" style="max-height: 80px; width: auto; filter: drop-shadow(0 0 10px rgba(0, 228, 255, 0.4));">
+                <a href="https://www.barion.com" target="_blank" rel="noopener noreferrer">
+                    <img src="barion_payments.png" alt="Barion fizetési módok (Visa, Mastercard, Maestro, AMEX, Apple Pay, Google Pay)" style="max-height: 42px; width: auto; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); background: white; padding: 4px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                </a>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; text-align: center; max-width: 800px; margin: 0 auto;">
+                <span>Az időmérő és regisztrációs rendszert a <strong>DragonWave</strong> biztosítja. A kényelmes és biztonságos online fizetést a <strong>Barion Payment Zrt.</strong> garantálja. (MNB engedély száma: H-EN-I-1064/2013)</span>
+            </div>
+        </div>
     </footer>
     <script src="landing.js"></script>
     <script>
