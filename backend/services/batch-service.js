@@ -26,7 +26,16 @@ function getGroupQuery(query, batchKey) {
     // 3. Előre definiált csoportok (Slug alapú szűrés)
     if (batchKey === 'kajak_hosszu') return query.in('category', CATEGORY_GROUPS.KAJAK).eq('distance', '22km');
     if (batchKey === 'kajak_rovid') return query.in('category', CATEGORY_GROUPS.KAJAK).eq('distance', '11km');
-    if (batchKey === 'kenu_hosszu') return query.in('category', CATEGORY_GROUPS.KENU).eq('distance', '22km');
+    if (batchKey === 'kenu_hosszu') {
+        const kenuHosszuCategories = [
+            ...CATEGORY_GROUPS.KENU,
+            'sup_noi_1_22km',
+            'sup_ferfi_1_22km',
+            'sup_noi_1',
+            'sup_ferfi_1'
+        ];
+        return query.in('category', kenuHosszuCategories).eq('distance', '22km');
+    }
     if (batchKey === 'kenu_rovid') return query.in('category', CATEGORY_GROUPS.KENU).eq('distance', '11km');
     if (batchKey === 'sup_4km') return query.in('category', CATEGORY_GROUPS.SUP).eq('distance', '4km');
     if (batchKey === 'sarkanyhajo_11km') return query.in('category', CATEGORY_GROUPS.SARKANYHAJO).eq('distance', '11km');

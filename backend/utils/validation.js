@@ -96,6 +96,7 @@ const CATEGORY_GROUPS = {
         'sup_noi_1_felfujhato_39_alatt_4km', 'sup_noi_1_felfujhato_40_felett_4km',
         'sup_ferfi_1_felfujhato_39_alatt_4km', 'sup_ferfi_1_felfujhato_40_felett_4km',
         'sup_noi_1_felfujhato_16_alatt_4km', 'sup_ferfi_1_felfujhato_16_alatt_4km',
+        'sup_noi_1_22km', 'sup_ferfi_1_22km',
         'sup_noi_1', 'sup_ferfi_1'
     ],
     SARKANYHAJO: ['sarkanyhajo_otproba']

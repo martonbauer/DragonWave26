@@ -108,9 +108,9 @@ export class RaceManager {
         this.groupMap = {
             'kajak_hosszu': 'Összes Hosszú Kajak',
             'kajak_rovid': 'Összes Rövid Kajak',
-            'kenu_hosszu': 'Összes Hosszú Kenu',
+            'kenu_hosszu': 'Összes Hosszú Kenu + Hosszú SUP',
             'kenu_rovid': 'Összes Rövid Kenu',
-            'sup_4km': 'Összes SUP',
+            'sup_4km': 'Összes SUP 4 km',
             'sarkanyhajo_11km': '🐉 SÁRKÁNYHAJÓ'
         };
         this.init();
@@ -248,7 +248,7 @@ export class RaceManager {
                     }
                 }
 
-                return result.bib;
+                return result;
             } else {
                 const errorData = await response.json();
                 showToast(errorData.error || "Hiba a regisztráció során!", "error");

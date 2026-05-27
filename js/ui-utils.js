@@ -132,12 +132,20 @@ export function updateRegFormContext(isAdmin) {
     const title = document.getElementById('reg-form-title');
     const sectionTitle = document.getElementById('reg-form-section-title');
     const notice = document.getElementById('reg-form-payment-notice');
+    
+    const nameInput = document.getElementById('reg-name');
+    const emailInput = document.getElementById('reg-email');
+    const phoneInput = document.getElementById('reg-phone');
 
     if (isAdmin) {
         if (subtitle) subtitle.classList.add('hidden');
         if (title) title.textContent = 'Admin nevezés';
         if (sectionTitle) sectionTitle.classList.add('hidden');
         if (notice) notice.classList.add('hidden');
+        
+        if (nameInput) nameInput.removeAttribute('required');
+        if (emailInput) emailInput.removeAttribute('required');
+        if (phoneInput) phoneInput.removeAttribute('required');
     } else {
         if (subtitle) subtitle.classList.remove('hidden');
         if (title) title.textContent = 'DunakesziFutam 2026';
@@ -146,6 +154,10 @@ export function updateRegFormContext(isAdmin) {
             sectionTitle.textContent = 'Online Nevezés és Fizetés';
         }
         if (notice) notice.classList.remove('hidden');
+        
+        if (nameInput) nameInput.setAttribute('required', 'required');
+        if (emailInput) emailInput.setAttribute('required', 'required');
+        if (phoneInput) phoneInput.setAttribute('required', 'required');
     }
 }
 

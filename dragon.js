@@ -641,10 +641,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const phone = document.getElementById('reg-phone').value.trim();
         const contactName = document.getElementById('reg-name').value.trim();
 
-        if (!email || !phone || !contactName) {
+        const notice = document.getElementById('reg-form-payment-notice');
+        const isAdmin = notice && notice.classList.contains('hidden');
+
+        if (!isAdmin && (!email || !phone || !contactName)) {
             showToast("Kérjük adja meg az összes kapcsolattartói adatot!", "error");
             return;
         }
+
+        const finalEmail = email || "admin@dragonwave.hu";
+        const finalPhone = phone || "0000";
+        const finalContactName = contactName || "Adminisztrátor";
 
         const members = [];
         try {
@@ -663,8 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 members.push({ name, birth_date, otproba_id });
             });
             const payModal = document.getElementById('payment-modal');
-            const notice = document.getElementById('reg-form-payment-notice');
-            const isAdmin = notice && notice.classList.contains('hidden');
 
             if(payModal && !isAdmin) {
                 const actualMembersCount = members.filter(m => m.otproba_id !== 'CSAPATNEV').length;
@@ -686,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     newBtn.textContent = 'Feldolgozás...';
                     try {
                         // 1. Regisztráció a szerveren
-                        const formRes = await window.raceManager.registerRacer(members, kategoria, tav, false, email, phone, contactName, true);
+                        const formRes = await window.raceManager.registerRacer(members, kategoria, tav, false, finalEmail, finalPhone, finalContactName, true);
                         
                         if (!formRes) {
                             newBtn.disabled = false;
@@ -706,9 +711,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 };
             } else {
-                await window.raceManager.registerRacer(members, kategoria, tav, false, email, phone, contactName, isAdmin);
+                const regResult = await window.raceManager.registerRacer(members, kategoria, tav, false, finalEmail, finalPhone, finalContactName, isAdmin);
                 this.reset();
                 window.updateCategorySelect();
+
+                if (isAdmin && regResult && regResult.id) {
+                    const wantsTeam = confirm("Sikeres adminisztrátori nevezés! Szeretnéd a most felvitt versenyző(ke)t közvetlenül beosztani egy csapatba/egységbe?");
+                    if (wantsTeam) {
+                        window.newlyRegisteredRacerId = regResult.id;
+                        window.showDataSubSection('admin-data-section-teams');
+                    }
+                }
             }
         } catch (err) {
             showToast(err.message, "error");

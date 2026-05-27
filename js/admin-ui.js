@@ -1229,6 +1229,14 @@ export function renderTeamManager() {
     
     // Szűrő lekérése
     const filterSelect = document.getElementById('team-builder-category-filter');
+    
+    if (window.newlyRegisteredRacerId) {
+        const newlyRegisteredRacer = allRacers.find(r => r.id === window.newlyRegisteredRacerId);
+        if (newlyRegisteredRacer && !(/s[aá]rk[aá]ny/i.test(newlyRegisteredRacer.category || ''))) {
+            if (filterSelect) filterSelect.value = 'all';
+        }
+    }
+    
     const filterValue = filterSelect ? filterSelect.value : 'sarkanyhajo';
     
     // Meglévő csapatok összegyűjtése a dropdown számára (minden olyan egység, aminek van CSAPATNEV tagja)
@@ -1308,8 +1316,10 @@ export function renderTeamManager() {
             `<span style="color:#00e4ff; font-weight:bold;">${m.teamName || ('#' + m.racerBib)}</span>` : 
             `<span style="color:#ff9800; font-weight:bold;">Egyéni jelentkező</span>`;
 
+        const isNewlyRegistered = window.newlyRegisteredRacerId && m.racerId === window.newlyRegisteredRacerId;
+
         tr.innerHTML = `
-            <td data-label="Kiválaszt"><input type="checkbox" class="dragon-member-check" value="${m.id}"></td>
+            <td data-label="Kiválaszt"><input type="checkbox" class="dragon-member-check" value="${m.id}" ${isNewlyRegistered ? 'checked' : ''}></td>
             <td data-label="Név" style="font-weight:bold;">
                 <span style="cursor: pointer; color: var(--accent-primary); text-decoration: underline;" onclick="window.raceManager.openEditModal('${m.racerId}', '${m.id}')" title="Versenyző szerkesztése">${m.name}</span>
             </td>
@@ -1322,6 +1332,9 @@ export function renderTeamManager() {
         `;
         tbody.appendChild(tr);
     });
+
+    // Töröljük a globális változót, hogy a következő kézi frissítésnél vagy belépésnél ne jelölje be őket újra
+    window.newlyRegisteredRacerId = null;
 }
 window.renderTeamManager = renderTeamManager;
 
