@@ -545,9 +545,12 @@
                         </div>
                         
                         <div id="admin-table-otproba-view" class="hidden">
-                            <div class="section-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                            <div class="section-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                                 <h3 class="section-title" style="margin-bottom:0; color: var(--accent-primary); font-size: 1.5rem; font-weight: bold;">🏅 5Próba Azonosítóval Rendelkezők</h3>
-                                <button class="btn-back" onclick="window.showTableLanding()">⬅️ Vissza a választóhoz</button>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn-primary" onclick="window.exportOtprobaExcel()" style="background: #28a745; width: auto; font-size: 0.85rem; padding: 8px 20px;">📥 Excel letöltése</button>
+                                    <button class="btn-back" onclick="window.showTableLanding()">⬅️ Vissza a választóhoz</button>
+                                </div>
                             </div>
                             <div id="admin-otproba-content">
                                 <!-- Dinamikusan feltöltve JS-ből -->

@@ -1830,3 +1830,88 @@ export function renderOtprobaList() {
 }
 window.renderOtprobaList = renderOtprobaList;
 
+export function exportOtprobaExcel() {
+    const rm = window.raceManager;
+    if (!rm || !rm.data.racers || rm.data.racers.length === 0) {
+        showToast('Nincs menthető adat!', 'error');
+        return;
+    }
+
+    const racers = rm.data.racers || [];
+    const otprobaList = [];
+
+    const cleanOtprobaId = (val) => {
+        if (val === undefined || val === null) return null;
+        const s = String(val).trim();
+        if (s.toLowerCase() === 'nincs' || s.toLowerCase() === 'csapatnev' || s === '') return null;
+        
+        const match = s.match(/^(?:5[Pp])?[-#\s]*(\d+)$/);
+        if (match) {
+            return match[1];
+        }
+        return null;
+    };
+
+    racers.forEach(r => {
+        if (!r.members || r.members.length === 0) {
+            const cleanId = cleanOtprobaId(r.otproba_id);
+            if (cleanId) {
+                otprobaList.push({
+                    bib: r.bib,
+                    name: r.name || 'Névtelen',
+                    otproba_id: cleanId,
+                    category: r.category,
+                    distance: r.distance,
+                    status: r.status || 'registered',
+                    total_time: r.total_time
+                });
+            }
+        } else {
+            r.members.forEach(m => {
+                const cleanId = cleanOtprobaId(m.otproba_id);
+                if (cleanId) {
+                    otprobaList.push({
+                        bib: r.bib,
+                        name: m.name || 'Névtelen',
+                        otproba_id: cleanId,
+                        category: r.category,
+                        distance: r.distance,
+                        status: r.status || 'registered',
+                        total_time: r.total_time
+                    });
+                }
+            });
+        }
+    });
+
+    if (otprobaList.length === 0) {
+        showToast('Nincs 5Próbás versenyző az exportáláshoz!', 'error');
+        return;
+    }
+
+    // Rajtszám szerint rendezés
+    otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
+
+    const wb = XLSX.utils.book_new();
+    const rows = [["Rajtszám", "Név", "5Próba Azonosító", "Kategória", "Táv", "Státusz", "Eredmény"]];
+
+    otprobaList.forEach(item => {
+        const status = item.status || 'registered';
+        const timeStr = status === 'finished' ? formatTime(item.total_time || 0) : (status === 'running' ? 'Futamban' : 'Regisztrálva');
+        rows.push([
+            item.bib ? `#${String(item.bib).padStart(3, '0')}` : '-',
+            item.name,
+            `5P${item.otproba_id}`,
+            rm.formatCategoryName(item.category),
+            item.distance || '-',
+            status.toUpperCase(),
+            timeStr
+        ]);
+    });
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "5Próba Nevezettek");
+    XLSX.writeFile(wb, `5Proba_Nevezettek_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showToast('5Próba Excel sikeresen exportálva!', 'success');
+}
+window.exportOtprobaExcel = exportOtprobaExcel;
+
