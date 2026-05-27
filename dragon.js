@@ -5,7 +5,7 @@
 
 import { RaceManager } from './js/RaceManager.js';
 import { switchTab, showToast, formatTime, updateRegFormContext, showConfirmModal, closeConfirmModal, executeConfirmedAction } from './js/ui-utils.js';
-import { renderAdminTable, renderAdminControlButtons, exportResultsToExcel, exportFilteredTableToExcel, renderAdminCategoryList, renderAdminCategoryDetail, renderBibManagementTable, renderResultsCategoryList } from './js/admin-ui.js';
+import { renderAdminTable, renderAdminControlButtons, exportResultsToExcel, exportFilteredTableToExcel, renderAdminCategoryList, renderAdminCategoryDetail, renderBibManagementTable, renderResultsCategoryList, renderOtprobaList } from './js/admin-ui.js';
 import { API_URL, APP_VERSION } from './js/api.js';
 
 // --- Globális hatókör biztosítása a HTML onclick eseményekhez ---
@@ -202,6 +202,8 @@ window.showDataLanding = () => {
     // Csendes reset a táblázat és eredmény nézetek belső állapotához
     document.getElementById('admin-table-content-view').classList.add('hidden');
     document.getElementById('admin-table-category-list-view').classList.add('hidden');
+    const otprobaView = document.getElementById('admin-table-otproba-view');
+    if (otprobaView) otprobaView.classList.add('hidden');
     document.getElementById('admin-table-landing-view').classList.remove('hidden');
     
     document.getElementById('admin-results-content-view').classList.add('hidden');
@@ -218,6 +220,8 @@ window.showTableSubSection = (mode) => {
     document.getElementById('admin-table-content-view').classList.add('hidden');
     document.getElementById('admin-table-category-list-view').classList.add('hidden');
     document.getElementById('admin-data-section-bibs').classList.add('hidden');
+    const otprobaView = document.getElementById('admin-table-otproba-view');
+    if (otprobaView) otprobaView.classList.add('hidden');
     
     if (mode === 'category-list') {
         document.getElementById('admin-table-category-list-view').classList.remove('hidden');
@@ -227,6 +231,10 @@ window.showTableSubSection = (mode) => {
         document.getElementById('admin-data-section-bibs').classList.remove('hidden');
         window.updateAdminDataHeader('🔢 Rajtszámok Újraosztása', window.showTableLanding);
         window.renderBibManagementTable();
+    } else if (mode === 'otproba') {
+        if (otprobaView) otprobaView.classList.remove('hidden');
+        window.updateAdminDataHeader('🏅 Nevezettek 5Próba Azonosítóval', window.showTableLanding);
+        if (typeof window.renderOtprobaList === 'function') window.renderOtprobaList();
     } else {
         document.getElementById('admin-table-content-view').classList.remove('hidden');
         const filterCtrls = document.getElementById('admin-table-filter-ctrls');
@@ -252,6 +260,8 @@ window.showTableLanding = () => {
     document.getElementById('admin-table-content-view').classList.add('hidden');
     document.getElementById('admin-table-category-list-view').classList.add('hidden');
     document.getElementById('admin-data-section-bibs').classList.add('hidden');
+    const otprobaView = document.getElementById('admin-table-otproba-view');
+    if (otprobaView) otprobaView.classList.add('hidden');
     // Megjelenítjük a landinget
     document.getElementById('admin-table-landing-view').classList.remove('hidden');
     

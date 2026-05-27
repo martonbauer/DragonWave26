@@ -468,6 +468,12 @@
                                     <p>Regisztrált versenyzők rajtszámának átírása.</p>
                                     <div class="btn-enter">Megnyitás</div>
                                 </div>
+                                <div class="landing-card" onclick="window.showTableSubSection('otproba')">
+                                    <div class="icon">🏅</div>
+                                    <h3>nevezettek 5p</h3>
+                                    <p>5Próba azonosítóval rendelkező versenyzők távonként.</p>
+                                    <div class="btn-enter">Megnyitás</div>
+                                </div>
                             </div>
                         </div>
 
@@ -535,6 +541,15 @@
                                     <button class="btn-back" onclick="window.backToCategorySelector()">⬅️ Vissza a kategóriákhoz</button>
                                 </div>
                                 <div id="admin-category-detail-content"></div>
+                        </div>
+                        
+                        <div id="admin-table-otproba-view" class="hidden">
+                            <div class="section-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                                <h3 class="section-title" style="margin-bottom:0; color: var(--accent-primary); font-size: 1.5rem; font-weight: bold;">🏅 5Próba Azonosítóval Rendelkezők</h3>
+                                <button class="btn-back" onclick="window.showTableLanding()">⬅️ Vissza a választóhoz</button>
+                            </div>
+                            <div id="admin-otproba-content">
+                                <!-- Dinamikusan feltöltve JS-ből -->
                             </div>
                         </div>
                     </div>

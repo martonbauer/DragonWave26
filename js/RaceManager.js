@@ -981,18 +981,28 @@ export class RaceManager {
             .map(k => ({ id: k, start: this.data.categories[k] }))
             .sort((a, b) => a.start - b.start);
 
+        const runningRacers = (this.data.racers || []).filter(r => r.status === 'running');
+
         containers.forEach(container => {
-            if (activeCategories.length > 0) {
+            const hasActive = activeCategories.length > 0 || runningRacers.length > 0;
+            if (hasActive) {
                 const safeId = (id) => id.replace(/[^a-z0-9]/gi, '_');
                 
-                // Ellenőrizzük, hogy minden aktív kategóriához megvan-e a timer elem
+                // Ellenőrizzük, hogy minden aktív kategóriához és futó versenyzőhöz megvan-e a timer elem
                 const missingTimers = activeCategories.some(cat => !container.querySelector(`[data-cat-id="${cat.id}"]`));
-                const needsRebuild = container.children.length !== activeCategories.length || 
-                                   container.querySelector('.cat-timer') === null ||
-                                   missingTimers;
+                const missingRacerTimers = runningRacers.some(r => !container.querySelector(`[data-racer-id="${r.id}"]`));
+                const expectedTotal = activeCategories.length + runningRacers.length;
+                const needsRebuild = container.children.length !== expectedTotal || 
+                                   container.querySelector('.empty-text') !== null ||
+                                   (activeCategories.length > 0 && container.querySelector('[data-cat-id]') === null) ||
+                                   (runningRacers.length > 0 && container.querySelector('[data-racer-id]') === null) ||
+                                   missingTimers ||
+                                   missingRacerTimers;
 
                 if (needsRebuild) {
                     container.innerHTML = '';
+                    
+                    // 1. Kategória órák
                     activeCategories.forEach(cat => {
                         const div = document.createElement('div');
                         div.className = 'cat-timer';
@@ -1006,8 +1016,25 @@ export class RaceManager {
                         `;
                         container.appendChild(div);
                     });
+
+                    // 2. Egyéni futók órái
+                    runningRacers.forEach(r => {
+                        const div = document.createElement('div');
+                        div.className = 'cat-timer';
+                        div.setAttribute('data-racer-id', r.id);
+                        const isAdmin = container.classList.contains('admin-timer-grid');
+                        const displayId = `${container.id || 'timer'}-racer-val-${r.id}`;
+                        const racerName = r.members && r.members.length > 0 ? r.members.map(m => m.name).join(', ') : (r.name || 'Névtelen');
+                        div.innerHTML = `
+                            <div class="cat-name" style="color: var(--accent-secondary); font-weight: bold;">👤 #${r.bib} - ${racerName}</div>
+                            <div class="cat-time" id="${displayId}">00:00:00.000</div>
+                            ${isAdmin ? `<button onclick="window.raceManager.stopRacer('${r.bib}')" style="margin-top:10px; padding:5px 10px; font-size:0.7rem; background:rgba(0,145,255,0.2); color:var(--accent-primary); border:1px solid var(--accent-primary); border-radius:4px; cursor:pointer; width:100%;">BEÉRKEZTETÉS (CÉL)</button>` : ''}
+                        `;
+                        container.appendChild(div);
+                    });
                 }
                 
+                // Frissítés
                 activeCategories.forEach(cat => {
                     const displayId = `${container.id || 'timer'}-val-${safeId(cat.id)}`;
                     const timeEl = document.getElementById(displayId);
@@ -1016,9 +1043,18 @@ export class RaceManager {
                         timeEl.textContent = formatTime(now - cat.start);
                     }
                 });
+
+                runningRacers.forEach(r => {
+                    const displayId = `${container.id || 'timer'}-racer-val-${r.id}`;
+                    const timeEl = document.getElementById(displayId);
+                    if (timeEl) {
+                        const now = Date.now() + (this.serverTimeOffset || 0);
+                        timeEl.textContent = formatTime(now - (r.start_time || 0));
+                    }
+                });
             } else {
-                if (container.children.length === 0 || container.querySelector('.cat-timer') !== null) {
-                    container.innerHTML = '<div style="text-align:center; color: var(--text-secondary); width:100%; padding:20px;">Még nincs aktív futam</div>';
+                if (container.children.length === 0 || container.querySelector('.cat-timer') !== null || container.querySelector('.empty-text') === null) {
+                    container.innerHTML = '<div class="empty-text" style="text-align:center; color: var(--text-secondary); width:100%; padding:20px;">Még nincs aktív futam</div>';
                 }
             }
         });
