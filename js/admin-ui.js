@@ -1369,7 +1369,10 @@ export function renderTeamManager() {
     const existingTeams = allRacers.filter(r => r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV'));
     const teamSelect = document.getElementById('existing-dragon-teams-select');
     if (teamSelect) {
-        teamSelect.innerHTML = '<option value="">-- Új csapat létrehozása (Töltsd ki az alsó mezőket) --</option>';
+        teamSelect.innerHTML = `
+            <option value="">-- Új csapat létrehozása (Töltsd ki az alsó mezőket) --</option>
+            <option value="REMOVE">❌ Kijelöltek eltávolítása a jelenlegi csapatukból</option>
+        `;
         existingTeams.forEach(team => {
             const teamMember = team.members.find(m => m.otproba_id === 'CSAPATNEV');
             const teamName = teamMember ? teamMember.name : `Ismeretlen Csapat #${team.bib}`;
