@@ -301,7 +301,11 @@
                 // Csoportosítás kategória szerint
                 const catGroups = {};
                 registered.forEach(r => {
-                    const groupKey = `${r.category}_${r.distance}`;
+                    let baseCat = r.category || '';
+                    if (r.distance && baseCat.endsWith('_' + r.distance)) {
+                        baseCat = baseCat.substring(0, baseCat.length - r.distance.length - 1);
+                    }
+                    const groupKey = `${baseCat}_${r.distance}`;
                     if (!catGroups[groupKey]) catGroups[groupKey] = [];
                     catGroups[groupKey].push(r);
                 });
