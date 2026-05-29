@@ -1409,6 +1409,9 @@ export function renderTeamManager() {
 
         const hasTeamName = r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV');
         const isTeam = r.id.startsWith('DRAGON_') || hasTeamName || (r.members && r.members.length > 1);
+        if (isTeam) {
+            return; // Csak a beosztásra váró egyéni jelentkezőket jelenítjük meg
+        }
         if (r.members) {
             const teamMember = hasTeamName ? r.members.find(x => x.otproba_id === 'CSAPATNEV') : null;
             const teamName = teamMember ? teamMember.name : isTeam ? `Csapat #${r.bib}` : null;

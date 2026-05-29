@@ -71,6 +71,59 @@ const { getGroupQuery, checkAndStopEmptyBatchTimers } = require('./backend/servi
 // --- 3. STRUKTURÁLIS RÉTEGEK: SEGÉDFUNKCIÓK (UTILITIES) IMPORTÁLÁSA ---
 const { validateRacerData, normalizeCategoryToSlug } = require('./backend/utils/validation');
 
+/**
+ * Segédfunkció az 5Próba ID 6 számjegyes duplikációjának ellenőrzésére.
+ * Kiszűri a nem-számjegy karaktereket, és ha pontosan 6 számjegy marad,
+ * ellenőrzi, hogy létezik-e már ilyen tag az adatbázisban (másik versenyzőnél).
+ * Visszatérési érték: a megtalált duplikált tag adatai (és a hozzá tartozó rajtszám), vagy null.
+ */
+async function findOtprobaDuplicate(otprobaId, currentRacerId = null) {
+    if (!otprobaId) return null;
+    const otpClean = String(otprobaId).trim();
+    if (otpClean.toLowerCase() === 'nincs' || otpClean.toLowerCase() === 'csapatnev' || otpClean === '') return null;
+
+    // Kivonjuk a számjegyeket
+    const digits = otpClean.replace(/\D/g, '');
+    if (digits.length !== 6) return null; // Csak a pontosan 6 számjegyes azonosítókat figyeljük
+
+    // Lekérdezzük az összes olyan tagot, akinek az 5Próba azonosítójában szerepel ez a 6 számjegy
+    let query = supabase.from('members').select('id, name, otproba_id, racer_id').ilike('otproba_id', `%${digits}%`);
+
+    if (currentRacerId) {
+        query = query.neq('racer_id', currentRacerId);
+    }
+
+    const { data: existingMembers, error } = await query;
+    if (error) {
+        console.error('Hiba a duplikáció ellenőrzésekor:', error);
+        return null;
+    }
+
+    if (existingMembers && existingMembers.length > 0) {
+        // JavaScript szinten pontosítjuk a 6 számjegyes egyezést, elkerülve a részleges egyezéseket (pl. 7 számjegy)
+        for (const m of existingMembers) {
+            const mDigits = (m.otproba_id || '').replace(/\D/g, '');
+            if (mDigits === digits) {
+                // Lekérdezzük a hozzá tartozó rajtszámot
+                const { data: racerData } = await supabase
+                    .from('racers')
+                    .select('bib')
+                    .eq('id', m.racer_id)
+                    .maybeSingle();
+
+                return {
+                    id: m.id,
+                    name: m.name,
+                    otproba_id: m.otproba_id,
+                    racer_id: m.racer_id,
+                    racer_bib: racerData ? racerData.bib : null,
+                };
+            }
+        }
+    }
+    return null;
+}
+
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -222,19 +275,13 @@ app.post('/api/register', async (req, res) => {
         // --- DUPLIKÁCIÓ ELLENŐRZÉS (A 2026-os versenyszabályok alapján) ---
         if (members && members.length > 0) {
             for (const m of members) {
-                // 1. Ellenőrzés Ötpróba ID alapján
-                const otp = m.otproba_id ? m.otproba_id.trim() : '';
-                if (otp.length > 0 && otp.toLowerCase() !== 'nincs' && otp.toLowerCase() !== 'csapatnev') {
-                    const { data } = await supabase.from('members').select('id, name').eq('otproba_id', otp).limit(1);
-                    if (data && data.length > 0) {
-                        if (data[0].name.toLowerCase().trim() !== m.name.toLowerCase().trim()) {
-                            return res.status(400).json({
-                                error: `Hiba: Az '${otp}' 5Próba azonosító már foglalt egy másik versenyző (${data[0].name}) által!`,
-                            });
-                        }
-                        isDuplicate = true;
-                        break;
-                    }
+                // 1. Ellenőrzés Ötpróba ID alapján (6 számjegyes normalizált szűréssel)
+                const duplicateMember = await findOtprobaDuplicate(m.otproba_id);
+                if (duplicateMember) {
+                    const bibStr = duplicateMember.racer_bib ? `#${duplicateMember.racer_bib}` : 'ismeretlen';
+                    return res.status(400).json({
+                        error: `Hiba: A(z) '${m.otproba_id}' 5Próba azonosító már regisztrálva van a(z) ${bibStr} rajtszámú egységnél (${duplicateMember.name})! Egy versenyző nem szerepelhet több egységben.`,
+                    });
                 }
                 // 2. Ellenőrzés Név + Születési dátum alapján
                 if (!isDuplicate && m.name && m.birth_date) {
@@ -738,23 +785,13 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
         let isDuplicate = false;
         if (members && members.length > 0) {
             for (const m of members) {
-                const otp = m.otproba_id ? m.otproba_id.trim() : '';
-                if (otp.length > 0 && otp.toLowerCase() !== 'nincs' && otp.toLowerCase() !== 'csapatnev') {
-                    const { data } = await supabase
-                        .from('members')
-                        .select('id, name')
-                        .eq('otproba_id', otp)
-                        .neq('racer_id', id)
-                        .limit(1);
-                    if (data && data.length > 0) {
-                        if (data[0].name.toLowerCase().trim() !== m.name.toLowerCase().trim()) {
-                            return res.status(400).json({
-                                error: `Hiba: Az '${otp}' 5Próba azonosító már foglalt egy másik versenyző (${data[0].name}) által!`,
-                            });
-                        }
-                        isDuplicate = true;
-                        break;
-                    }
+                // 1. Ellenőrzés Ötpróba ID alapján (6 számjegyes normalizált szűréssel)
+                const duplicateMember = await findOtprobaDuplicate(m.otproba_id, id);
+                if (duplicateMember) {
+                    const bibStr = duplicateMember.racer_bib ? `#${duplicateMember.racer_bib}` : 'ismeretlen';
+                    return res.status(400).json({
+                        error: `Hiba: A(z) '${m.otproba_id}' 5Próba azonosító már regisztrálva van a(z) ${bibStr} rajtszámú egységnél (${duplicateMember.name})! Egy versenyző nem szerepelhet több egységben.`,
+                    });
                 }
                 if (!isDuplicate && m.name && m.birth_date) {
                     const { data } = await supabase
@@ -1065,14 +1102,10 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                                     otproba_id: mOtp,
                                 });
 
-                                if (mOtp !== 'Nincs' && mOtp.length > 0) {
-                                    const { data } = await supabase
-                                        .from('members')
-                                        .select('id, name')
-                                        .eq('otproba_id', mOtp)
-                                        .limit(1);
-                                    if (data && data.length > 0) {
-                                        if (data[0].name.toLowerCase().trim() !== mName.toLowerCase().trim()) {
+                                if (mOtp !== 'Nincs' && mOtp.length > 0 && mOtp.toLowerCase() !== 'csapatnev') {
+                                    const duplicateMember = await findOtprobaDuplicate(mOtp);
+                                    if (duplicateMember) {
+                                        if (duplicateMember.name.toLowerCase().trim() !== mName.toLowerCase().trim()) {
                                             hasHardConflict = true;
                                             break;
                                         }
@@ -1180,14 +1213,14 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                                     otproba_id: mOtp,
                                 });
 
-                                if (mOtp.length > 0 && mOtp.toLowerCase() !== 'nincs') {
-                                    const { data } = await supabase
-                                        .from('members')
-                                        .select('id, name')
-                                        .eq('otproba_id', mOtp)
-                                        .limit(1);
-                                    if (data && data.length > 0) {
-                                        if (data[0].name.toLowerCase().trim() !== mName.toLowerCase().trim()) {
+                                if (
+                                    mOtp.length > 0 &&
+                                    mOtp.toLowerCase() !== 'nincs' &&
+                                    mOtp.toLowerCase() !== 'csapatnev'
+                                ) {
+                                    const duplicateMember = await findOtprobaDuplicate(mOtp);
+                                    if (duplicateMember) {
+                                        if (duplicateMember.name.toLowerCase().trim() !== mName.toLowerCase().trim()) {
                                             hasHardConflict = true;
                                             break;
                                         }
