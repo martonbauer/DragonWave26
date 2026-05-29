@@ -828,12 +828,20 @@
                         
                         <div id="team-manager-container" style="margin-top: 20px;">
                             <!-- Szűrő & Csapatválasztó sor -->
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
                                 <div>
                                     <label for="team-builder-category-filter" style="display: block; margin-bottom: 8px; color: var(--accent-primary); font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">Kategória Szűrés</label>
                                     <select id="team-builder-category-filter" onchange="window.renderTeamManager()" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white;">
                                         <option value="sarkanyhajo">Csak Sárkányhajó kategória</option>
                                         <option value="all">Minden kategória</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="team-builder-status-filter" style="display: block; margin-bottom: 8px; color: var(--accent-primary); font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">Beosztás Szűrés</label>
+                                    <select id="team-builder-status-filter" onchange="window.renderTeamManager()" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white;">
+                                        <option value="unassigned" selected>Csak beosztatlan várakozók</option>
+                                        <option value="all">Összes (Beosztott + Várakozó)</option>
+                                        <option value="assigned">Csak beosztott csapattagok</option>
                                     </select>
                                 </div>
                                 <div>

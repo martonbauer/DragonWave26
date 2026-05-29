@@ -1363,6 +1363,8 @@ export function renderTeamManager() {
     }
 
     const filterValue = filterSelect ? filterSelect.value : 'sarkanyhajo';
+    const statusSelect = document.getElementById('team-builder-status-filter');
+    const statusFilter = statusSelect ? statusSelect.value : 'unassigned';
 
     // Meglévő csapatok összegyűjtése a dropdown számára (minden olyan egység, aminek van CSAPATNEV tagja)
     // Ezt nem szűrjük, hogy bármilyen kategóriájú csapatba be lehessen osztani!
@@ -1409,8 +1411,13 @@ export function renderTeamManager() {
 
         const hasTeamName = r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV');
         const isTeam = r.id.startsWith('DRAGON_') || hasTeamName || (r.members && r.members.length > 1);
-        if (isTeam) {
+
+        // Szűrés a beosztási állapot alapján
+        if (statusFilter === 'unassigned' && isTeam) {
             return; // Csak a beosztásra váró egyéni jelentkezőket jelenítjük meg
+        }
+        if (statusFilter === 'assigned' && !isTeam) {
+            return; // Csak a már beosztott tagokat jelenítjük meg
         }
         if (r.members) {
             const teamMember = hasTeamName ? r.members.find(x => x.otproba_id === 'CSAPATNEV') : null;
