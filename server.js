@@ -224,7 +224,7 @@ app.post('/api/register', async (req, res) => {
             for (const m of members) {
                 // 1. Ellenőrzés Ötpróba ID alapján
                 const otp = m.otproba_id ? m.otproba_id.trim() : '';
-                if (otp.length > 0 && otp.toLowerCase() !== 'nincs') {
+                if (otp.length > 0 && otp.toLowerCase() !== 'nincs' && otp.toLowerCase() !== 'csapatnev') {
                     const { data } = await supabase.from('members').select('id, name').eq('otproba_id', otp).limit(1);
                     if (data && data.length > 0) {
                         if (data[0].name.toLowerCase().trim() !== m.name.toLowerCase().trim()) {
@@ -739,7 +739,7 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
         if (members && members.length > 0) {
             for (const m of members) {
                 const otp = m.otproba_id ? m.otproba_id.trim() : '';
-                if (otp.length > 0 && otp.toLowerCase() !== 'nincs') {
+                if (otp.length > 0 && otp.toLowerCase() !== 'nincs' && otp.toLowerCase() !== 'csapatnev') {
                     const { data } = await supabase
                         .from('members')
                         .select('id, name')

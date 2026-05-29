@@ -1488,20 +1488,32 @@ window.selectExistingDragonTeam = val => {
     } else if (val) {
         try {
             const data = JSON.parse(val);
-            if (bibInput) bibInput.value = data.bib || '';
-            if (nameInput) nameInput.value = data.name || '';
+            if (bibInput) {
+                bibInput.value = data.bib || '';
+                bibInput.disabled = true;
+            }
+            if (nameInput) {
+                nameInput.value = data.name || '';
+                nameInput.disabled = false;
+            }
 
-            if (inputsContainer) inputsContainer.style.display = 'none';
+            if (inputsContainer) inputsContainer.style.display = 'flex';
             if (submitBtn) {
-                submitBtn.innerHTML = `BEOSZTÁS A(Z) "${data.name}" CSAPATBA`;
+                submitBtn.innerHTML = `BEOSZTÁS ÉS ÁTNEVEZÉS A(Z) "${data.name}" CSAPATBA`;
                 submitBtn.style.background = '#28a745';
             }
         } catch (err) {
             console.error('Hibás csapatadat formátum:', err);
         }
     } else {
-        if (bibInput) bibInput.value = '';
-        if (nameInput) nameInput.value = '';
+        if (bibInput) {
+            bibInput.value = '';
+            bibInput.disabled = false;
+        }
+        if (nameInput) {
+            nameInput.value = '';
+            nameInput.disabled = false;
+        }
 
         if (inputsContainer) inputsContainer.style.display = 'flex';
         if (submitBtn) {
