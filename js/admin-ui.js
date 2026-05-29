@@ -1430,6 +1430,8 @@ export function renderTeamManager() {
         }
     });
 
+    window.allDragonMembers = allMembers;
+
     if (allMembers.length === 0) {
         tbody.innerHTML =
             '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-secondary);">Nincs versenyző a rendszerben.</td></tr>';
@@ -1448,8 +1450,8 @@ export function renderTeamManager() {
         const tr = document.createElement('tr');
 
         const teamInfo = m.isTeam
-            ? `<span style="color:#00e4ff; font-weight:bold;">${m.teamName || '#' + m.racerBib}</span>`
-            : `<span style="color:#ff9800; font-weight:bold;">Egyéni jelentkező</span>`;
+            ? `<span style="background: rgba(0, 228, 255, 0.08); border: 1px solid rgba(0, 228, 255, 0.2); padding: 4px 8px; border-radius: 6px; color:#00e4ff; font-weight:bold; display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem;">🔗 Beosztva: ${m.teamName || '#' + m.racerBib}</span>`
+            : `<span style="background: rgba(255, 152, 0, 0.08); border: 1px solid rgba(255, 152, 0, 0.2); padding: 4px 8px; border-radius: 6px; color:#ff9800; font-weight:bold; display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem;">❓ Beosztatlan: Egyéni</span>`;
 
         const isNewlyRegistered = window.newlyRegisteredRacerId && m.racerId === window.newlyRegisteredRacerId;
 
@@ -1568,6 +1570,23 @@ window.createDragonTeam = async () => {
             showToast('Hiba a hálózati kapcsolatban!', 'error');
         }
         return;
+    }
+
+    if (selectedIds.length === 0) {
+        showToast('Kérjük, válasszon ki legalább egy versenyzőt a beosztáshoz!', 'error');
+        return;
+    }
+
+    const selectedMembers = selectedIds
+        .map(id => (window.allDragonMembers || []).find(m => m.id === id))
+        .filter(Boolean);
+    const alreadyAssigned = selectedMembers.filter(m => m.isTeam);
+    if (alreadyAssigned.length > 0) {
+        const listStr = alreadyAssigned.map(m => ` - ${m.name} (${m.teamName || '#' + m.racerBib})`).join('\n');
+        const confirmMsg = `Figyelem! Az alábbi versenyző(k) már be van(nak) osztva egy sárkányhajó egységbe:\n\n${listStr}\n\nEgy versenyző egyszerre csak egy egységben szerepelhet. Biztosan át szeretnéd őket osztani az új csapatba? (Ezzel automatikusan kikerülnek a régi egységükből!)`;
+        if (!confirm(confirmMsg)) {
+            return;
+        }
     }
 
     if (!bib && !name) {

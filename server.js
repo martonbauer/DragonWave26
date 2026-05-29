@@ -1298,7 +1298,12 @@ app.post('/api/remove-from-dragon-team', authenticateAdmin, async (req, res) => 
         // Takarítás: töröljük azokat a régi rekordokat, amik kiürültek (már nincsenek tagjaik egyáltalán)
         oldRacerIds = [...new Set(oldRacerIds)];
         for (const oldId of oldRacerIds) {
-            const { data: remMembers } = await supabase.from('members').select('id').eq('racer_id', oldId).limit(1);
+            const { data: remMembers } = await supabase
+                .from('members')
+                .select('id')
+                .eq('racer_id', oldId)
+                .neq('otproba_id', 'CSAPATNEV')
+                .limit(1);
             if (!remMembers || remMembers.length === 0) {
                 await supabase.from('racers').delete().eq('id', oldId);
             }
@@ -1424,7 +1429,12 @@ app.post('/api/create-dragon-team', authenticateAdmin, async (req, res) => {
         // 4. Takarítás: töröljük azokat a régi rekordokat, amik kiürültek
         for (const oldId of oldRacerIds) {
             if (oldId === targetRacerId) continue;
-            const { data: remMembers } = await supabase.from('members').select('id').eq('racer_id', oldId).limit(1);
+            const { data: remMembers } = await supabase
+                .from('members')
+                .select('id')
+                .eq('racer_id', oldId)
+                .neq('otproba_id', 'CSAPATNEV')
+                .limit(1);
             if (!remMembers || remMembers.length === 0) {
                 // Ha nincs benne több tag, töröljük a racer rekordot is (kivéve ha épp oda mozgattunk)
                 await supabase.from('racers').delete().eq('id', oldId);
