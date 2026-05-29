@@ -1013,7 +1013,6 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                             .from('racers')
                             .select('id')
                             .eq('bib', bib)
-                            .eq('distance', dist)
                             .maybeSingle();
 
                         if (existing) {
@@ -1136,7 +1135,6 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                             .from('racers')
                             .select('id')
                             .eq('bib', bib)
-                            .eq('distance', dist)
                             .maybeSingle();
 
                         if (existing) {
