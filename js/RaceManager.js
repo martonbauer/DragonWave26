@@ -24,6 +24,10 @@ export class RaceManager {
             kenu_2_nyitott_11km: 'Kenu-2 nyitott',
             kenu_3_nyitott_11km: 'Kenu-3 nyitott',
             kenu_4_nyitott_11km: 'Kenu-4 nyitott',
+            sup_ferfi_1_merev_11km: 'SUP férfi-1- merev deszka',
+            sup_noi_1_merev_11km: 'SUP női-1- merev deszka',
+            sup_ferfi_1_felfujhato_11km: 'SUP férfi-1- felfújható deszka',
+            sup_noi_1_felfujhato_11km: 'SUP női-1- felfújható deszka',
 
             // 22 km (Hosszú)
             versenykajak_noi_1_22km: 'Versenykajak női-1 (38 cm)',
@@ -81,6 +85,10 @@ export class RaceManager {
                 'kenu_2_nyitott_11km',
                 'kenu_3_nyitott_11km',
                 'kenu_4_nyitott_11km',
+                'sup_ferfi_1_merev_11km',
+                'sup_noi_1_merev_11km',
+                'sup_ferfi_1_felfujhato_11km',
+                'sup_noi_1_felfujhato_11km',
                 'sarkanyhajo_otproba',
             ],
             '22km': [

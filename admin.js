@@ -637,6 +637,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'kenu_2_nyitott_11km', name: 'Kenu-2 nyitott' },
                 { id: 'kenu_3_nyitott_11km', name: 'Kenu-3 nyitott' },
                 { id: 'kenu_4_nyitott_11km', name: 'Kenu-4 nyitott' },
+                { id: 'sup_ferfi_1_merev_11km', name: 'SUP férfi-1- merev deszka' },
+                { id: 'sup_noi_1_merev_11km', name: 'SUP női-1- merev deszka' },
+                { id: 'sup_ferfi_1_felfujhato_11km', name: 'SUP férfi-1- felfújható deszka' },
+                { id: 'sup_noi_1_felfujhato_11km', name: 'SUP női-1- felfújható deszka' },
                 { id: 'sarkanyhajo_otproba', name: 'Sárkányhajó' },
             ],
             '22km': [

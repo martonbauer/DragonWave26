@@ -897,6 +897,21 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
     }
 
     if (dist === '11km') {
+        if (n.includes('sup')) {
+            const isMerev = n.includes('merev');
+            const isFelfujhato = n.includes('felfújható') || n.includes('felfujhato');
+            const isNoi = n.includes('női');
+            const isFerfi = n.includes('férfi');
+
+            if (isNoi) {
+                if (isMerev) return 'sup_noi_1_merev_11km';
+                if (isFelfujhato) return 'sup_noi_1_felfujhato_11km';
+            }
+            if (isFerfi) {
+                if (isMerev) return 'sup_ferfi_1_merev_11km';
+                if (isFelfujhato) return 'sup_ferfi_1_felfujhato_11km';
+            }
+        }
         if (n.includes('kajak') && n.includes('1')) return 'kajak_1_nyitott_11km';
         if (n.includes('kajak') && n.includes('2')) return 'kajak_2_nyitott_11km';
         if (n.includes('kenu') && n.includes('1')) return 'kenu_1_nyitott_11km';
