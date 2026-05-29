@@ -1128,6 +1128,9 @@ app.post('/api/upload-csv', authenticateAdmin, bodyParser.json({ limit: '10mb' }
                     const category = normalizeCategoryToSlug(fields[7]);
                     const dist = (fields[12] || '11km').replace(/\s+/g, '').toLowerCase();
                     let bib = parseInt(fields[0]);
+                    if (!bib) {
+                        bib = await getNextBib(dist, category);
+                    }
 
                     if (bib) {
                         let isDuplicate = false;
