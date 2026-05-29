@@ -1482,8 +1482,359 @@ export function renderTeamManager() {
 
     // Töröljük a globális változót, hogy a következő kézi frissítésnél vagy belépésnél ne jelölje be őket újra
     window.newlyRegisteredRacerId = null;
+
+    // Dinamikus csapatkártyák frissítése
+    renderExistingTeamsGrid();
 }
 window.renderTeamManager = renderTeamManager;
+
+/**
+ * --- SÁRKÁNYHAJÓ CSAPATOK VIZUÁLIS SZERKESZTŐJE ---
+ */
+export function renderExistingTeamsGrid() {
+    const container = document.getElementById('existing-teams-grid-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const rm = window.raceManager;
+    if (!rm || !rm.data.racers) return;
+
+    const allRacers = rm.data.racers;
+
+    // Meglévő csapatok összegyűjtése (minden olyan egység, aminek van CSAPATNEV tagja)
+    const teams = allRacers.filter(r => r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV'));
+
+    // Beosztatlan (várakozó) egyéni versenyzők összegyűjtése az új tag hozzáadása funkcióhoz
+    const unassignedList = [];
+    allRacers.forEach(r => {
+        const hasTeamName = r.members && r.members.some(m => m.otproba_id === 'CSAPATNEV');
+        const isTeam = r.id.startsWith('DRAGON_') || hasTeamName || (r.members && r.members.length > 1);
+        if (!isTeam && r.members) {
+            r.members.forEach(m => {
+                unassignedList.push({
+                    id: m.id,
+                    name: m.name,
+                    category: r.category,
+                    bib: r.bib,
+                });
+            });
+        }
+    });
+    // Ábécé sorrendbe rendezés név szerint
+    unassignedList.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (teams.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--glass-border); border-radius: 12px; color: var(--text-secondary);">
+                👥 Nincsenek még létrehozott sárkányhajó csapatok a rendszerben.<br>
+                <span style="font-size: 0.85rem; color: #888; display: block; margin-top: 10px;">Válassz ki versenyzőket a fenti táblázatból, add meg a csapatnevet és kattints az "ÚJ EGYSÉG LÉTREHOZÁSA" gombra!</span>
+            </div>
+        `;
+        return;
+    }
+
+    teams.forEach(team => {
+        const teamNameMember = team.members.find(m => m.otproba_id === 'CSAPATNEV');
+        const teamName = teamNameMember ? teamNameMember.name : `Csapat #${team.bib}`;
+        const categoryName = rm.formatCategoryName(team.category) || 'Ismeretlen kategória';
+
+        // Csapattagok kigyűjtése (a CSAPATNEV nélküliek)
+        const humanMembers = team.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+
+        const card = document.createElement('div');
+        card.className = 'team-card';
+
+        // Fejléc
+        const headerHTML = `
+            <div class="team-card-header">
+                <div class="team-card-title-area">
+                    <h4 class="team-card-title">${teamName}</h4>
+                    <div class="team-card-meta">
+                        <span>🔢 Rajtszám: <strong>#${team.bib}</strong></span>
+                        <span>🏆 Kategória: ${categoryName}</span>
+                        <span>👥 Létszám: <strong>${humanMembers.length} fő</strong></span>
+                    </div>
+                </div>
+                <div class="team-card-actions">
+                    <button class="btn-card-action" onclick="window.renameDragonTeam('${team.id}', ${team.bib}, \`${teamName.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" title="Csapat átnevezése">✏️</button>
+                    <button class="btn-card-action" onclick="window.changeDragonTeamBib('${team.id}', ${team.bib}, \`${teamName.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" title="Rajtszám módosítása">🔢</button>
+                    <button class="btn-card-action danger" onclick="window.dissolveDragonTeam(${team.bib}, \`${teamName.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, ${JSON.stringify(humanMembers.map(m => m.id))})" title="Csapat feloszlatása (minden tag egyéni lesz)">🚨</button>
+                </div>
+            </div>
+        `;
+
+        // Tagok listája
+        let membersHTML = '<ul class="team-card-members">';
+        if (humanMembers.length === 0) {
+            membersHTML += `<li style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; padding: 10px 0;">Nincsenek tagok a csapatban</li>`;
+        } else {
+            humanMembers.forEach(m => {
+                // Áthelyezési legördülő más csapatokhoz
+                let moveOptionsHTML = `<option value="" disabled selected>➡️ Áthelyez...</option>`;
+                teams.forEach(otherTeam => {
+                    if (otherTeam.id !== team.id) {
+                        const otherNameMember = otherTeam.members.find(x => x.otproba_id === 'CSAPATNEV');
+                        const otherName = otherNameMember ? otherNameMember.name : `Csapat #${otherTeam.bib}`;
+                        moveOptionsHTML += `<option value="${otherTeam.bib}">${otherName} (#${otherTeam.bib})</option>`;
+                    }
+                });
+
+                membersHTML += `
+                    <li class="team-card-member-item">
+                        <div class="team-card-member-info">
+                            <span class="team-card-member-name" onclick="window.raceManager.openEditModal('${team.id}', '${m.id}')" title="Tag adatlapjának szerkesztése">${m.name}</span>
+                            <div class="team-card-member-sub">
+                                ${m.birth_date || '-'} | ID: ${m.otproba_id || '-'}
+                            </div>
+                        </div>
+                        <div class="team-card-member-actions">
+                            <select class="team-member-move-select" onchange="window.moveMemberToTeam('${m.id}', this.value, \`${m.name.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" title="Tag áthelyezése másik csapatba">
+                                ${moveOptionsHTML}
+                            </select>
+                            <button class="team-member-remove-btn" onclick="window.removeMemberFromTeam('${m.id}', '${team.id}', \`${m.name.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, \`${teamName.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" title="Kivétel a csapatból (egyéni versenyzővé válik)">❌</button>
+                        </div>
+                    </li>
+                `;
+            });
+        }
+        membersHTML += '</ul>';
+
+        // Tag hozzáadása legördülő
+        let addOptionsHTML = `<option value="" disabled selected>➕ Tag hozzáadása...</option>`;
+        unassignedList.forEach(unassigned => {
+            const catName = rm.formatCategoryName(unassigned.category) || 'SUP/Egyéni';
+            addOptionsHTML += `<option value="${unassigned.id}">${unassigned.name} (${catName})</option>`;
+        });
+
+        const addMemberHTML = `
+            <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);">
+                <select class="team-card-add-member-select" onchange="window.addMemberToTeam(this.value, ${team.bib}, \`${teamName.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, this.options[this.selectedIndex].text)" ${unassignedList.length === 0 ? 'disabled' : ''}>
+                    ${unassignedList.length === 0 ? '<option value="" disabled selected>Nincs várakozó beosztható tag</option>' : addOptionsHTML}
+                </select>
+            </div>
+        `;
+
+        card.innerHTML = headerHTML + membersHTML + addMemberHTML;
+        container.appendChild(card);
+    });
+}
+window.renderExistingTeamsGrid = renderExistingTeamsGrid;
+
+window.renameDragonTeam = async (racerId, currentBib, currentName) => {
+    const newName = prompt(`Add meg a(z) "${currentName}" csapat új nevét:`, currentName);
+    if (newName === null) return;
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === currentName) return;
+
+    try {
+        const response = await fetch(`${API_URL}/create-dragon-team`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${window.raceManager.adminPassword}`,
+            },
+            body: JSON.stringify({ memberIds: [], bib: currentBib, name: trimmed }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showToast(`Csapat sikeresen átnevezve: "${trimmed}"`, 'success');
+            await window.raceManager.loadData();
+            renderTeamManager();
+            window.renderAdminTable();
+        } else {
+            showToast(result.error || 'Hiba történt!', 'error');
+        }
+    } catch (err) {
+        showToast('Hálózati hiba a csapat átnevezése során!', 'error');
+    }
+};
+
+window.changeDragonTeamBib = async (racerId, currentBib, teamName) => {
+    const newBib = prompt(`Add meg a(z) "${teamName}" csapat új rajtszámát:`, currentBib);
+    if (newBib === null) return;
+    const bibInt = parseInt(newBib.trim());
+    if (isNaN(bibInt) || bibInt === currentBib) return;
+
+    try {
+        const response = await fetch(`${API_URL}/racer/${racerId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${window.raceManager.adminPassword}`,
+            },
+            body: JSON.stringify({ bib: bibInt }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showToast(`Rajtszám sikeresen módosítva: #${bibInt}`, 'success');
+            await window.raceManager.loadData();
+            renderTeamManager();
+            window.renderAdminTable();
+        } else {
+            showToast(result.error || 'Hiba történt!', 'error');
+        }
+    } catch (err) {
+        showToast('Hálózati hiba a rajtszám módosítása során!', 'error');
+    }
+};
+
+window.dissolveDragonTeam = async (teamBib, teamName, memberIds) => {
+    if (memberIds.length === 0) {
+        if (!confirm(`Biztosan törlöd a(z) "${teamName}" üres csapatot?`)) return;
+        try {
+            const response = await fetch(`${API_URL}/racer/${teamBib}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${window.raceManager.adminPassword}`,
+                },
+            });
+            if (response.ok) {
+                showToast(`Üres csapat törölve!`, 'success');
+                await window.raceManager.loadData();
+                renderTeamManager();
+                window.renderAdminTable();
+            } else {
+                const res = await response.json();
+                showToast(res.error || 'Hiba a törlésnél', 'error');
+            }
+        } catch (err) {
+            showToast('Hálózati hiba a csapat törlésekor!', 'error');
+        }
+        return;
+    }
+
+    if (
+        !confirm(
+            `Biztosan feloszlatod a(z) "${teamName}" csapatot?\n\nMinden tagja (${memberIds.length} fő) egyéni indulóvá válik, a csapat pedig véglegesen törlődik!`
+        )
+    )
+        return;
+
+    try {
+        const response = await fetch(`${API_URL}/remove-from-dragon-team`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${window.raceManager.adminPassword}`,
+            },
+            body: JSON.stringify({ memberIds }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showToast(`Csapat feloszlatva! A tagok egyéni indulókká váltak.`, 'success');
+            await window.raceManager.loadData();
+            renderTeamManager();
+            window.renderAdminTable();
+        } else {
+            showToast(result.error || 'Hiba történt!', 'error');
+        }
+    } catch (err) {
+        showToast('Hálózati hiba a feloszlatás során!', 'error');
+    }
+};
+
+window.removeMemberFromTeam = async (memberId, racerId, memberName, teamName) => {
+    if (
+        !confirm(
+            `Biztosan kiveszed ${memberName} versenyzőt a(z) "${teamName}" csapatból? (Visszaalakul egyéni versenyzővé)`
+        )
+    )
+        return;
+
+    try {
+        const response = await fetch(`${API_URL}/remove-from-dragon-team`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${window.raceManager.adminPassword}`,
+            },
+            body: JSON.stringify({ memberIds: [memberId] }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showToast(`${memberName} sikeresen kivéve a csapatból!`, 'success');
+            await window.raceManager.loadData();
+            renderTeamManager();
+            window.renderAdminTable();
+        } else {
+            showToast(result.error || 'Hiba történt!', 'error');
+        }
+    } catch (err) {
+        showToast('Hálózati hiba az eltávolítás során!', 'error');
+    }
+};
+
+window.moveMemberToTeam = async (memberId, targetBib, memberName) => {
+    const rm = window.raceManager;
+    const targetTeam = rm.data.racers.find(r => r.bib === parseInt(targetBib));
+    if (!targetTeam) {
+        showToast('A kiválasztott célcsapat nem található!', 'error');
+        return;
+    }
+    const nameMember = targetTeam.members.find(m => m.otproba_id === 'CSAPATNEV');
+    const targetName = nameMember ? nameMember.name : `Csapat #${targetBib}`;
+
+    if (!confirm(`Biztosan áthelyezed ${memberName} versenyzőt a(z) "${targetName}" (#${targetBib}) csapatba?`)) {
+        renderTeamManager();
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/create-dragon-team`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${window.raceManager.adminPassword}`,
+            },
+            body: JSON.stringify({ memberIds: [memberId], bib: targetBib, name: targetName }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showToast(`${memberName} sikeresen áthelyezve a(z) "${targetName}" csapatba!`, 'success');
+            await window.raceManager.loadData();
+            renderTeamManager();
+            window.renderAdminTable();
+        } else {
+            showToast(result.error || 'Hiba történt!', 'error');
+            renderTeamManager();
+        }
+    } catch (err) {
+        showToast('Hálózati hiba az áthelyezés során!', 'error');
+        renderTeamManager();
+    }
+};
+
+window.addMemberToTeam = async (memberId, teamBib, teamName, _selectText) => {
+    const rm = window.raceManager;
+    let mName = 'versenyző';
+    const racer = rm.data.racers.find(r => r.members && r.members.some(m => m.id === memberId));
+    if (racer) {
+        const member = racer.members.find(m => m.id === memberId);
+        if (member) mName = member.name;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/create-dragon-team`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${window.raceManager.adminPassword}`,
+            },
+            body: JSON.stringify({ memberIds: [memberId], bib: teamBib, name: teamName }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showToast(`${mName} sikeresen hozzáadva a(z) "${teamName}" csapathoz!`, 'success');
+            await window.raceManager.loadData();
+            renderTeamManager();
+            window.renderAdminTable();
+        } else {
+            showToast(result.error || 'Hiba történt!', 'error');
+        }
+    } catch (err) {
+        showToast('Hálózati hiba a hozzáadás során!', 'error');
+    }
+};
 
 window.selectExistingDragonTeam = val => {
     const bibInput = document.getElementById('new-team-bib');
