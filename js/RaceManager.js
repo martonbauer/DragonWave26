@@ -117,7 +117,7 @@ export class RaceManager {
             kajak_hosszu: 'Összes Hosszú Kajak',
             kajak_rovid: 'Összes Rövid Kajak',
             kenu_hosszu: 'Összes Hosszú Kenu + Hosszú SUP',
-            kenu_rovid: 'Összes Rövid Kenu',
+            kenu_rovid: 'Összes Rövid Kenu + Rövid SUP',
             sup_4km: 'Összes SUP 4 km',
             sarkanyhajo_11km: '🐉 SÁRKÁNYHAJÓ',
         };
@@ -1596,7 +1596,8 @@ export class RaceManager {
         if (groupId === 'kajak_rovid') return (cat.includes('kajak') || cat.includes('surfski')) && dist === '11km';
         if (groupId === 'kenu_hosszu')
             return (cat.includes('kenu') || cat.includes('outrigger') || cat.includes('sup')) && dist === '22km';
-        if (groupId === 'kenu_rovid') return (cat.includes('kenu') || cat.includes('outrigger')) && dist === '11km';
+        if (groupId === 'kenu_rovid')
+            return (cat.includes('kenu') || cat.includes('outrigger') || cat.includes('sup')) && dist === '11km';
         if (groupId === 'sup_4km') return cat.includes('sup') && dist === '4km';
         if (groupId === 'sarkanyhajo_11km') return /s[aá]rk[aá]ny/i.test(cat) && dist === '11km';
         return false;

@@ -36,7 +36,16 @@ function getGroupQuery(query, batchKey) {
         ];
         return query.in('category', kenuHosszuCategories).eq('distance', '22km');
     }
-    if (batchKey === 'kenu_rovid') return query.in('category', CATEGORY_GROUPS.KENU).eq('distance', '11km');
+    if (batchKey === 'kenu_rovid') {
+        const kenuRovidCategories = [
+            ...CATEGORY_GROUPS.KENU,
+            'sup_ferfi_1_merev_11km',
+            'sup_noi_1_merev_11km',
+            'sup_ferfi_1_felfujhato_11km',
+            'sup_noi_1_felfujhato_11km',
+        ];
+        return query.in('category', kenuRovidCategories).eq('distance', '11km');
+    }
     if (batchKey === 'sup_4km') return query.in('category', CATEGORY_GROUPS.SUP).eq('distance', '4km');
     if (batchKey === 'sarkanyhajo_11km')
         return query.in('category', CATEGORY_GROUPS.SARKANYHAJO).eq('distance', '11km');
