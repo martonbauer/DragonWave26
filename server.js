@@ -719,8 +719,12 @@ app.delete('/api/racer/:idOrBib', authenticateAdmin, async (req, res) => {
 
 app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
     const id = req.params.id;
-    const { bib, category, distance, is_series, status, email, phone, members, checked_in, is_paid } = req.body;
+    const { bib, category, distance, is_series, status, email, phone, members, checked_in, is_paid, total_time } =
+        req.body;
     try {
+        const { data: racer } = await supabase.from('racers').select('*').eq('id', id).single();
+        if (!racer) return res.status(404).json({ error: 'A módosítani kívánt versenyző nem található!' });
+
         if (bib) {
             const { data: existing } = await supabase
                 .from('racers')
@@ -731,10 +735,7 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
             if (existing) {
                 if (req.body.swap) {
                     // Kölcsönös rajtszám csere megvalósítása
-                    const { data: racerA } = await supabase.from('racers').select('bib').eq('id', id).single();
-                    if (!racerA) return res.status(404).json({ error: 'A módosítani kívánt versenyző nem található!' });
-
-                    const oldBibA = racerA.bib;
+                    const oldBibA = racer.bib;
                     const oldBibB = existing.bib;
                     const idB = existing.id;
 
@@ -826,6 +827,16 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
         if (is_series !== undefined) updateData.is_series = is_series ? 1 : 0;
         if (checked_in !== undefined) updateData.checked_in = checked_in;
         if (is_paid !== undefined) updateData.is_paid = is_paid;
+
+        if (total_time !== undefined) {
+            updateData.total_time = total_time;
+            if (total_time !== null) {
+                const start = racer.start_time || Date.now();
+                updateData.finish_time = start + total_time;
+            } else {
+                updateData.finish_time = null;
+            }
+        }
 
         if (Object.keys(updateData).length > 0) {
             console.log('UPDATING RACER', id, 'with data:', updateData);

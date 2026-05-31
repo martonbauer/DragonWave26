@@ -1,6 +1,42 @@
 import { apiCall, API_URL, socketAdmin } from './api.js';
 import { showToast, formatTime } from './ui-utils.js';
 
+export function parseTimeToMs(timeStr) {
+    if (!timeStr || !timeStr.trim()) return null;
+    const parts = timeStr.trim().split(':');
+    if (parts.length < 2 || parts.length > 3) return NaN;
+
+    let hours = 0;
+    let minutes;
+    let secondsWithMs;
+
+    if (parts.length === 3) {
+        hours = parseInt(parts[0], 10);
+        minutes = parseInt(parts[1], 10);
+        secondsWithMs = parts[2];
+    } else {
+        minutes = parseInt(parts[0], 10);
+        secondsWithMs = parts[1];
+    }
+
+    if (isNaN(hours) || hours < 0 || isNaN(minutes) || minutes < 0 || minutes >= 60) return NaN;
+
+    const secParts = secondsWithMs.split('.');
+    const seconds = parseInt(secParts[0], 10);
+    if (isNaN(seconds) || seconds < 0 || seconds >= 60) return NaN;
+
+    let milliseconds = 0;
+    if (secParts.length === 2) {
+        const msStr = secParts[1];
+        milliseconds = parseInt(msStr.padEnd(3, '0').slice(0, 3), 10);
+        if (isNaN(milliseconds)) return NaN;
+    } else if (secParts.length > 2) {
+        return NaN;
+    }
+
+    return hours * 3600000 + minutes * 60000 + seconds * 1000 + milliseconds;
+}
+
 /**
  * --- KÖZPONTI LOGIKAI RÉTEG (MANAGER LAYER) ---
  * RaceManager - A verseny lebonyolításáért, az adatok kezeléséért
@@ -625,6 +661,11 @@ export class RaceManager {
         document.getElementById('edit-bib').value = racer.bib || '';
         document.getElementById('edit-status').value = racer.status || 'registered';
 
+        const totalTimeEl = document.getElementById('edit-total_time');
+        if (totalTimeEl) {
+            totalTimeEl.value = racer.total_time ? formatTime(racer.total_time) : '';
+        }
+
         const distanceVal = racer.distance || '11km';
         const editDistanceEl = document.getElementById('edit-distance');
         if (editDistanceEl) {
@@ -820,6 +861,21 @@ export class RaceManager {
             }
         }
 
+        let totalTimeMs = null;
+        if (!memberId) {
+            const totalTimeStr = document.getElementById('edit-total_time').value.trim();
+            if (totalTimeStr) {
+                totalTimeMs = parseTimeToMs(totalTimeStr);
+                if (isNaN(totalTimeMs)) {
+                    showToast(
+                        'Érvénytelen időformátum! Használja az ÓÓ:pp:mp.mmm (pl. 01:23:45.678) vagy pp:mp formátumot!',
+                        'error'
+                    );
+                    return;
+                }
+            }
+        }
+
         const data = {
             members: membersToSend,
         };
@@ -835,6 +891,7 @@ export class RaceManager {
             data.phone = document.getElementById('edit-phone').value;
             data.is_series = document.getElementById('edit-is_series').checked;
             data.is_paid = document.getElementById('edit-is_paid').value === '1';
+            data.total_time = totalTimeMs;
         }
         try {
             const response = await apiCall(`racer/${id}`, 'PUT', data, this.adminPassword);
