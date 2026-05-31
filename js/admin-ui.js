@@ -144,7 +144,13 @@ export function renderAdminTable(filterType = 'all') {
     });
 
     displayRacers
-        .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+        .sort((a, b) => {
+            const bibDiff = (a.bib || 0) - (b.bib || 0);
+            if (bibDiff !== 0) return bibDiff;
+            const nameA = a.members && a.members[0] ? a.members[0].name || '' : '';
+            const nameB = b.members && b.members[0] ? b.members[0].name || '' : '';
+            return nameA.localeCompare(nameB);
+        })
         .forEach(r => {
             const tr = document.createElement('tr');
             let statusColor = 'white';
