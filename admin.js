@@ -298,16 +298,13 @@ window.showTableSubSection = mode => {
     } else {
         document.getElementById('admin-table-content-view').classList.remove('hidden');
         const filterCtrls = document.getElementById('admin-table-filter-ctrls');
+        if (filterCtrls) filterCtrls.classList.remove('hidden');
 
         if (mode === 'all') {
-            window.currentTableFilter = 'all';
             window.updateAdminDataHeader('👥 Összes Versenyző Listája', null, true);
-            filterCtrls.classList.add('hidden');
-            window.renderAdminTable('all');
+            window.filterAdminTable('all');
         } else {
-            window.currentTableFilter = '22km';
             window.updateAdminDataHeader('🔍 Nevezettek Távonként', null, true);
-            filterCtrls.classList.remove('hidden');
             window.filterAdminTable('22km');
         }
     }

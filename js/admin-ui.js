@@ -90,6 +90,52 @@ export function renderAdminTable(filterType = 'all') {
         return;
     }
 
+    // Regisztráljuk a rendezési függvényt globálisan, ha még nincs
+    if (!window.sortAdminTable) {
+        window.adminTableSortCol = 'bib';
+        window.adminTableSortDir = 'asc';
+        window.sortAdminTable = col => {
+            const currentCol = window.adminTableSortCol || 'bib';
+            const currentDir = window.adminTableSortDir || 'asc';
+
+            if (currentCol === col) {
+                window.adminTableSortDir = currentDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                window.adminTableSortCol = col;
+                window.adminTableSortDir = 'asc';
+            }
+
+            renderAdminTable(window.currentTableFilter || 'all');
+        };
+    }
+
+    const thead = document.querySelector('#admin-table thead');
+    if (thead) {
+        const sortCol = window.adminTableSortCol || 'bib';
+        const sortDir = window.adminTableSortDir || 'asc';
+        const getIndicator = col => {
+            if (sortCol === col) {
+                return sortDir === 'asc' ? ' ▲' : ' ▼';
+            }
+            return ' ⇅';
+        };
+
+        thead.innerHTML = `
+            <tr>
+                <th onclick="window.sortAdminTable('bib')" style="cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">Rajtszám${getIndicator('bib')}</th>
+                <th onclick="window.sortAdminTable('name')" style="cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">Egység Tagjai${getIndicator('name')}</th>
+                <th style="user-select: none;">Ötpróba ID</th>
+                <th onclick="window.sortAdminTable('category')" style="cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">Kategória${getIndicator('category')}</th>
+                <th onclick="window.sortAdminTable('distance')" style="cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">Táv${getIndicator('distance')}</th>
+                <th onclick="window.sortAdminTable('status')" style="cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">Státusz${getIndicator('status')}</th>
+                <th onclick="window.sortAdminTable('time')" style="cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">Időeredmény${getIndicator('time')}</th>
+                <th onclick="window.sortAdminTable('checked_in')" style="cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">Megjelent${getIndicator('checked_in')}</th>
+                <th onclick="window.sortAdminTable('is_paid')" style="cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background=''">Barion${getIndicator('is_paid')}</th>
+                <th>Művelet</th>
+            </tr>
+        `;
+    }
+
     let racers = [...window.raceManager.data.racers].filter(r => r && r.status);
 
     // Alkalmazzuk a szűrőt
@@ -143,53 +189,100 @@ export function renderAdminTable(filterType = 'all') {
         }
     });
 
-    displayRacers
-        .sort((a, b) => {
-            const bibDiff = (a.bib || 0) - (b.bib || 0);
-            if (bibDiff !== 0) return bibDiff;
-            const nameA = a.members && a.members[0] ? a.members[0].name || '' : '';
-            const nameB = b.members && b.members[0] ? b.members[0].name || '' : '';
-            return nameA.localeCompare(nameB);
-        })
-        .forEach(r => {
-            const tr = document.createElement('tr');
-            let statusColor = 'white';
-            let dataStartAttr = '';
+    const sortCol = window.adminTableSortCol || 'bib';
+    const sortDir = window.adminTableSortDir || 'asc';
+    const dirMultiplier = sortDir === 'asc' ? 1 : -1;
 
-            if (r.status === 'running') {
-                statusColor = 'var(--accent-primary)';
-                tr.className = 'status-running';
-                dataStartAttr = `data-start="${r.start_time || 0}"`;
-            } else if (r.status === 'finished') {
-                statusColor = '#00FFCC';
-            } else if (r.status === 'duplicate') {
-                statusColor = '#FFA500'; // Narancs
-                tr.style.background = 'rgba(255, 165, 0, 0.15)';
+    displayRacers.sort((a, b) => {
+        let valA, valB;
+
+        if (sortCol === 'bib') {
+            valA = a.bib || 0;
+            valB = b.bib || 0;
+        } else if (sortCol === 'name') {
+            valA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
+            valB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+        } else if (sortCol === 'category') {
+            valA = a.category || '';
+            valB = b.category || '';
+        } else if (sortCol === 'distance') {
+            valA = a.distance || '';
+            valB = b.distance || '';
+        } else if (sortCol === 'status') {
+            valA = a.status || '';
+            valB = b.status || '';
+        } else if (sortCol === 'time') {
+            valA = a.total_time || 0;
+            valB = b.total_time || 0;
+        } else if (sortCol === 'checked_in') {
+            valA = a.team_size_was_larger && a.members && a.members[0] ? !!a.members[0].checked_in : !!a.checked_in;
+            valB = b.team_size_was_larger && b.members && b.members[0] ? !!b.members[0].checked_in : !!b.checked_in;
+        } else if (sortCol === 'is_paid') {
+            valA = !!a.is_paid;
+            valB = !!b.is_paid;
+        } else {
+            valA = a.bib || 0;
+            valB = b.bib || 0;
+        }
+
+        if (valA === valB) {
+            if (sortCol === 'bib') {
+                const nameA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
+                const nameB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+                return nameA.localeCompare(nameB);
+            } else {
+                return (a.bib || 0) - (b.bib || 0);
             }
+        }
 
-            let timeStr = '00:00:00.000';
-            if (r.status === 'running') {
-                timeStr = formatTime(Date.now() + (window.raceManager.serverTimeOffset || 0) - (r.start_time || 0));
-            } else if (r.status === 'finished') {
-                timeStr = formatTime(r.total_time || 0);
-            }
+        if (typeof valA === 'string' && typeof valB === 'string') {
+            return valA.localeCompare(valB) * dirMultiplier;
+        }
+        if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+            return ((valA ? 1 : 0) - (valB ? 1 : 0)) * dirMultiplier;
+        }
+        return (valA - valB) * dirMultiplier;
+    });
 
-            const memberList = formatMemberListHtml(r);
-            const otprobaList = formatOtprobaListHtml(r);
+    displayRacers.forEach(r => {
+        const tr = document.createElement('tr');
+        let statusColor = 'white';
+        let dataStartAttr = '';
 
-            const isChecked =
-                r.team_size_was_larger && r.members && r.members[0] ? !!r.members[0].checked_in : !!r.checked_in;
-            const isPaid = !!r.is_paid;
+        if (r.status === 'running') {
+            statusColor = 'var(--accent-primary)';
+            tr.className = 'status-running';
+            dataStartAttr = `data-start="${r.start_time || 0}"`;
+        } else if (r.status === 'finished') {
+            statusColor = '#00FFCC';
+        } else if (r.status === 'duplicate') {
+            statusColor = '#FFA500'; // Narancs
+            tr.style.background = 'rgba(255, 165, 0, 0.15)';
+        }
 
-            const checkInHtml =
-                r.team_size_was_larger && r.members && r.members[0]
-                    ? `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateMemberStatus('${r.members[0].id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`
-                    : `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateRacerStatus('${r.id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`;
-            const paidHtml = isPaid
-                ? `<span style="background:#5BB226; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;" onclick="if(confirm('Mégis visszaállítod fizetetlenre?')) window.raceManager.updateRacerStatus('${r.id}', 'is_paid', false).then(() => renderAdminTable(window.currentTableFilter))">Befizetve</span>`
-                : `<button onclick="window.raceManager.updateRacerStatus('${r.id}', 'is_paid', true).then(() => renderAdminTable(window.currentTableFilter))" class="action-btn" style="background:transparent; border:1px solid #5BB226; color:#5BB226; padding:2px 8px; font-size:0.8rem;">Függőben</button>`;
+        let timeStr = '00:00:00.000';
+        if (r.status === 'running') {
+            timeStr = formatTime(Date.now() + (window.raceManager.serverTimeOffset || 0) - (r.start_time || 0));
+        } else if (r.status === 'finished') {
+            timeStr = formatTime(r.total_time || 0);
+        }
 
-            tr.innerHTML = `
+        const memberList = formatMemberListHtml(r);
+        const otprobaList = formatOtprobaListHtml(r);
+
+        const isChecked =
+            r.team_size_was_larger && r.members && r.members[0] ? !!r.members[0].checked_in : !!r.checked_in;
+        const isPaid = !!r.is_paid;
+
+        const checkInHtml =
+            r.team_size_was_larger && r.members && r.members[0]
+                ? `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateMemberStatus('${r.members[0].id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`
+                : `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateRacerStatus('${r.id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`;
+        const paidHtml = isPaid
+            ? `<span style="background:#5BB226; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;" onclick="if(confirm('Mégis visszaállítod fizetetlenre?')) window.raceManager.updateRacerStatus('${r.id}', 'is_paid', false).then(() => renderAdminTable(window.currentTableFilter))">Befizetve</span>`
+            : `<button onclick="window.raceManager.updateRacerStatus('${r.id}', 'is_paid', true).then(() => renderAdminTable(window.currentTableFilter))" class="action-btn" style="background:transparent; border:1px solid #5BB226; color:#5BB226; padding:2px 8px; font-size:0.8rem;">Függőben</button>`;
+
+        tr.innerHTML = `
             <td data-label="Rajtszám"><strong>#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
             <td data-label="Egység Tagjai">${memberList}</td>
             <td data-label="Ötpróba ID">${otprobaList}</td>
@@ -219,8 +312,8 @@ export function renderAdminTable(filterType = 'all') {
                 }
             </td>
         `;
-            tbody.appendChild(tr);
-        });
+        tbody.appendChild(tr);
+    });
 }
 
 // globális kereső támogatása
