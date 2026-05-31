@@ -1283,6 +1283,50 @@ export class RaceManager {
         }
     }
 
+    async updateMemberStatus(id, field, value) {
+        try {
+            const response = await fetch(`${API_URL}/member/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${this.adminPassword}`,
+                },
+                body: JSON.stringify({ [field]: value }),
+            });
+
+            if (response.ok) {
+                showToast('Tag állapota mentve.', 'success');
+                // Frissítjük a helyi adatot és az UI-t
+                for (const r of this.data.racers) {
+                    if (r.members) {
+                        const member = r.members.find(m => m.id == id);
+                        if (member) {
+                            member[field] = value;
+                            break;
+                        }
+                    }
+                }
+
+                // Újrarajzoljuk a listákat, ha a megjelent állapot változott
+                if (field === 'checked_in') {
+                    this.renderWaitingListCards();
+                    this.renderRunningListCards();
+                    this.renderFinishedListCards();
+                    if (typeof window.renderAdminTable === 'function') window.renderAdminTable();
+                }
+
+                return true;
+            } else {
+                const err = await response.json();
+                showToast(err.error || 'Hiba a mentéskor!', 'error');
+                return false;
+            }
+        } catch (err) {
+            showToast('Hálózati hiba!', 'error');
+            return false;
+        }
+    }
+
     // --- 4. MEGJELENÍTÉSI LOGIKA (UI RENDERING) ---
     renderUI() {
         this.renderRacersList();

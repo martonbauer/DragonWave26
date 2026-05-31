@@ -859,6 +859,23 @@ app.put('/api/racer/:id', authenticateAdmin, async (req, res) => {
     }
 });
 
+app.put('/api/member/:id', authenticateAdmin, async (req, res) => {
+    const id = req.params.id;
+    const { checked_in } = req.body;
+    try {
+        const updateData = {};
+        if (checked_in !== undefined) updateData.checked_in = checked_in;
+
+        if (Object.keys(updateData).length > 0) {
+            const { error } = await supabase.from('members').update(updateData).eq('id', id);
+            if (error) throw error;
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- 11.5 RAJTSZÁM ELŐZMÉNYEK (BIB HISTORY API) ---
 app.get('/api/bib-history', authenticateAdmin, async (req, res) => {
     res.json(await getBibHistory());

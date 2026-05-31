@@ -4,6 +4,9 @@ ALTER TABLE racers ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE racers ADD COLUMN IF NOT EXISTS checked_in BOOLEAN DEFAULT false;
 ALTER TABLE racers ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT false;
 
+-- Add checked_in column to the members table for individual team member check-ins
+ALTER TABLE members ADD COLUMN IF NOT EXISTS checked_in BOOLEAN DEFAULT false;
+
 -- Update the RPC function to handle email and phone (if not already done)
 CREATE OR REPLACE FUNCTION register_racer_with_members(
     p_racer_id TEXT,

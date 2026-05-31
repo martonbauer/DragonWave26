@@ -171,10 +171,14 @@ export function renderAdminTable(filterType = 'all') {
             const memberList = formatMemberListHtml(r);
             const otprobaList = formatOtprobaListHtml(r);
 
-            const isChecked = !!r.checked_in;
+            const isChecked =
+                r.team_size_was_larger && r.members && r.members[0] ? !!r.members[0].checked_in : !!r.checked_in;
             const isPaid = !!r.is_paid;
 
-            const checkInHtml = `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateRacerStatus('${r.id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`;
+            const checkInHtml =
+                r.team_size_was_larger && r.members && r.members[0]
+                    ? `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateMemberStatus('${r.members[0].id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`
+                    : `<input type="checkbox" style="transform: scale(1.5)" ${isChecked ? 'checked' : ''} onchange="window.raceManager.updateRacerStatus('${r.id}', 'checked_in', this.checked).then(res => { if(res) { window.raceManager.renderWaitingListCards(); window.raceManager.renderRunningListCards(); } })">`;
             const paidHtml = isPaid
                 ? `<span style="background:#5BB226; color:white; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;" onclick="if(confirm('Mégis visszaállítod fizetetlenre?')) window.raceManager.updateRacerStatus('${r.id}', 'is_paid', false).then(() => renderAdminTable(window.currentTableFilter))">Befizetve</span>`
                 : `<button onclick="window.raceManager.updateRacerStatus('${r.id}', 'is_paid', true).then(() => renderAdminTable(window.currentTableFilter))" class="action-btn" style="background:transparent; border:1px solid #5BB226; color:#5BB226; padding:2px 8px; font-size:0.8rem;">Függőben</button>`;
