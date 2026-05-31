@@ -73,6 +73,9 @@ const SLUG_MAP = [
  */
 function normalizeCategoryToSlug(categoryName) {
     if (!categoryName) return '';
+    if (typeof ALL_VALID_SLUGS !== 'undefined' && ALL_VALID_SLUGS.has(categoryName)) {
+        return categoryName;
+    }
     const n = categoryName.toLowerCase();
     const match = SLUG_MAP.find(e => e.keys.every(k => n.includes(k)));
     return match ? match.slug : categoryName;
@@ -152,6 +155,8 @@ const CATEGORY_GROUPS = {
     ],
     SARKANYHAJO: ['sarkanyhajo_otproba'],
 };
+
+const ALL_VALID_SLUGS = new Set(Object.values(CATEGORY_GROUPS).flat());
 
 module.exports = {
     validateRacerData,
