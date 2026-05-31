@@ -873,6 +873,8 @@ export class RaceManager {
                     );
                     return;
                 }
+                // Ha van időeredmény, a státuszt automatikusan FINISHED-re állítjuk!
+                document.getElementById('edit-status').value = 'finished';
             }
         }
 
