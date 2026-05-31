@@ -2005,6 +2005,26 @@ window.generateDiploma = async bibStr => {
     showToast('Oklevél generálása folyamatban...', 'info');
 
     try {
+        // Dinamikusan betöltjük a PDF-lib könyvtárat CDN-ről, ha még nincs betöltve
+        if (typeof window.PDFLib === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/pdf-lib/dist/pdf-lib.min.js';
+            document.head.appendChild(script);
+            await new Promise(resolve => {
+                script.onload = resolve;
+            });
+        }
+
+        // Dinamikusan betöltjük a fontkit könyvtárat CDN-ről, ha még nincs betöltve
+        if (typeof window.fontkit === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.min.js';
+            document.head.appendChild(script);
+            await new Promise(resolve => {
+                script.onload = resolve;
+            });
+        }
+
         // Helyezés kiszámítása
         const categoryRacers = rm.data.racers.filter(
             r => r.category === racer.category && r.distance === racer.distance
@@ -2026,15 +2046,16 @@ window.generateDiploma = async bibStr => {
         const categoryName = rm.formatCategoryName(racer.category);
         const distanceStr = racer.distance;
 
+        // Dinamikus elérési út meghatározása az API_URL alapján,
+        // így file:// vagy alternatív portok esetén is megbízhatóan betöltődik.
+        const baseStaticUrl = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : '';
+        const pdfUrl = baseStaticUrl ? `${baseStaticUrl}/Dunakeszi.pdf` : 'Dunakeszi.pdf';
+
         // PDF Letöltése és betöltése
-        const existingPdfBytes = await fetch('Dunakeszi.pdf').then(res => {
+        const existingPdfBytes = await fetch(pdfUrl).then(res => {
             if (!res.ok) throw new Error('Nem található a Dunakeszi.pdf fájl a szerveren!');
             return res.arrayBuffer();
         });
-
-        if (!window.PDFLib) {
-            throw new Error('A PDF-lib könyvtár nem töltődött be!');
-        }
 
         const { PDFDocument, rgb } = window.PDFLib;
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
@@ -2103,6 +2124,12 @@ window.generateDiploma = async bibStr => {
         );
         drawCenteredText(resultText, centerX, height * 0.45, 14, fontBold, darkBlue);
 
+        // Hivatalos célidő kiírása, ha beérkezett
+        if (racer.status === 'finished' && racer.total_time) {
+            const timeDisplay = formatTime(racer.total_time);
+            drawCenteredText(`Hivatalos időeredménye: ${timeDisplay}`, centerX, height * 0.38, 14, fontBold, darkBlue);
+        }
+
         const pdfBytes = await pdfDoc.save();
 
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -2128,104 +2155,8 @@ export async function generateCertificate(racerId) {
     const racer = rm.data.racers.find(r => r.id === racerId);
     if (!racer) return;
 
-    showToast('Oklevél generálása...', 'info');
-
-    // Dinamikusan betöltjük a jsPDF könyvtárat CDN-ről, ha még nincs betöltve
-    if (typeof window.jspdf === 'undefined') {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        document.head.appendChild(script);
-        await new Promise(resolve => {
-            script.onload = resolve;
-        });
-    }
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4',
-    });
-
-    // 1. Háttér: Sötétkék arculat (#0B192C)
-    doc.setFillColor(11, 25, 44);
-    doc.rect(0, 0, 297, 210, 'F');
-
-    // 2. Dekoratív cián keret
-    doc.setDrawColor(0, 228, 255); // cián
-    doc.setLineWidth(1);
-    doc.line(10, 10, 287, 10);
-    doc.line(10, 10, 10, 200);
-    doc.line(287, 10, 287, 200);
-    doc.line(10, 200, 287, 200);
-
-    // 3. Dekoratív arany keret beljebb
-    doc.setDrawColor(255, 215, 0); // arany
-    doc.setLineWidth(1.5);
-    doc.line(14, 14, 283, 14);
-    doc.line(14, 14, 14, 196);
-    doc.line(283, 14, 283, 196);
-    doc.line(14, 196, 283, 196);
-
-    // 4. Oklevél fejléce
-    doc.setTextColor(0, 228, 255); // cián
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(38);
-    doc.text('ELISMERŐ OKLEVÉL', 148, 45, { align: 'center' });
-
-    // Aláírásos rész szövege
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(16);
-    doc.text('amelyet büszkén adományozunk a', 148, 65, { align: 'center' });
-
-    // 5. Versenyző(k) neve
-    const names = formatRacerName(racer);
-    doc.setTextColor(255, 215, 0); // arany
-    doc.setFont('helvetica', 'bold');
-    if (names.length > 35) {
-        doc.setFontSize(18);
-    } else {
-        doc.setFontSize(26);
-    }
-    doc.text(names, 148, 85, { align: 'center' });
-
-    // 6. Távolság és kategória
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(16);
-    doc.text('részére, aki sikeresen teljesítette a', 148, 105, { align: 'center' });
-
-    const categoryName = rm.formatCategoryName(racer.category);
-    doc.setTextColor(0, 228, 255); // cián
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.text(`DUNAKESZI FUTAM 2026 - ${racer.distance} (${categoryName})`, 148, 125, { align: 'center' });
-
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(16);
-    doc.text('versenytávot, az alábbi hivatalos időeredménnyel:', 148, 145, { align: 'center' });
-
-    // 7. Célidő
-    doc.setTextColor(0, 255, 194); // zöldes-cián
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(30);
-    doc.text(formatTime(racer.total_time || 0), 148, 168, { align: 'center' });
-
-    // 8. Dátum és hitelesítés
-    doc.setTextColor(139, 168, 203);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.text('Dunakeszi, 2026. május 26.', 30, 188);
-
-    doc.text('__________________________', 240, 183, { align: 'center' });
-    doc.text('DunakesziFutam Szervezőség', 240, 188, { align: 'center' });
-
-    // Letöltés indítása
-    const sanitized = names.replace(/[^a-zA-Z0-9]/g, '_');
-    doc.save(`oklevel_${sanitized}.pdf`);
-    showToast('Oklevél sikeresen letöltve!', 'success');
+    // Az adminisztrációs felületről letöltött oklevelet is egységesítjük a sablonos változatra
+    await window.generateDiploma(racer.bib);
 }
 window.generateCertificate = generateCertificate;
 
