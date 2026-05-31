@@ -200,8 +200,10 @@ export function renderAdminTable(filterType = 'all') {
             valA = a.bib || 0;
             valB = b.bib || 0;
         } else if (sortCol === 'name') {
-            valA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
-            valB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+            const realA = (a.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
+            const realB = (b.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
+            valA = (realA[0] ? realA[0].name : a.name) || '';
+            valB = (realB[0] ? realB[0].name : b.name) || '';
         } else if (sortCol === 'category') {
             valA = a.category || '';
             valB = b.category || '';
@@ -227,8 +229,10 @@ export function renderAdminTable(filterType = 'all') {
 
         if (valA === valB) {
             if (sortCol === 'bib') {
-                const nameA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
-                const nameB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+                const realA = (a.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
+                const realB = (b.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
+                const nameA = (realA[0] ? realA[0].name : a.name) || '';
+                const nameB = (realB[0] ? realB[0].name : b.name) || '';
                 return nameA.localeCompare(nameB);
             } else {
                 return (a.bib || 0) - (b.bib || 0);
@@ -871,8 +875,10 @@ export function renderAdminCategoryDetail(distId, catId) {
         .sort((a, b) => {
             const bibDiff = (a.bib || 0) - (b.bib || 0);
             if (bibDiff !== 0) return bibDiff;
-            const nameA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
-            const nameB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+            const realA = (a.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
+            const realB = (b.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
+            const nameA = (realA[0] ? realA[0].name : a.name) || '';
+            const nameB = (realB[0] ? realB[0].name : b.name) || '';
             return nameA.localeCompare(nameB);
         })
         .forEach(r => {
