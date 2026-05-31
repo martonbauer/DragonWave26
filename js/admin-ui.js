@@ -775,7 +775,13 @@ export function renderAdminCategoryDetail(distId, catId) {
 
     const tbody = tableDiv.querySelector('tbody');
     racers
-        .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+        .sort((a, b) => {
+            const bibDiff = (a.bib || 0) - (b.bib || 0);
+            if (bibDiff !== 0) return bibDiff;
+            const nameA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
+            const nameB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+            return nameA.localeCompare(nameB);
+        })
         .forEach(r => {
             const tr = document.createElement('tr');
             let statusColor = 'white';
@@ -2279,8 +2285,12 @@ export function renderOtprobaList() {
         console.log('renderOtprobaList: scanned ids in database:', rawIdsForDebug);
         console.log('renderOtprobaList: matched valid numeric 5Próba list:', otprobaList);
 
-        // Rendezzük rajtszám szerint
-        otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
+        // Rendezzük rajtszám szerint, majd név szerint abc-ben
+        otprobaList.sort((a, b) => {
+            const bibDiff = (a.bib || 0) - (b.bib || 0);
+            if (bibDiff !== 0) return bibDiff;
+            return (a.name || '').localeCompare(b.name || '');
+        });
 
         let html = '';
 
@@ -2424,8 +2434,12 @@ export function exportOtprobaExcel() {
         return;
     }
 
-    // Rajtszám szerint rendezés
-    otprobaList.sort((a, b) => (a.bib || 0) - (b.bib || 0));
+    // Rajtszám szerint, majd név szerint abc-ben rendezés
+    otprobaList.sort((a, b) => {
+        const bibDiff = (a.bib || 0) - (b.bib || 0);
+        if (bibDiff !== 0) return bibDiff;
+        return (a.name || '').localeCompare(b.name || '');
+    });
 
     const wb = XLSX.utils.book_new();
     const rows = [['Rajtszám', 'Név', '5Próba Azonosító', 'Kategória', 'Táv', 'Státusz', 'Eredmény']];

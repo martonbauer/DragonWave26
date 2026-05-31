@@ -1487,9 +1487,14 @@ export class RaceManager {
                                 <th>Táv</th>
                             </tr>
                         </thead>
-                        <tbody>
                             ${registered
-                                .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+                                .sort((a, b) => {
+                                    const bibDiff = (a.bib || 0) - (b.bib || 0);
+                                    if (bibDiff !== 0) return bibDiff;
+                                    const nameA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
+                                    const nameB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+                                    return nameA.localeCompare(nameB);
+                                })
                                 .map(
                                     r => `
                                 <tr>
@@ -1545,9 +1550,14 @@ export class RaceManager {
                                 <th style="text-align: right;">Eltelt idő</th>
                             </tr>
                         </thead>
-                        <tbody>
                             ${runningRacers
-                                .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+                                .sort((a, b) => {
+                                    const bibDiff = (a.bib || 0) - (b.bib || 0);
+                                    if (bibDiff !== 0) return bibDiff;
+                                    const nameA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
+                                    const nameB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+                                    return nameA.localeCompare(nameB);
+                                })
                                 .map(r => {
                                     const now = Date.now() + (this.serverTimeOffset || 0);
                                     const timeDisplay = formatTime(now - (r.start_time || 0));
@@ -1660,9 +1670,14 @@ export class RaceManager {
                                 <th>Táv</th>
                             </tr>
                         </thead>
-                        <tbody>
                             ${notTurnedRacers
-                                .sort((a, b) => (a.bib || 0) - (b.bib || 0))
+                                .sort((a, b) => {
+                                    const bibDiff = (a.bib || 0) - (b.bib || 0);
+                                    if (bibDiff !== 0) return bibDiff;
+                                    const nameA = (a.members && a.members[0] ? a.members[0].name : a.name) || '';
+                                    const nameB = (b.members && b.members[0] ? b.members[0].name : b.name) || '';
+                                    return nameA.localeCompare(nameB);
+                                })
                                 .map(
                                     r => `
                                 <tr>

@@ -211,7 +211,9 @@ export function executeConfirmedAction() {
 export function formatMemberListHtml(racer) {
     if (!racer.members || racer.members.length === 0) return racer.name || '-';
     const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
-    const rm = racer.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+    const rm = racer.members
+        .filter(m => m.otproba_id !== 'CSAPATNEV')
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     let html = '';
 
     const isSarkany = racer.team_size_was_larger || /s[aá]rk[aá]ny/i.test(racer.category || '');
@@ -252,7 +254,9 @@ export function formatMemberListHtml(racer) {
 export function formatRacerName(racer) {
     if (!racer.members || racer.members.length === 0) return racer.name || '-';
     const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
-    const rm = racer.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+    const rm = racer.members
+        .filter(m => m.otproba_id !== 'CSAPATNEV')
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     let nameStr = t ? t.name : '';
     if (rm.length > 0) {
         const memNames = rm.map(m => m.name).join(', ');
@@ -267,7 +271,9 @@ export function formatRacerName(racer) {
 export function formatOtprobaListHtml(racer) {
     if (!racer.members || racer.members.length === 0) return racer.otproba_id || '-';
     const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
-    const rm = racer.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+    const rm = racer.members
+        .filter(m => m.otproba_id !== 'CSAPATNEV')
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     if (t) {
         return `<span style="color:#888; font-size: 0.8rem;">(Lásd a neveknél)</span>`;
