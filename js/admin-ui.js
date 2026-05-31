@@ -2020,8 +2020,14 @@ window.generateDiploma = async bibStr => {
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/pdf-lib/dist/pdf-lib.min.js';
             document.head.appendChild(script);
-            await new Promise(resolve => {
+            await new Promise((resolve, reject) => {
                 script.onload = resolve;
+                script.onerror = () =>
+                    reject(
+                        new Error(
+                            'Nem sikerült betölteni a PDF-lib könyvtárat a CDN-ről! Kérjük, ellenőrizze az internetkapcsolatot.'
+                        )
+                    );
             });
         }
 
@@ -2030,8 +2036,9 @@ window.generateDiploma = async bibStr => {
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.min.js';
             document.head.appendChild(script);
-            await new Promise(resolve => {
+            await new Promise((resolve, reject) => {
                 script.onload = resolve;
+                script.onerror = () => reject(new Error('Nem sikerült betölteni a fontkit könyvtárat a CDN-ről!'));
             });
         }
 
@@ -2056,14 +2063,20 @@ window.generateDiploma = async bibStr => {
         const categoryName = rm.formatCategoryName(racer.category);
         const distanceStr = racer.distance;
 
-        // Dinamikus elérési út meghatározása az API_URL alapján,
-        // így file:// vagy alternatív portok esetén is megbízhatóan betöltődik.
-        const baseStaticUrl = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : '';
-        const pdfUrl = baseStaticUrl ? `${baseStaticUrl}/Dunakeszi.pdf` : 'Dunakeszi.pdf';
+        // Dinamikus elérési út meghatározása: HTTP/HTTPS esetén a relatív path tökéletesen azonos-eredetű (same-origin CORS-mentes),
+        // de file:// protokoll esetén a backend szervertől kérjük le a sablont.
+        let pdfUrl = 'Dunakeszi.pdf';
+        if (window.location.protocol === 'file:') {
+            const baseStaticUrl = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : '';
+            pdfUrl = baseStaticUrl ? `${baseStaticUrl}/Dunakeszi.pdf` : 'Dunakeszi.pdf';
+        }
 
         // PDF Letöltése és betöltése
         const existingPdfBytes = await fetch(pdfUrl).then(res => {
-            if (!res.ok) throw new Error('Nem található a Dunakeszi.pdf fájl a szerveren!');
+            if (!res.ok)
+                throw new Error(
+                    'Nem található a Dunakeszi.pdf fájl a szerveren! Kérjük, győződjön meg róla, hogy a szerver fut.'
+                );
             return res.arrayBuffer();
         });
 
@@ -2083,7 +2096,11 @@ window.generateDiploma = async bibStr => {
         const fontNormal = await pdfDoc.embedFont(window.PDFLib.StandardFonts.Helvetica);
 
         const drawCenteredText = (text, centerX, y, size, fontUsed, color) => {
-            const safeText = text.replace(/ő/g, 'ö').replace(/Ő/g, 'Ö').replace(/ű/g, 'ü').replace(/Ű/g, 'Ü');
+            const safeText = String(text || '')
+                .replace(/ő/g, 'ö')
+                .replace(/Ő/g, 'Ö')
+                .replace(/ű/g, 'ü')
+                .replace(/Ű/g, 'Ü');
             const textWidth = fontUsed.widthOfTextAtSize(safeText, size);
             firstPage.drawText(safeText, {
                 x: centerX - textWidth / 2,
