@@ -2109,25 +2109,26 @@ window.generateDiploma = async bibStr => {
             nameSize -= 1;
         }
 
-        // Minden felirat betűméretét az elvárt egyedi méretekre állítjuk
-        drawCenteredText(name, centerX, height * 0.73, nameSize, fontBold, darkBlue);
-        drawCenteredText(reszereText, centerX, height * 0.68, 18, fontNormal, darkBlue);
-        drawCenteredText('az Országos Vízitúra Bajnokság', centerX, height * 0.62, 14, fontBold, darkBlue);
-        drawCenteredText('2. fordulóján a Dunakeszi Futam', centerX, height * 0.57, 14, fontNormal, darkBlue);
+        // Minden felirat betűméretét és Y pozícióját az elvárt egyedi értékekre állítjuk,
+        // elkerülve a képekre való rálógást az alsó részen.
+        drawCenteredText(name, centerX, height * 0.76, nameSize, fontBold, darkBlue);
+        drawCenteredText(reszereText, centerX, height * 0.71, 16, fontNormal, darkBlue);
+        drawCenteredText('az Országos Vízitúra Bajnokság', centerX, height * 0.66, 14, fontBold, darkBlue);
+        drawCenteredText('2. fordulóján a Dunakeszi Futam', centerX, height * 0.61, 14, fontNormal, darkBlue);
         drawCenteredText(
             `${categoryName} (${distanceStr}) kategóriában`,
             centerX,
-            height * 0.51,
+            height * 0.56,
             14,
             fontBold,
             darkBlue
         );
-        drawCenteredText(resultText, centerX, height * 0.45, 14, fontBold, darkBlue);
+        drawCenteredText(resultText, centerX, height * 0.51, 14, fontBold, darkBlue);
 
         // Hivatalos célidő kiírása, ha beérkezett
         if (racer.status === 'finished' && racer.total_time) {
             const timeDisplay = formatTime(racer.total_time);
-            drawCenteredText(`Hivatalos időeredménye: ${timeDisplay}`, centerX, height * 0.38, 14, fontBold, darkBlue);
+            drawCenteredText(`Hivatalos időeredménye: ${timeDisplay}`, centerX, height * 0.46, 14, fontBold, darkBlue);
         }
 
         const pdfBytes = await pdfDoc.save();
