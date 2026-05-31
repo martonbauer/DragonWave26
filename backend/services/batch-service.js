@@ -27,22 +27,16 @@ function getGroupQuery(query, batchKey) {
     if (batchKey === 'kajak_hosszu') return query.in('category', CATEGORY_GROUPS.KAJAK).eq('distance', '22km');
     if (batchKey === 'kajak_rovid') return query.in('category', CATEGORY_GROUPS.KAJAK).eq('distance', '11km');
     if (batchKey === 'kenu_hosszu') {
-        const kenuHosszuCategories = [
-            ...CATEGORY_GROUPS.KENU,
-            'sup_noi_1_22km',
-            'sup_ferfi_1_22km',
-            'sup_noi_1',
-            'sup_ferfi_1',
-        ];
+        const kenuHosszuCategories = [...CATEGORY_GROUPS.KENU, 'sup_noi_1', 'sup_ferfi_1'];
         return query.in('category', kenuHosszuCategories).eq('distance', '22km');
     }
     if (batchKey === 'kenu_rovid') {
         const kenuRovidCategories = [
             ...CATEGORY_GROUPS.KENU,
-            'sup_ferfi_1_merev_11km',
-            'sup_noi_1_merev_11km',
-            'sup_ferfi_1_felfujhato_11km',
-            'sup_noi_1_felfujhato_11km',
+            'sup_ferfi_1_merev',
+            'sup_noi_1_merev',
+            'sup_ferfi_1_felfujhato',
+            'sup_noi_1_felfujhato',
         ];
         return query.in('category', kenuRovidCategories).eq('distance', '11km');
     }

@@ -918,35 +918,35 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
     const n = rawCategory.toLowerCase();
 
     if (dist === '22km') {
-        if (n.includes('versenykajak') && n.includes('női')) return 'versenykajak_noi_1_22km';
-        if (n.includes('versenykajak') && n.includes('férfi')) return 'versenykajak_ferfi_1_22km';
+        if (n.includes('versenykajak') && n.includes('női')) return 'versenykajak_noi_1';
+        if (n.includes('versenykajak') && n.includes('férfi')) return 'versenykajak_ferfi_1';
         if (n.includes('túrakajak') || n.includes('turakajak')) {
-            if (n.includes('2')) return 'turakajak_2_nyitott_22km';
-            if (n.includes('női')) return 'turakajak_noi_1_22km';
-            if (n.includes('férfi')) return 'turakajak_ferfi_1_22km';
+            if (n.includes('2')) return 'turakajak_2_nyitott';
+            if (n.includes('női')) return 'turakajak_noi_1';
+            if (n.includes('férfi')) return 'turakajak_ferfi_1';
         }
         if (n.includes('tengeri')) {
-            if (n.includes('női')) return 'tengeri_kajak_noi_1_22km';
-            if (n.includes('férfi')) return 'tengeri_kajak_ferfi_1_22km';
+            if (n.includes('női')) return 'tengeri_kajak_noi_1';
+            if (n.includes('férfi')) return 'tengeri_kajak_ferfi_1';
         }
         if (n.includes('surfski')) {
-            if (n.includes('női')) return 'surfski_noi_22km';
-            if (n.includes('férfi')) return 'surfski_ferfi_22km';
+            if (n.includes('női')) return 'surfski_noi';
+            if (n.includes('férfi')) return 'surfski_ferfi';
         }
         if (n.includes('outrigger')) {
-            if (n.includes('2')) return 'outrigger_2_nyitott_22km';
-            if (n.includes('női')) return 'outrigger_noi_1_22km';
-            if (n.includes('férfi')) return 'outrigger_ferfi_1_22km';
+            if (n.includes('2')) return 'outrigger_2_nyitott';
+            if (n.includes('női')) return 'outrigger_noi_1';
+            if (n.includes('férfi')) return 'outrigger_ferfi_1';
         }
         if (n.includes('kenu')) {
-            if (n.includes('2') && n.includes('férfi')) return 'kenu_2_ferfi_22km';
-            if (n.includes('2') && n.includes('vegyes')) return 'kenu_2_vegyes_22km';
-            if (n.includes('3')) return 'kenu_3_nyitott_22km';
-            if (n.includes('4')) return 'kenu_4_nyitott_22km';
+            if (n.includes('2') && n.includes('férfi')) return 'kenu_2_ferfi';
+            if (n.includes('2') && n.includes('vegyes')) return 'kenu_2_vegyes';
+            if (n.includes('3')) return 'kenu_3_nyitott';
+            if (n.includes('4')) return 'kenu_4_nyitott';
         }
         if (n.includes('sup')) {
-            if (n.includes('női')) return 'sup_noi_1_22km';
-            if (n.includes('férfi')) return 'sup_ferfi_1_22km';
+            if (n.includes('női')) return 'sup_noi_1';
+            if (n.includes('férfi')) return 'sup_ferfi_1';
         }
     }
 
@@ -958,20 +958,20 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
             const isFerfi = n.includes('férfi');
 
             if (isNoi) {
-                if (isMerev) return 'sup_noi_1_merev_11km';
-                if (isFelfujhato) return 'sup_noi_1_felfujhato_11km';
+                if (isMerev) return 'sup_noi_1_merev';
+                if (isFelfujhato) return 'sup_noi_1_felfujhato';
             }
             if (isFerfi) {
-                if (isMerev) return 'sup_ferfi_1_merev_11km';
-                if (isFelfujhato) return 'sup_ferfi_1_felfujhato_11km';
+                if (isMerev) return 'sup_ferfi_1_merev';
+                if (isFelfujhato) return 'sup_ferfi_1_felfujhato';
             }
         }
-        if (n.includes('kajak') && n.includes('1')) return 'kajak_1_nyitott_11km';
-        if (n.includes('kajak') && n.includes('2')) return 'kajak_2_nyitott_11km';
-        if (n.includes('kenu') && n.includes('1')) return 'kenu_1_nyitott_11km';
-        if (n.includes('kenu') && n.includes('2')) return 'kenu_2_nyitott_11km';
-        if (n.includes('kenu') && n.includes('3')) return 'kenu_3_nyitott_11km';
-        if (n.includes('kenu') && n.includes('4')) return 'kenu_4_nyitott_11km';
+        if (n.includes('kajak') && n.includes('1')) return 'kajak_1_nyitott';
+        if (n.includes('kajak') && n.includes('2')) return 'kajak_2_nyitott';
+        if (n.includes('kenu') && n.includes('1')) return 'kenu_1_nyitott';
+        if (n.includes('kenu') && n.includes('2')) return 'kenu_2_nyitott';
+        if (n.includes('kenu') && n.includes('3')) return 'kenu_3_nyitott';
+        if (n.includes('kenu') && n.includes('4')) return 'kenu_4_nyitott';
         if (
             n.includes('sárkányhajó') ||
             n.includes('sarkanyhajo') ||
@@ -992,24 +992,24 @@ function mapCsvCategoryToSlug(rawCategory, dist) {
 
         if (isNoi) {
             if (isMerev) {
-                if (is39Alatt) return 'sup_noi_1_merev_39_alatt_4km';
-                if (is40Felett) return 'sup_noi_1_merev_40_felett_4km';
+                if (is39Alatt) return 'sup_noi_1_merev_39_alatt';
+                if (is40Felett) return 'sup_noi_1_merev_40_felett';
             }
             if (isFelfujhato) {
-                if (is16Alatt) return 'sup_noi_1_felfujhato_16_alatt_4km';
-                if (is39Alatt) return 'sup_noi_1_felfujhato_39_alatt_4km';
-                if (is40Felett) return 'sup_noi_1_felfujhato_40_felett_4km';
+                if (is16Alatt) return 'sup_noi_1_felfujhato_16_alatt';
+                if (is39Alatt) return 'sup_noi_1_felfujhato_39_alatt';
+                if (is40Felett) return 'sup_noi_1_felfujhato_40_felett';
             }
         }
         if (isFerfi) {
             if (isMerev) {
-                if (is39Alatt) return 'sup_ferfi_1_merev_39_alatt_4km';
-                if (is40Felett) return 'sup_ferfi_1_merev_40_felett_4km';
+                if (is39Alatt) return 'sup_ferfi_1_merev_39_alatt';
+                if (is40Felett) return 'sup_ferfi_1_merev_40_felett';
             }
             if (isFelfujhato) {
-                if (is16Alatt) return 'sup_ferfi_1_felfujhato_16_alatt_4km';
-                if (is39Alatt) return 'sup_ferfi_1_felfujhato_39_alatt_4km';
-                if (is40Felett) return 'sup_ferfi_1_felfujhato_40_felett_4km';
+                if (is16Alatt) return 'sup_ferfi_1_felfujhato_16_alatt';
+                if (is39Alatt) return 'sup_ferfi_1_felfujhato_39_alatt';
+                if (is40Felett) return 'sup_ferfi_1_felfujhato_40_felett';
             }
         }
     }
