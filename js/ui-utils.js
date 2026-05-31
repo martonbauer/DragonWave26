@@ -214,6 +214,8 @@ export function formatMemberListHtml(racer) {
     const rm = racer.members.filter(m => m.otproba_id !== 'CSAPATNEV');
     let html = '';
 
+    const isSarkany = racer.team_size_was_larger || /s[aá]rk[aá]ny/i.test(racer.category || '');
+
     if (t) {
         html += `<details style="cursor: pointer; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; width: 100%;">
                     <summary style="font-weight:bold; color:var(--accent-primary); outline: none; margin-bottom: 5px;">${t.name} <span style="font-size: 0.8em;">▼</span></summary>
@@ -222,7 +224,7 @@ export function formatMemberListHtml(racer) {
             .map(
                 m =>
                     `<div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
-                        <input type="checkbox" ${m.checked_in ? 'checked' : ''} onchange="if(window.raceManager) window.raceManager.updateMemberStatus('${m.id}', 'checked_in', this.checked)" style="cursor:pointer; width:14px; height:14px; margin-right:3px; transform: scale(1.1); vertical-align: middle;">
+                        ${isSarkany ? `<input type="checkbox" ${m.checked_in ? 'checked' : ''} onchange="if(window.raceManager) window.raceManager.updateMemberStatus('${m.id}', 'checked_in', this.checked)" style="cursor:pointer; width:14px; height:14px; margin-right:3px; transform: scale(1.1); vertical-align: middle;">` : ''}
                         <strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--accent-primary);" title="Versenyző/Csapat szerkesztése">${m.name || '?'}</strong>
                         <span style="font-size:0.7rem; color:#aaa;">(${m.birth_date || '?'})</span>
                     </div>`
@@ -234,7 +236,7 @@ export function formatMemberListHtml(racer) {
             .map(
                 m =>
                     `<div style="margin-bottom:4px; display: flex; align-items: center; gap: 6px;">
-                        ${racer.members.length > 1 ? `<input type="checkbox" ${m.checked_in ? 'checked' : ''} onchange="if(window.raceManager) window.raceManager.updateMemberStatus('${m.id}', 'checked_in', this.checked)" style="cursor:pointer; width:14px; height:14px; transform: scale(1.1); vertical-align: middle;">` : ''}
+                        ${isSarkany ? `<input type="checkbox" ${m.checked_in ? 'checked' : ''} onchange="if(window.raceManager) window.raceManager.updateMemberStatus('${m.id}', 'checked_in', this.checked)" style="cursor:pointer; width:14px; height:14px; transform: scale(1.1); vertical-align: middle;">` : ''}
                         <strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--text-primary);" title="Versenyző szerkesztése">${m.name || '?'}</strong> 
                         <span style="font-size:0.7rem; color:#888;">(${m.birth_date || '?'})</span>
                     </div>`
