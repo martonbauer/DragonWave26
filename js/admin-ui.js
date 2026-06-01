@@ -314,6 +314,13 @@ export function renderAdminTable(filterType = 'all') {
                 `
                         : ''
                 }
+                ${
+                    r.status === 'finished' || r.status === 'dnf' || r.status === 'dsq'
+                        ? `
+                <button class="action-btn" onclick="if(confirm('Biztosan visszarakod ezt a versenyzőt a futamába? Az ideje folytatódni fog a kategóriája idejével.')) window.raceManager.resumeRacer('${r.id}').then(() => renderAdminTable(window.currentTableFilter))" style="background:#007bff; color:white; padding: 5px 8px; font-size: 0.8rem; border-radius: 6px; font-weight:bold; margin-right: 5px;" title="Visszarakás futamba">🏃 VISSZARAK FUTAMBA</button>
+                `
+                        : ''
+                }
             </td>
         `;
         tbody.appendChild(tr);

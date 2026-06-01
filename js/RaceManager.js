@@ -1340,6 +1340,41 @@ export class RaceManager {
         }
     }
 
+    async resumeRacer(id) {
+        try {
+            const response = await fetch(`${API_URL}/racer/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${this.adminPassword}`,
+                },
+                body: JSON.stringify({ status: 'running', total_time: null }),
+            });
+
+            if (response.ok) {
+                showToast('Versenyző visszatéve a futamba!', 'success');
+                const racer = this.data.racers.find(r => r.id === id);
+                if (racer) {
+                    racer.status = 'running';
+                    racer.total_time = null;
+                    racer.finish_time = null;
+                }
+
+                await this.loadData();
+                this.renderUI();
+                return true;
+            } else {
+                const err = await response.json();
+                showToast(err.error || 'Hiba a visszaállításkor!', 'error');
+                return false;
+            }
+        } catch (err) {
+            console.error('Resume racer error:', err);
+            showToast('Hálózati hiba a visszaállításkor!', 'error');
+            return false;
+        }
+    }
+
     async updateMemberStatus(id, field, value) {
         try {
             const response = await fetch(`${API_URL}/member/${id}`, {
