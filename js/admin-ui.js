@@ -1400,15 +1400,19 @@ window.renderResultsCategoryList = renderResultsCategoryList;
  * Kategória rangsor részleteinek renderelése
  */
 export function renderResultsCategoryDetail(distId, catId) {
-    const tbody = document.getElementById('admin-results-category-table-body');
-    const titleEl = document.getElementById('admin-results-category-title');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    const contentEl = document.getElementById('admin-results-category-detail-content');
+    const titleEl = document.getElementById('admin-results-category-detail-title');
+    if (!contentEl) return;
+    contentEl.innerHTML = '';
 
     const rm = window.raceManager;
     if (!rm) return;
 
-    if (titleEl) titleEl.textContent = `🥇 ${rm.formatCategoryName(catId)} - Rangsor (${distId})`;
+    const formattedCatName = rm.formatCategoryName(catId);
+    if (titleEl) {
+        titleEl.textContent = `🥇 ${formattedCatName} - Rangsor (${distId})`;
+        titleEl.classList.remove('hidden');
+    }
 
     // Szűrés kategória és táv szerint
     let finishers = [];
@@ -1433,27 +1437,51 @@ export function renderResultsCategoryDetail(distId, catId) {
     // Rendezés időeredmény szerint
     finishers.sort((a, b) => (a.total_time || 0) - (b.total_time || 0));
 
+    // Export gomb hozzáadása felülre
+    const headerBar = document.createElement('div');
+    headerBar.style = 'margin-bottom: 20px; display: flex; justify-content: flex-end;';
+    headerBar.innerHTML = `
+        <button onclick="window.exportCategoryResultsExcel()" class="btn-primary" style="background: #28a745; width: auto; font-size: 0.8rem; padding: 8px 20px;">
+            📥 EXCEL EXPORT (CSAK EZ A RANGSOR)
+        </button>
+    `;
+    contentEl.appendChild(headerBar);
+
     if (finishers.length === 0) {
-        tbody.innerHTML =
-            '<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-secondary); font-style: italic;">Még nincs beérkezett eredmény ebben a kategóriában.</td></tr>';
+        const noResults = document.createElement('div');
+        noResults.style =
+            'text-align: center; padding: 50px; background: rgba(255,255,255,0.02); border-radius: 15px; border: 1px dashed rgba(255,255,255,0.1);';
+        noResults.innerHTML = `
+            <div style="font-size: 3rem; margin-bottom: 15px;">🏜️</div>
+            <h3 style="color: #888;">Még nincs beérkezett eredmény ebben a kategóriában.</h3>
+        `;
+        contentEl.appendChild(noResults);
         return;
     }
 
-    const thead = document.querySelector('.results-table thead tr');
-    const theadCategory = document.querySelector('#admin-results-category-detail thead tr');
-    const targetThead = theadCategory || thead;
+    const tableDiv = document.createElement('div');
+    tableDiv.className = 'table-responsive';
 
-    if (targetThead) {
-        targetThead.innerHTML = `
-            <th style="width: 10%">Helyezés</th>
-            <th style="width: 15%">Rajtszám</th>
-            <th style="width: ${distId === '22km' ? '30%' : '40%'}">Egység Tagjai</th>
-            ${distId === '22km' ? '<th style="width: 15%">Forduló idő (11km)</th>' : ''}
-            <th style="width: 15%">Időeredmény</th>
-            <th style="width: 15%">Különbség</th>
-            <th style="width: 10%; text-align: center;">Oklevél</th>
-        `;
-    }
+    const showFordulo = distId === '22km';
+    tableDiv.innerHTML = `
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%">Helyezés</th>
+                    <th style="width: 15%">Rajtszám</th>
+                    <th style="width: ${showFordulo ? '30%' : '40%'}">Egység Tagjai</th>
+                    ${showFordulo ? '<th style="width: 15%">Forduló idő (11km)</th>' : ''}
+                    <th style="width: 15%">Időeredmény</th>
+                    <th style="width: 15%">Különbség</th>
+                    <th style="width: 10%; text-align: center;">Oklevél</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    `;
+
+    const tbody = tableDiv.querySelector('tbody');
+    contentEl.appendChild(tableDiv);
 
     finishers.forEach((r, idx) => {
         const tr = document.createElement('tr');
