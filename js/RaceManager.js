@@ -1167,23 +1167,30 @@ export class RaceManager {
         const runningRacers = (this.data.racers || []).filter(r => r.status === 'running');
 
         containers.forEach(container => {
-            const hasActive = activeCategories.length > 0 || runningRacers.length > 0;
+            const isAdmin = container.classList.contains('admin-timer-grid');
+
+            // A kategória órák mindenhol megjelennek
+            const displayCategories = activeCategories;
+            // Az egyéni órák csak az adminisztrációs felületen jelennek meg
+            const displayRacers = isAdmin ? runningRacers : [];
+
+            const hasActive = displayCategories.length > 0 || displayRacers.length > 0;
             if (hasActive) {
                 const safeId = id => id.replace(/[^a-z0-9]/gi, '_');
 
                 // Ellenőrizzük, hogy minden aktív kategóriához és futó versenyzőhöz megvan-e a timer elem
-                const missingTimers = activeCategories.some(
+                const missingTimers = displayCategories.some(
                     cat => !container.querySelector(`[data-cat-id="${cat.id}"]`)
                 );
-                const missingRacerTimers = runningRacers.some(
+                const missingRacerTimers = displayRacers.some(
                     r => !container.querySelector(`[data-racer-id="${r.id}"]`)
                 );
-                const expectedTotal = activeCategories.length + runningRacers.length;
+                const expectedTotal = displayCategories.length + displayRacers.length;
                 const needsRebuild =
                     container.children.length !== expectedTotal ||
                     container.querySelector('.empty-text') !== null ||
-                    (activeCategories.length > 0 && container.querySelector('[data-cat-id]') === null) ||
-                    (runningRacers.length > 0 && container.querySelector('[data-racer-id]') === null) ||
+                    (displayCategories.length > 0 && container.querySelector('[data-cat-id]') === null) ||
+                    (displayRacers.length > 0 && container.querySelector('[data-racer-id]') === null) ||
                     missingTimers ||
                     missingRacerTimers;
 
@@ -1191,11 +1198,10 @@ export class RaceManager {
                     container.innerHTML = '';
 
                     // 1. Kategória órák
-                    activeCategories.forEach(cat => {
+                    displayCategories.forEach(cat => {
                         const div = document.createElement('div');
                         div.className = 'cat-timer';
                         div.setAttribute('data-cat-id', cat.id);
-                        const isAdmin = container.classList.contains('admin-timer-grid');
                         const displayId = `${container.id || 'timer'}-val-${safeId(cat.id)}`;
                         div.innerHTML = `
                             <div class="cat-name">${this.formatCategoryName(cat.id)}</div>
@@ -1206,11 +1212,10 @@ export class RaceManager {
                     });
 
                     // 2. Egyéni futók órái
-                    runningRacers.forEach(r => {
+                    displayRacers.forEach(r => {
                         const div = document.createElement('div');
                         div.className = 'cat-timer';
                         div.setAttribute('data-racer-id', r.id);
-                        const isAdmin = container.classList.contains('admin-timer-grid');
                         const displayId = `${container.id || 'timer'}-racer-val-${r.id}`;
                         const racerName =
                             r.members && r.members.length > 0
@@ -1226,7 +1231,7 @@ export class RaceManager {
                 }
 
                 // Frissítés
-                activeCategories.forEach(cat => {
+                displayCategories.forEach(cat => {
                     const displayId = `${container.id || 'timer'}-val-${safeId(cat.id)}`;
                     const timeEl = document.getElementById(displayId);
                     if (timeEl) {
@@ -1235,7 +1240,7 @@ export class RaceManager {
                     }
                 });
 
-                runningRacers.forEach(r => {
+                displayRacers.forEach(r => {
                     const displayId = `${container.id || 'timer'}-racer-val-${r.id}`;
                     const timeEl = document.getElementById(displayId);
                     if (timeEl) {
