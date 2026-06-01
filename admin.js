@@ -222,6 +222,7 @@ window.showDataSubSection = async subId => {
         'admin-data-section-table': '👥 Versenyzői Adatbázis',
         'admin-data-section-export': '📊 Eredmények Listázása',
         'admin-data-section-system': '⚙️ Rendszerkezelés',
+        'admin-data-section-archive': '💾 Adatbázis Mentése és Archiválása',
         'admin-data-section-bibs': '🔢 Rajtszámok Újraosztása',
     };
 
@@ -756,3 +757,105 @@ document.addEventListener('DOMContentLoaded', () => {
         window.loginAdmin();
     }
 });
+
+// --- Adatbázis Mentés és Archiválás Funkciók (Database Backup & Restore) ---
+window.exportDatabaseBackup = async () => {
+    const eventNameInput = document.getElementById('backup-event-name');
+    let eventName = eventNameInput ? eventNameInput.value.trim() : '';
+    if (!eventName) {
+        eventName = new Date().getFullYear().toString();
+    }
+
+    const safeEventName = eventName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    showToast('Adatok lekérése a mentéshez...', 'info');
+
+    try {
+        const response = await fetch(`${API_URL}/backup/export`, {
+            headers: {
+                ...window.raceManager.getAuthHeader(),
+            },
+        });
+
+        if (!response.ok) {
+            const errResult = await response.json();
+            throw new Error(errResult.error || 'Szerver hiba');
+        }
+
+        const backupData = await response.json();
+
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        link.href = url;
+        link.download = `DragonWave_Backup_${safeEventName}_${timestamp}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast('Adatbázis sikeresen elmentve!', 'success');
+        if (eventNameInput) eventNameInput.value = '';
+    } catch (err) {
+        console.error('Backup hiba:', err);
+        showToast('Hiba a mentés letöltésekor: ' + err.message, 'error');
+    }
+};
+
+window.restoreDatabaseBackup = async () => {
+    const fileInput = document.getElementById('backup-file-input');
+    if (!fileInput || fileInput.files.length === 0) {
+        showToast('Kérjük, válasszon ki egy korábban mentett .json fájlt!', 'error');
+        return;
+    }
+
+    const file = fileInput.files[0];
+
+    const confirmAction = confirm(
+        '🚨 FIGYELEM! A visszaállítás VÉGLEGESEN törli a jelenlegi adatbázist és felülírja a mentett adatokkal!\n\nBiztosan folytatni szeretné?'
+    );
+    if (!confirmAction) return;
+
+    const secondConfirm = confirm(
+        'Megerősítés: Biztos benne, hogy a(z) "' + file.name + '" fájlból visszaállítja az adatokat?'
+    );
+    if (!secondConfirm) return;
+
+    showToast('Adatbázis visszaállítása folyamatban...', 'info');
+
+    const reader = new FileReader();
+    reader.onload = async e => {
+        try {
+            const backupData = JSON.parse(e.target.result);
+
+            if (!backupData.data || !backupData.data.racers) {
+                throw new Error('A fájl formátuma nem megfelelő! Hiányzik a racers tömb.');
+            }
+
+            const response = await fetch(`${API_URL}/backup/restore`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...window.raceManager.getAuthHeader(),
+                },
+                body: JSON.stringify(backupData.data),
+            });
+
+            if (!response.ok) {
+                const errResult = await response.json();
+                throw new Error(errResult.error || 'Szerver hiba');
+            }
+
+            showToast('Adatbázis sikeresen visszaállítva!', 'success');
+            fileInput.value = '';
+
+            await window.raceManager.loadData();
+            window.raceManager.renderUI();
+        } catch (err) {
+            console.error('Restore error:', err);
+            showToast('Hiba a visszaállítás során: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(file);
+};

@@ -464,6 +464,12 @@
                             <p>Idők és beérkezések nullázása, teljes adatbázis törlés.</p>
                             <div class="btn-enter">Megnyitás</div>
                         </div>
+                        <div class="landing-card" onclick="window.showDataSubSection('admin-data-section-archive')">
+                            <div class="icon">💾</div>
+                            <h3>Archiválás & Mentés</h3>
+                            <p>Adatbázis mentése eseményenként/évenként és visszaállítása JSON-ből.</p>
+                            <div class="btn-enter">Megnyitás</div>
+                        </div>
                         <div class="landing-card" onclick="window.showDataSubSection('admin-data-section-teams')">
                             <div class="icon">🐉</div>
                             <h3>Sárkányhajó építés</h3>
@@ -817,6 +823,42 @@
                         <div style="display: flex; flex-direction: column; gap: 15px; max-width: 450px;">
                             <button onclick="window.raceManager.resetTimes()" class="btn-danger" style="background: #e68a00; border: none; height: 50px; font-weight: bold;">⏱️ CSAK MÉRT IDŐK NULLÁZÁSA (Rajt/Cél törlése)</button>
                             <button onclick="window.raceManager.resetDatabase()" class="btn-danger" style="background: #ff4d4d; border: none; height: 50px; font-weight: bold;">🚨 TELJES ADATBÁZIS TÖRLÉSE (Minden nevező törlése)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adatkezelés Al-szekció 6.5: Adatbázis Archiválás -->
+                <div id="admin-data-section-archive" class="admin-data-sub hidden">
+                    <div class="admin-card" style="border-color: var(--accent-primary); background: rgba(0, 163, 255, 0.02);">
+                        <h3 class="card-title" style="color: var(--accent-primary); display: flex; align-items: center; gap: 8px;">💾 Adatbázis Mentése és Archiválása</h3>
+                        <p class="card-desc" style="color: var(--text-secondary); margin-bottom: 25px;">
+                            Mentse el az összes nevezett versenyzőt, csapattagot, futam- és köridőt egy archivált JSON fájlba. 
+                            Az elmentett archívumokat év vagy esemény szerint tudja elnevezni, és szükség esetén bármikor visszaállíthatja.
+                        </p>
+
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                            <h4 style="margin-top:0; margin-bottom: 15px; color: white;">📥 Új Mentés Létrehozása</h4>
+                            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 250px;">
+                                    <label for="backup-event-name" style="display: block; margin-bottom: 8px; color: var(--accent-primary); font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">Év vagy Esemény neve</label>
+                                    <input type="text" id="backup-event-name" placeholder="Pl. 2026_Dunakeszi_Futam" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white; margin-bottom: 0;">
+                                </div>
+                                <button onclick="window.exportDatabaseBackup()" class="btn-primary" style="background: #28a745; border: none; height: 48px; font-weight: bold; padding: 0 25px;">💾 MENTÉS LETÖLTÉSE</button>
+                            </div>
+                        </div>
+
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 12px; border-color: #ff9900;">
+                            <h4 style="margin-top:0; margin-bottom: 15px; color: #ff9900;">📤 Mentés Visszaállítása (Archívum Betöltése)</h4>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.4;">
+                                ⚠️ <strong>FIGYELEM!</strong> A mentés visszaállítása felülírja a jelenlegi adatbázist. A meglévő adatok (nevezések, futamidők) véglegesen törlődnek, és a betöltött archívum lép a helyükre. 
+                                Javasoljuk, hogy a visszaállítás előtt készítsen egy mentést a jelenlegi állapotról!
+                            </p>
+                            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 250px; position: relative;">
+                                    <input type="file" id="backup-file-input" accept=".json" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white;">
+                                </div>
+                                <button onclick="window.restoreDatabaseBackup()" class="btn-danger" style="background: #e68a00; border: none; height: 48px; font-weight: bold; padding: 0 25px;">🔄 VISSZAÁLLÍTÁS</button>
+                            </div>
                         </div>
                     </div>
                 </div>

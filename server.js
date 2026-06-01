@@ -923,6 +923,76 @@ app.post('/api/reset-times', authenticateAdmin, async (req, res) => {
     }
 });
 
+// --- 12.5 ADATBÁZIS ARCHIVÁLÁS ÉS MENTÉS (DATABASE BACKUP & RESTORE) ---
+app.get('/api/backup/export', authenticateAdmin, async (req, res) => {
+    try {
+        const { data: racers, error: rError } = await supabase.from('racers').select('*');
+        if (rError) throw rError;
+
+        const { data: members, error: mError } = await supabase.from('members').select('*');
+        if (mError) throw mError;
+
+        const { data: categories, error: cError } = await supabase.from('categories').select('*');
+        if (cError) throw cError;
+
+        const { data: checkpoints, error: chkError } = await supabase.from('checkpoints').select('*');
+        if (chkError) console.warn('Checkpoints fetch warning:', chkError.message);
+
+        res.json({
+            version: '1.0.0',
+            exportedAt: new Date().toISOString(),
+            data: {
+                racers: racers || [],
+                members: members || [],
+                categories: categories || [],
+                checkpoints: checkpoints || [],
+            },
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/backup/restore', authenticateAdmin, bodyParser.json({ limit: '20mb' }), async (req, res) => {
+    try {
+        const { racers, members, categories, checkpoints } = req.body || {};
+
+        // 1. Töröljük a meglévő rekordokat a megfelelő sorrendben a függőségek miatt
+        await supabase.from('checkpoints').delete().not('id', 'is', null);
+        await supabase.from('members').delete().not('id', 'is', null);
+        await supabase.from('racers').delete().not('id', 'is', null);
+        await supabase.from('categories').delete().not('key', 'is', null);
+
+        // 2. Újraírjuk a kategóriákat
+        if (categories && categories.length > 0) {
+            const { error: cErr } = await supabase.from('categories').insert(categories);
+            if (cErr) throw new Error('Hiba a kategóriák visszaállításakor: ' + cErr.message);
+        }
+
+        // 3. Újraírjuk a versenyzőket
+        if (racers && racers.length > 0) {
+            const { error: rErr } = await supabase.from('racers').insert(racers);
+            if (rErr) throw new Error('Hiba a versenyzők visszaállításakor: ' + rErr.message);
+        }
+
+        // 4. Újraírjuk a csapattagokat
+        if (members && members.length > 0) {
+            const { error: mErr } = await supabase.from('members').insert(members);
+            if (mErr) throw new Error('Hiba a tagok visszaállításakor: ' + mErr.message);
+        }
+
+        // 5. Újraírjuk az ellenőrzőpontokat
+        if (checkpoints && checkpoints.length > 0) {
+            const { error: chkErr } = await supabase.from('checkpoints').insert(checkpoints);
+            if (chkErr) throw new Error('Hiba az ellenőrzőpontok visszaállításakor: ' + chkErr.message);
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- 13. CSV IMPORTÁLÁS (DATA IMPORT) ---
 function mapCsvCategoryToSlug(rawCategory, dist) {
     if (!rawCategory) return '';
