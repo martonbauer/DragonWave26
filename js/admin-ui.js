@@ -2388,14 +2388,14 @@ export function renderOtprobaList() {
         // Gyűjtsük össze az összes 5Próba tagot egyetlen listába
         const otprobaList = [];
 
-        // Robust cleaner and identifier extractor for 5Próba ID (e.g. "5P123456", "5p 123456", "123456")
+        // Robust cleaner and identifier extractor for 5Próba ID (e.g. "5P123456", "5p 123456", "123456", "SP549259", "5P239008.")
         const cleanOtprobaId = val => {
             if (val === undefined || val === null) return null;
             const s = String(val).trim();
             if (s.toLowerCase() === 'nincs' || s.toLowerCase() === 'csapatnev' || s === '') return null;
 
-            // Match optional '5P' prefix, optional separators (spaces, dashes, hashes), and then a series of digits
-            const match = s.match(/^(?:5[Pp])?[-#\s]*(\d+)$/);
+            // Match optional '5P' or 'SP' prefix, optional separators (spaces, dashes, hashes), then a series of digits, and optional trailing dots/spaces
+            const match = s.match(/^(?:5[Pp]|S[Pp])?[-#\s]*(\d+)[.\s]*$/);
             if (match) {
                 return match[1]; // Return the clean digits
             }
@@ -2562,7 +2562,7 @@ export function exportOtprobaExcel() {
         const s = String(val).trim();
         if (s.toLowerCase() === 'nincs' || s.toLowerCase() === 'csapatnev' || s === '') return null;
 
-        const match = s.match(/^(?:5[Pp])?[-#\s]*(\d+)$/);
+        const match = s.match(/^(?:5[Pp]|S[Pp])?[-#\s]*(\d+)[.\s]*$/);
         if (match) {
             return match[1];
         }
