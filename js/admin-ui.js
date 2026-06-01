@@ -1239,6 +1239,25 @@ export function renderResultsTable(filterType = 'all') {
 
         const gapStr = idx === 0 ? 'Leader' : `+${formatTime(r.total_time - racers[0].total_time)}`;
 
+        let certificateHtml;
+        const isDragon = /s[aá]rk[aá]ny/i.test(r.category || '');
+        if (isDragon && r.members && r.members.length > 0) {
+            const memberOptions = r.members
+                .filter(m => m.otproba_id !== 'CSAPATNEV')
+                .map(m => `<option value="${m.name.replace(/"/g, '&quot;')}">${m.name}</option>`)
+                .join('');
+            certificateHtml = `
+                <div style="display: inline-flex; align-items: center; gap: 5px; justify-content: center; width: 100%;">
+                    <select id="cert-select-${r.id}" style="padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: white; font-family: inherit; max-width: 130px;">
+                        ${memberOptions}
+                    </select>
+                    <button onclick="window.generateCertificate('${r.id}', document.getElementById('cert-select-${r.id}').value)" class="action-btn" style="background:#5BB226; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Oklevél letöltése">📜 LETÖLTÉS</button>
+                </div>
+            `;
+        } else {
+            certificateHtml = `<button onclick="window.generateCertificate('${r.id}')" class="action-btn" style="background:#5BB226; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Oklevél letöltése">📜 LETÖLTÉS</button>`;
+        }
+
         tr.innerHTML = `
             <td data-label="Helyezés" style="${rankDecor}">${rank}.</td>
             <td data-label="Rajtszám"><strong>#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
@@ -1249,7 +1268,7 @@ export function renderResultsTable(filterType = 'all') {
             <td data-label="Időeredmény" style="font-family:'Space Mono'; font-weight:bold; color:var(--accent-primary);">${formatTime(r.total_time || 0)}</td>
             <td data-label="Különbség" style="font-family:'Space Mono'; color: ${idx === 0 ? 'var(--success)' : '#aaa'}">${gapStr}</td>
             <td data-label="Oklevél" style="text-align: center;">
-                <button onclick="window.generateCertificate('${r.id}')" class="action-btn" style="background:#5BB226; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Oklevél letöltése">📜 LETÖLTÉS</button>
+                ${certificateHtml}
             </td>
         `;
         tbody.appendChild(tr);
@@ -1438,6 +1457,25 @@ export function renderResultsCategoryDetail(distId, catId) {
 
         const gapStr = idx === 0 ? 'Leader' : `+${formatTime(r.total_time - finishers[0].total_time)}`;
 
+        let certificateHtml;
+        const isDragon = /s[aá]rk[aá]ny/i.test(r.category || '');
+        if (isDragon && r.members && r.members.length > 0) {
+            const memberOptions = r.members
+                .filter(m => m.otproba_id !== 'CSAPATNEV')
+                .map(m => `<option value="${m.name.replace(/"/g, '&quot;')}">${m.name}</option>`)
+                .join('');
+            certificateHtml = `
+                <div style="display: inline-flex; align-items: center; gap: 5px; justify-content: center; width: 100%;">
+                    <select id="cert-select-cat-${r.id}" style="padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: white; font-family: inherit; max-width: 130px;">
+                        ${memberOptions}
+                    </select>
+                    <button onclick="window.generateCertificate('${r.id}', document.getElementById('cert-select-cat-${r.id}').value)" class="action-btn" style="background:#5BB226; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Oklevél letöltése">📜 LETÖLTÉS</button>
+                </div>
+            `;
+        } else {
+            certificateHtml = `<button onclick="window.generateCertificate('${r.id}')" class="action-btn" style="background:#5BB226; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Oklevél letöltése">📜 LETÖLTÉS</button>`;
+        }
+
         tr.innerHTML = `
             <td data-label="Helyezés" style="${rankDecor}">${rank}.</td>
             <td data-label="Rajtszám"><strong>#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
@@ -1446,7 +1484,7 @@ export function renderResultsCategoryDetail(distId, catId) {
             <td data-label="Időeredmény" style="font-family:'Space Mono'; font-weight:bold; color:var(--accent-primary);">${formatTime(r.total_time || 0)}</td>
             <td data-label="Különbség" style="font-family:'Space Mono'; color: ${idx === 0 ? 'var(--success)' : '#aaa'}">${gapStr}</td>
             <td data-label="Oklevél" style="text-align: center;">
-                <button onclick="window.generateCertificate('${r.id}')" class="action-btn" style="background:#5BB226; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Oklevél letöltése">📜 LETÖLTÉS</button>
+                ${certificateHtml}
             </td>
         `;
         tbody.appendChild(tr);
@@ -2098,7 +2136,7 @@ window.createDragonTeam = async () => {
     }
 };
 
-window.generateDiploma = async bibStr => {
+window.generateDiploma = async (bibStr, selectedMemberName = 'ALL') => {
     const bib = parseInt(bibStr);
     if (isNaN(bib)) {
         showToast('Kérjük, adjon meg egy érvényes rajtszámot!', 'error');
@@ -2164,7 +2202,21 @@ window.generateDiploma = async bibStr => {
             if (index !== -1) rankStr = (index + 1).toString();
         }
 
-        const name = formatRacerName(racer);
+        let name = formatRacerName(racer)
+            .replace(/\t/g, ' ')
+            .replace(/\r/g, ' ')
+            .replace(/\n/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (selectedMemberName && selectedMemberName !== 'ALL') {
+            name = selectedMemberName
+                .replace(/\t/g, ' ')
+                .replace(/\r/g, ' ')
+                .replace(/\n/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
         const categoryName = rm.formatCategoryName(racer.category);
         const distanceStr = racer.distance;
 
@@ -2202,6 +2254,10 @@ window.generateDiploma = async bibStr => {
 
         const drawCenteredText = (text, centerX, y, size, fontUsed, color) => {
             const safeText = String(text || '')
+                .replace(/\t/g, ' ')
+                .replace(/\r/g, ' ')
+                .replace(/\n/g, ' ')
+                .replace(/\s+/g, ' ')
                 .replace(/ő/g, 'ö')
                 .replace(/Ő/g, 'Ö')
                 .replace(/ű/g, 'ü')
@@ -2218,9 +2274,11 @@ window.generateDiploma = async bibStr => {
 
         const darkBlue = rgb(0.05, 0.2, 0.35);
         const isPlural =
-            (racer.members && racer.members.length > 1) ||
-            /csapat/i.test(name) ||
-            /s[aá]rk[aá]ny/i.test(racer.category || '');
+            selectedMemberName && selectedMemberName !== 'ALL'
+                ? false
+                : (racer.members && racer.members.length > 1) ||
+                  /csapat/i.test(name) ||
+                  /s[aá]rk[aá]ny/i.test(racer.category || '');
         const reszereText = isPlural ? 'részükre, akik' : 'részére, aki';
         const elerteText = isPlural ? 'értek el' : 'ért el';
 
@@ -2282,14 +2340,14 @@ window.generateDiploma = async bibStr => {
     }
 };
 
-export async function generateCertificate(racerId) {
+export async function generateCertificate(racerId, selectedMemberName = 'ALL') {
     const rm = window.raceManager;
     if (!rm) return;
     const racer = rm.data.racers.find(r => r.id === racerId);
     if (!racer) return;
 
     // Az adminisztrációs felületről letöltött oklevelet is egységesítjük a sablonos változatra
-    await window.generateDiploma(racer.bib);
+    await window.generateDiploma(racer.bib, selectedMemberName);
 }
 window.generateCertificate = generateCertificate;
 

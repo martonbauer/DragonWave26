@@ -1825,11 +1825,47 @@ export class RaceManager {
 
             const rowColor =
                 r.status === 'finished' ? '#00ff88' : r.status === 'running' ? 'var(--accent-primary)' : 'inherit';
-            const diplomaBtnHtml =
-                r.status === 'finished'
-                    ? `<button onclick="window.generateDiploma('${r.bib}')" class="btn-primary" style="display:inline-flex; align-items:center; gap:5px; margin-left:12px; padding: 3px 8px; font-size: 0.7rem; background: #007bff; border: none; border-radius: 4px; cursor: pointer; color: white; vertical-align: middle; font-family: inherit;">🎓 Oklevél</button>`
-                    : '';
-            const namesDisplay = `${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}${diplomaBtnHtml}`;
+            const isDragon = /s[aá]rk[aá]ny/i.test(r.category || '');
+            let diplomaBtnHtml = '';
+            if (r.status === 'finished' && !isDragon) {
+                diplomaBtnHtml = `<button onclick="window.generateDiploma('${r.bib}')" class="btn-primary" style="display:inline-flex; align-items:center; gap:5px; margin-left:12px; padding: 3px 8px; font-size: 0.7rem; background: #007bff; border: none; border-radius: 4px; cursor: pointer; color: white; vertical-align: middle; font-family: inherit;">🎓 Oklevél</button>`;
+            }
+
+            let namesDisplay;
+            if (isDragon && r.members && r.members.length > 0) {
+                const teamMember = r.members.find(m => m.otproba_id === 'CSAPATNEV');
+                const teamName = teamMember ? teamMember.name : r.name || `Sárkányhajó csapat #${r.bib}`;
+                const athleteMembers = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+
+                if (athleteMembers.length > 0) {
+                    const athleteListHtml = athleteMembers
+                        .map(m => {
+                            let btnHtml = '';
+                            if (r.status === 'finished') {
+                                btnHtml = `<button onclick="window.generateDiploma('${r.bib}', '${m.name.replace(/'/g, "\\'")}')" class="btn-primary" style="display:inline-flex; align-items:center; gap:3px; padding: 2px 6px; font-size: 0.65rem; background: #007bff; border: none; border-radius: 4px; cursor: pointer; color: white; font-family: inherit; margin-left:8px; vertical-align: middle;">🎓 Letöltés</button>`;
+                            }
+                            return `<li style="margin-bottom: 6px;">${m.name}${btnHtml}</li>`;
+                        })
+                        .join('');
+                    namesDisplay = `
+                        <div class="team-dropdown-wrapper" style="display:inline-block; vertical-align:middle; width:100%; max-width:550px; text-align:left;">
+                            <details class="team-details" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: all 0.3s; width:100%; box-sizing:border-box;" onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.background='rgba(255,255,255,0.03)'">
+                                <summary style="font-weight:bold; color:white; outline:none; display:flex; align-items:center; justify-content:space-between; user-select:none; gap:10px;">
+                                    <span>🐉 ${teamName} <span style="font-size:0.85em; color:var(--text-secondary); font-weight:normal; margin-left: 8px;">(${athleteMembers.length} tag)</span></span>
+                                    <span class="dropdown-chevron" style="color:var(--accent-primary); font-size:0.8em;">▼</span>
+                                </summary>
+                                <ul style="margin: 10px 0 0 0; padding-left: 20px; text-align: left; list-style-type: decimal; color: var(--text-secondary); font-size: 0.9em; line-height: 1.5; columns: 2; -webkit-columns: 2; -moz-columns: 2;">
+                                    ${athleteListHtml}
+                                </ul>
+                            </details>
+                        </div>
+                    `;
+                } else {
+                    namesDisplay = `<strong>🐉 ${teamName}</strong>`;
+                }
+            } else {
+                namesDisplay = `${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}${diplomaBtnHtml}`;
+            }
             tr.innerHTML = `<td style="color:${rowColor}; font-weight:bold;">${rankDisplay}</td><td>#${(r.bib || 0).toString().padStart(3, '0')}</td><td>${namesDisplay}</td>${showCategory ? `<td style="font-size: 0.8rem; color: #888;">${this.categoryMap[r.category] || r.category}</td>` : ''}${cpHtml}<td class="time" style="color:${rowColor}; font-family: 'Space Mono', monospace; text-align:right;" ${dataStartAttr}>${timeDisplay}</td>`;
             tbody.appendChild(tr);
         });

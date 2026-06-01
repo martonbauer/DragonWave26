@@ -359,14 +359,42 @@
                                     <tbody>`;
 
                     racers.forEach(r => {
-                        let names = r.name || '-';
-                        if (r.members && r.members.length > 0) {
-                            const tMem = r.members.find(m => m.otproba_id === 'CSAPATNEV');
-                            const rMems = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
-                            if (tMem) {
-                                names = rMems.length > 0 ? `<strong>${tMem.name}</strong> <span style="font-size:0.85em; color:var(--text-secondary);">(${rMems.map(m => m.name).join(', ')})</span>` : `<strong>${tMem.name}</strong>`;
+                        let names = '';
+                        const isDragon = /s[aá]rk[aá]ny/i.test(r.category || '');
+                        if (isDragon && r.members && r.members.length > 0) {
+                            const teamMember = r.members.find(m => m.otproba_id === 'CSAPATNEV');
+                            const teamName = teamMember ? teamMember.name : (r.name || `Sárkányhajó csapat #${r.bib}`);
+                            const athleteMembers = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+                            
+                            if (athleteMembers.length > 0) {
+                                const athleteListHtml = athleteMembers.map(m => `<li>${m.name}</li>`).join('');
+                                names = `
+                                    <div class="team-dropdown-wrapper" style="display:inline-block; vertical-align:middle; width:100%; max-width:550px; text-align:left;">
+                                        <details class="team-details" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: all 0.3s; width:100%; box-sizing:border-box;" onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.background='rgba(255,255,255,0.03)'">
+                                            <summary style="font-weight:bold; color:white; outline:none; display:flex; align-items:center; justify-content:space-between; user-select:none; gap:10px;">
+                                                <span>🐉 ${teamName} <span style="font-size:0.85em; color:var(--text-secondary); font-weight:normal; margin-left: 8px;">(${athleteMembers.length} tag)</span></span>
+                                                <span class="dropdown-chevron" style="color:var(--accent-primary); font-size:0.8em;">▼</span>
+                                            </summary>
+                                            <ul style="margin: 10px 0 0 0; padding-left: 20px; text-align: left; list-style-type: decimal; color: var(--text-secondary); font-size: 0.9em; line-height: 1.5; columns: 2; -webkit-columns: 2; -moz-columns: 2;">
+                                                ${athleteListHtml}
+                                            </ul>
+                                        </details>
+                                    </div>
+                                `;
                             } else {
-                                names = rMems.map(m => m.name).join(', ');
+                                names = `<strong>🐉 ${teamName}</strong>`;
+                            }
+                        } else {
+                            if (r.members && r.members.length > 0) {
+                                const tMem = r.members.find(m => m.otproba_id === 'CSAPATNEV');
+                                const rMems = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
+                                if (tMem) {
+                                    names = rMems.length > 0 ? `<strong>${tMem.name}</strong> <span style="font-size:0.85em; color:var(--text-secondary);">(${rMems.map(m => m.name).join(', ')})</span>` : `<strong>${tMem.name}</strong>`;
+                                } else {
+                                    names = rMems.map(m => m.name).join(', ');
+                                }
+                            } else {
+                                names = r.name || '-';
                             }
                         }
 
