@@ -226,10 +226,15 @@ app.get('/api/data', async (req, res) => {
         const categoriesObj = {};
         (categories || []).forEach(c => (categoriesObj[c.key] = c.start_time));
 
+        const filteredRacers = (racers || []).filter(r => r.id !== 'SYSTEM_CATEGORY_MERGES');
+        const systemRow = (racers || []).find(r => r.id === 'SYSTEM_CATEGORY_MERGES');
+        const categoryMerges = systemRow && systemRow.email ? JSON.parse(systemRow.email) : {};
+
         res.json({
-            racers: racers || [],
+            racers: filteredRacers,
             categories: categoriesObj,
             checkpoints: checkpoints || [],
+            categoryMerges,
             serverNow: Date.now(),
         });
     } catch (err) {
@@ -988,6 +993,42 @@ app.post('/api/backup/restore', authenticateAdmin, bodyParser.json({ limit: '20m
         }
 
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 12.6 ADATBÁZIS KATEGÓRIA ÖSSZEVONÁSOK (CATEGORY MERGES) ---
+app.get('/api/category-merges', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('racers')
+            .select('email')
+            .eq('id', 'SYSTEM_CATEGORY_MERGES')
+            .maybeSingle();
+        if (error) throw error;
+        const merges = data && data.email ? JSON.parse(data.email) : {};
+        res.json(merges);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/category-merges', authenticateAdmin, bodyParser.json(), async (req, res) => {
+    try {
+        const merges = req.body || {};
+        const mergesStr = JSON.stringify(merges);
+
+        const { error } = await supabase.from('racers').upsert({
+            id: 'SYSTEM_CATEGORY_MERGES',
+            bib: 9999,
+            category: 'system',
+            status: 'system',
+            email: mergesStr,
+        });
+
+        if (error) throw error;
+        res.json({ success: true, merges });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

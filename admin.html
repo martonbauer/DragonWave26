@@ -470,6 +470,12 @@
                             <p>Adatbázis mentése eseményenként/évenként és visszaállítása JSON-ből.</p>
                             <div class="btn-enter">Megnyitás</div>
                         </div>
+                        <div class="landing-card" onclick="window.showDataSubSection('admin-data-section-merges')">
+                            <div class="icon">🔗</div>
+                            <h3>Kategóriák összevonása</h3>
+                            <p>Kategóriák egybeolvasztása távokon belül eredményhirdetéshez.</p>
+                            <div class="btn-enter">Megnyitás</div>
+                        </div>
                         <div class="landing-card" onclick="window.showDataSubSection('admin-data-section-teams')">
                             <div class="icon">🐉</div>
                             <h3>Sárkányhajó építés</h3>
@@ -858,6 +864,63 @@
                                     <input type="file" id="backup-file-input" accept=".json" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white;">
                                 </div>
                                 <button onclick="window.restoreDatabaseBackup()" class="btn-danger" style="background: #e68a00; border: none; height: 48px; font-weight: bold; padding: 0 25px;">🔄 VISSZAÁLLÍTÁS</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adatkezelés Al-szekció 6.8: Kategóriák Összevonása -->
+                <div id="admin-data-section-merges" class="admin-data-sub hidden">
+                    <div class="admin-card" style="border-color: var(--accent-primary); background: rgba(0, 163, 255, 0.02);">
+                        <h3 class="card-title" style="color: var(--accent-primary); display: flex; align-items: center; gap: 8px;">🔗 Kategóriák Összevonása (Merges)</h3>
+                        <p class="card-desc" style="color: var(--text-secondary); margin-bottom: 25px;">
+                            Vonja össze az alacsony létszámú kategóriákat egy nagyobb kategóriába a távokon belül, hogy az eredményeknél és a rangsorolásnál közösen szerepeljenek! 
+                            A cél kategória neve megmarad, és zárójelben, kisebb betűkkel megjelentetjük az összevont forrás kategóriákat.
+                        </p>
+
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                            <h4 style="margin-top:0; margin-bottom: 15px; color: white;">➕ Új Összevonás Létrehozása</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                                <div>
+                                    <label for="merge-distance-select" style="display: block; margin-bottom: 8px; color: var(--accent-primary); font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">1. Válasszon Távot</label>
+                                    <select id="merge-distance-select" onchange="window.updateMergeCategoryDropdowns()" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white;">
+                                        <option value="11km">📐 Rövid táv (11 km)</option>
+                                        <option value="22km">📏 Hosszú táv (22 km)</option>
+                                        <option value="4km">🛶 SUP 4 km</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="merge-source-select" style="display: block; margin-bottom: 8px; color: #ff9900; font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">2. Beolvasztandó (Forrás)</label>
+                                    <select id="merge-source-select" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white;">
+                                        <!-- Dinamikusan feltöltve -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="merge-target-select" style="display: block; margin-bottom: 8px; color: #28a745; font-size: 0.85rem; font-weight: bold; text-transform: uppercase;">3. Amibe beolvad (Cél)</label>
+                                    <select id="merge-target-select" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white;">
+                                        <!-- Dinamikusan feltöltve -->
+                                    </select>
+                                </div>
+                            </div>
+                            <button onclick="window.submitCategoryMerge()" class="btn-primary" style="background: #28a745; border: none; height: 48px; font-weight: bold; width: 100%;">🔗 KATEGÓRIÁK ÖSSZEVONÁSA</button>
+                        </div>
+
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 12px;">
+                            <h4 style="margin-top:0; margin-bottom: 15px; color: white;">📋 Aktív Összevonások</h4>
+                            <div class="table-responsive">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid var(--glass-border); color: var(--accent-primary);">
+                                            <th style="padding: 10px 5px;">Beolvasztott kategória (Forrás)</th>
+                                            <th style="padding: 10px 5px; width: 50px; text-align: center;">➔</th>
+                                            <th style="padding: 10px 5px;">Befogadó kategória (Cél)</th>
+                                            <th style="padding: 10px 5px; text-align: right; width: 100px;">Művelet</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="active-merges-table-body">
+                                        <!-- Dinamikusan feltöltve -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

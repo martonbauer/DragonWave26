@@ -1308,15 +1308,20 @@ export function renderResultsCategoryList() {
         grid.className = 'admin-landing-grid';
         grid.style = 'grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin:0;';
 
-        // Egyedi kategóriák gyűjtése ehhez a távhoz
+        // Egyedi kategóriák gyűjtése ehhez a távhoz (összevonásokat figyelembe véve)
         const relevantCats = new Set();
-        rm.data.racers.filter(r => r.distance === dist).forEach(r => relevantCats.add(r.category));
+        rm.data.racers
+            .filter(r => r.distance === dist)
+            .forEach(r => {
+                const effectiveCat = rm.getEffectiveCategory(r.category);
+                relevantCats.add(effectiveCat);
+            });
 
         const sortedCats = Array.from(relevantCats).sort();
 
         sortedCats.forEach(catId => {
             const finishers = rm.data.racers.filter(
-                r => r.category === catId && r.distance === dist && r.status === 'finished'
+                r => rm.getEffectiveCategory(r.category) === catId && r.distance === dist && r.status === 'finished'
             );
 
             const card = document.createElement('div');
@@ -1417,8 +1422,11 @@ export function renderResultsCategoryDetail(distId, catId) {
     } else {
         const baseCatId = catId.replace(/_(11km|22km|4km)$/, '');
         finishers = rm.data.racers.filter(r => {
-            const rBaseCat = (r.category || '').replace(/_(11km|22km|4km)$/, '');
-            return (r.category === catId || rBaseCat === baseCatId) && r.distance === distId && r.status === 'finished';
+            const effectiveCat = rm.getEffectiveCategory(r.category);
+            const rBaseCat = (effectiveCat || '').replace(/_(11km|22km|4km)$/, '');
+            return (
+                (effectiveCat === catId || rBaseCat === baseCatId) && r.distance === distId && r.status === 'finished'
+            );
         });
     }
 

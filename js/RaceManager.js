@@ -997,7 +997,12 @@ export class RaceManager {
     }
 
     // --- 3. SEGÉDFUNKCIÓK ÉS IDŐMÉRÉS (HELPERS & TIMING) ---
-    formatCategoryName(id) {
+    getEffectiveCategory(cat) {
+        const merges = (this.data && this.data.categoryMerges) || {};
+        return merges[cat] ? merges[cat] : cat;
+    }
+
+    formatCategoryName(id, isHtml = true) {
         if (!id) return 'Ismeretlen Kategória';
         if (id === 'MASS_START_ALL') return '🚀 Tömegrajt - Mindenki';
         if (id.startsWith('DISTANCE_')) {
@@ -1005,22 +1010,46 @@ export class RaceManager {
             const distName = dist === '11km' ? 'Rövid táv' : dist === '22km' ? 'Hosszú táv' : 'SUP 4 km';
             return `📏 ${distName} (Összesített)`;
         }
-        if (this.groupMap[id]) return this.groupMap[id];
 
-        if (this.categoryMap[id]) return this.categoryMap[id];
-
-        if (id.includes('_')) {
+        let baseName = '';
+        if (this.groupMap[id]) baseName = this.groupMap[id];
+        else if (this.categoryMap[id]) baseName = this.categoryMap[id];
+        else if (id.includes('_')) {
             const parts = id.split('_');
             const dist = parts[parts.length - 1];
             if (dist === '11km' || dist === '22km' || dist === '4km') {
                 const catId = id.substring(0, id.lastIndexOf('_'));
                 const catName = this.categoryMap[catId] || catId;
-                if (/s[aá]rk[aá]ny/i.test(catId)) return `🐉 SÁRKÁNYHAJÓ`;
-                return catName;
+                if (/s[aá]rk[aá]ny/i.test(catId)) baseName = `🐉 SÁRKÁNYHAJÓ`;
+                else baseName = catName;
             }
         }
-        if (/s[aá]rk[aá]ny/i.test(id)) return `🐉 SÁRKÁNYHAJÓ`;
-        return id;
+        if (!baseName) {
+            if (/s[aá]rk[aá]ny/i.test(id)) baseName = `🐉 SÁRKÁNYHAJÓ`;
+            else baseName = id;
+        }
+
+        // Ellenőrizzük az összevonásokat a bázis kategória ID alapján
+        let baseCatId = id;
+        if (id.includes('_')) {
+            const parts = id.split('_');
+            const dist = parts[parts.length - 1];
+            if (dist === '11km' || dist === '22km' || dist === '4km') {
+                baseCatId = id.substring(0, id.lastIndexOf('_'));
+            }
+        }
+
+        const merges = (this.data && this.data.categoryMerges) || {};
+        const mergedSources = Object.keys(merges).filter(k => merges[k] === baseCatId);
+        if (mergedSources.length > 0) {
+            const sourceNames = mergedSources.map(src => this.categoryMap[src] || src).join(', ');
+            if (isHtml) {
+                return `${baseName} <span style="font-size:0.75em; font-weight:normal; opacity:0.8; font-style:italic;">(összevonva a(z) ${sourceNames} kategóriával)</span>`;
+            } else {
+                return `${baseName} (összevonva a(z) ${sourceNames} kategóriával)`;
+            }
+        }
+        return baseName;
     }
 
     startTickLoop() {
@@ -1773,7 +1802,8 @@ export class RaceManager {
 
         const catGroups = {};
         this.data.racers.forEach(r => {
-            const groupKey = `${r.category}_${r.distance}`;
+            const effectiveCat = this.getEffectiveCategory(r.category);
+            const groupKey = `${effectiveCat}_${r.distance}`;
             if (!catGroups[groupKey]) catGroups[groupKey] = [];
             catGroups[groupKey].push(r);
         });

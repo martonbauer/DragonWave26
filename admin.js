@@ -223,10 +223,15 @@ window.showDataSubSection = async subId => {
         'admin-data-section-export': '📊 Eredmények Listázása',
         'admin-data-section-system': '⚙️ Rendszerkezelés',
         'admin-data-section-archive': '💾 Adatbázis Mentése és Archiválása',
+        'admin-data-section-merges': '🔗 Kategóriák Összevonása',
         'admin-data-section-bibs': '🔢 Rajtszámok Újraosztása',
     };
 
     window.updateAdminDataHeader(titles[subId] || '📂 Adatkezelés', window.showDataLanding);
+
+    if (subId === 'admin-data-section-merges') {
+        window.renderCategoryMergesUI();
+    }
 
     if (subId === 'admin-data-section-nevezes') {
         const regForm = document.getElementById('registration-form');
@@ -858,4 +863,206 @@ window.restoreDatabaseBackup = async () => {
         }
     };
     reader.readAsText(file);
+};
+
+// --- Kategória Összevonás Kezelő Modul (Category Merge Module) ---
+const DISTANCE_CATEGORIES = {
+    '11km': [
+        { id: 'kajak_1_nyitott', name: 'Kajak-1 nyitott' },
+        { id: 'kajak_2_nyitott', name: 'Kajak-2 nyitott' },
+        { id: 'kenu_1_nyitott', name: 'Kenu-1 nyitott' },
+        { id: 'kenu_2_nyitott', name: 'Kenu-2 nyitott' },
+        { id: 'kenu_3_nyitott', name: 'Kenu-3 nyitott' },
+        { id: 'kenu_4_nyitott', name: 'Kenu-4 nyitott' },
+        { id: 'sup_ferfi_1_merev', name: 'SUP férfi-1- merev deszka' },
+        { id: 'sup_noi_1_merev', name: 'SUP női-1- merev deszka' },
+        { id: 'sup_ferfi_1_felfujhato', name: 'SUP férfi-1- felfújható deszka' },
+        { id: 'sup_noi_1_felfujhato', name: 'SUP női-1- felfújható deszka' },
+        { id: 'sarkanyhajo_otproba', name: 'Sárkányhajó' },
+    ],
+    '22km': [
+        { id: 'versenykajak_noi_1', name: 'Versenykajak női-1 (38 cm)' },
+        { id: 'versenykajak_ferfi_1', name: 'Versenykajak férfi-1 (38 cm)' },
+        { id: 'turakajak_noi_1', name: 'Túrakajak női-1 (42–51 cm)' },
+        { id: 'turakajak_ferfi_1', name: 'Túrakajak férfi-1 (42–51 cm)' },
+        { id: 'turakajak_2_nyitott', name: 'Túrakajak 2 (nyitott)' },
+        { id: 'tengeri_kajak_noi_1', name: 'Tengeri kajak női-1 (51 cm>)' },
+        { id: 'tengeri_kajak_ferfi_1', name: 'Tengeri kajak férfi-1 (51 cm>)' },
+        { id: 'surfski_noi', name: 'Surfski kajak női' },
+        { id: 'surfski_ferfi', name: 'Surfski kajak férfi' },
+        { id: 'outrigger_noi_1', name: 'Outrigger női-1' },
+        { id: 'outrigger_ferfi_1', name: 'Outrigger férfi-1' },
+        { id: 'outrigger_2_nyitott', name: 'Outrigger-2 (nyitott)' },
+        { id: 'kenu_2_ferfi', name: 'Kenu-2 férfi' },
+        { id: 'kenu_2_vegyes', name: 'Kenu-2 vegyes' },
+        { id: 'kenu_3_nyitott', name: 'Kenu-3 (nyitott)' },
+        { id: 'kenu_4_nyitott', name: 'Kenu-4 (nyitott)' },
+        { id: 'sup_noi_1', name: 'SUP női-1' },
+        { id: 'sup_ferfi_1', name: 'SUP férfi-1' },
+    ],
+    '4km': [
+        { id: 'sup_noi_1_merev_39_alatt', name: 'SUP női-1- merev deszka 39 év alatt' },
+        { id: 'sup_noi_1_merev_40_felett', name: 'SUP női-1- merev deszka 40 év felett' },
+        { id: 'sup_ferfi_1_merev_39_alatt', name: 'SUP férfi-1- merev deszka 39 év alatt' },
+        { id: 'sup_ferfi_1_merev_40_felett', name: 'SUP férfi-1- merev deszka 40 év felett' },
+        { id: 'sup_noi_1_felfujhato_39_alatt', name: 'SUP női-1- felfújható deszka 39 év alatt' },
+        { id: 'sup_noi_1_felfujhato_40_felett', name: 'SUP női-1- felfújható deszka 40 év felett' },
+        { id: 'sup_ferfi_1_felfujhato_39_alatt', name: 'SUP férfi-1- felfújható deszka 39 év alatt' },
+        { id: 'sup_ferfi_1_felfujhato_40_felett', name: 'SUP férfi-1- felfújható deszka 40 év felett' },
+        { id: 'sup_ferfi_1_felfujhato_16_alatt', name: 'SUP férfi-1- felfújható deszka 16 év alatt' },
+        { id: 'sup_noi_1_felfujhato_16_alatt', name: 'SUP női-1- felfújható deszka 16 év alatt' },
+    ],
+};
+
+window.renderCategoryMergesUI = () => {
+    const tbody = document.getElementById('active-merges-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const merges = (window.raceManager && window.raceManager.data && window.raceManager.data.categoryMerges) || {};
+    const mergeKeys = Object.keys(merges);
+
+    if (mergeKeys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #888; padding: 20px; font-style: italic;">Nincsenek aktív kategória összevonások.</td></tr>`;
+    } else {
+        mergeKeys.forEach(source => {
+            const target = merges[source];
+            const sourceName = window.raceManager.categoryMap[source] || source;
+            const targetName = window.raceManager.categoryMap[target] || target;
+
+            const tr = document.createElement('tr');
+            tr.style = 'border-bottom: 1px solid rgba(255,255,255,0.05);';
+            tr.innerHTML = `
+                <td style="padding: 10px 5px; font-weight: bold; color: #ff9900;">${sourceName}</td>
+                <td style="padding: 10px 5px; text-align: center; color: var(--text-secondary);">➔</td>
+                <td style="padding: 10px 5px; font-weight: bold; color: #28a745;">${targetName}</td>
+                <td style="padding: 10px 5px; text-align: right;">
+                    <button onclick="window.removeCategoryMerge('${source}')" class="btn-danger" style="background:#dc3545; border:none; padding:4px 10px; font-size:0.75rem; border-radius:4px; font-weight:bold; margin:0;" title="Összevonás felbontása">✖ FELBONTÁS</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.updateMergeCategoryDropdowns();
+};
+
+window.updateMergeCategoryDropdowns = () => {
+    const distSelect = document.getElementById('merge-distance-select');
+    const sourceSelect = document.getElementById('merge-source-select');
+    const targetSelect = document.getElementById('merge-target-select');
+
+    if (!distSelect || !sourceSelect || !targetSelect) return;
+
+    const dist = distSelect.value;
+    const cats = DISTANCE_CATEGORIES[dist] || [];
+
+    sourceSelect.innerHTML = '';
+    targetSelect.innerHTML = '';
+
+    cats.forEach(cat => {
+        // Hozzáadjuk mindkét legördülőhöz
+        const opt1 = new Option(cat.name, cat.id);
+        const opt2 = new Option(cat.name, cat.id);
+        sourceSelect.appendChild(opt1);
+        targetSelect.appendChild(opt2);
+    });
+
+    if (sourceSelect.options.length > 0) sourceSelect.selectedIndex = 0;
+    if (targetSelect.options.length > 1) targetSelect.selectedIndex = 1;
+};
+
+window.submitCategoryMerge = async () => {
+    const sourceSelect = document.getElementById('merge-source-select');
+    const targetSelect = document.getElementById('merge-target-select');
+
+    if (!sourceSelect || !targetSelect) return;
+
+    const source = sourceSelect.value;
+    const target = targetSelect.value;
+
+    if (source === target) {
+        showToast('Egy kategóriát nem lehet önmagával összevonni!', 'error');
+        return;
+    }
+
+    const merges = {
+        ...((window.raceManager && window.raceManager.data && window.raceManager.data.categoryMerges) || {}),
+    };
+
+    // Vizsgáljuk meg a körkörös vagy láncolt összevonásokat: ha a cél is össze van már vonva valamivel, ne engedjük, vagy kövessük a láncot
+    if (merges[target]) {
+        showToast('A cél kategória már be van olvasztva egy másik kategóriába!', 'error');
+        return;
+    }
+
+    merges[source] = target;
+
+    showToast('Összevonás mentése...', 'info');
+
+    try {
+        const response = await fetch(`${API_URL}/category-merges`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...window.raceManager.getAuthHeader(),
+            },
+            body: JSON.stringify(merges),
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Szerver hiba');
+        }
+
+        showToast('Kategóriák sikeresen összevonva!', 'success');
+
+        // Frissítsük a helyi adatokat és az UI-t
+        await window.raceManager.loadData();
+        window.raceManager.renderUI();
+        window.renderCategoryMergesUI();
+    } catch (err) {
+        console.error('Merge save error:', err);
+        showToast('Hiba az összevonás mentésekor: ' + err.message, 'error');
+    }
+};
+
+window.removeCategoryMerge = async source => {
+    const confirmAction = confirm(
+        'Biztosan fel szeretnéd bontani ezt az összevonást? A versenyzők visszakerülnek az eredeti kategóriájukba.'
+    );
+    if (!confirmAction) return;
+
+    const merges = {
+        ...((window.raceManager && window.raceManager.data && window.raceManager.data.categoryMerges) || {}),
+    };
+    delete merges[source];
+
+    showToast('Összevonás felbontása...', 'info');
+
+    try {
+        const response = await fetch(`${API_URL}/category-merges`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...window.raceManager.getAuthHeader(),
+            },
+            body: JSON.stringify(merges),
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Szerver hiba');
+        }
+
+        showToast('Összevonás sikeresen felbontva!', 'success');
+
+        // Frissítsük a helyi adatokat és az UI-t
+        await window.raceManager.loadData();
+        window.raceManager.renderUI();
+        window.renderCategoryMergesUI();
+    } catch (err) {
+        console.error('Merge remove error:', err);
+        showToast('Hiba az összevonás felbontásakor: ' + err.message, 'error');
+    }
 };
