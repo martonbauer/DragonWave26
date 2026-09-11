@@ -518,10 +518,11 @@
                 if(response.ok) {
                     const data = await response.json();
                     if(data.racers) {
-                        const total = data.racers.length;
-                        const running = data.racers.filter(r => r.status === 'running').length;
-                        const finished = data.racers.filter(r => r.status === 'finished').length;
-                        const registered = data.racers.filter(r => r.status === 'registered').length;
+                        const validRacers = (data.racers || []).filter(r => r.id !== 'SYSTEM_CATEGORY_MERGES' && r.status !== 'system');
+                        const total = validRacers.length;
+                        const running = validRacers.filter(r => r.status === 'running').length;
+                        const finished = validRacers.filter(r => r.status === 'finished').length;
+                        const registered = validRacers.filter(r => r.status === 'registered').length;
                         
                         document.getElementById('stat-ossz').textContent = total;
                         document.getElementById('stat-futo').textContent = running;

@@ -9,13 +9,34 @@ export function renderAdminStats(rm) {
         const statsContainers = document.querySelectorAll('.admin-stats');
         if (statsContainers.length === 0) return;
 
-        const total = rm.data.racers.length;
-        const running = rm.data.racers.filter(r => r.status === 'running').length;
-        const finished = rm.data.racers.filter(r => r.status === 'finished').length;
-        const registered = rm.data.racers.filter(r => r.status === 'registered').length;
+        const validRacers = (rm.data.racers || []).filter(r => r.id !== 'SYSTEM_CATEGORY_MERGES' && r.status !== 'system');
+        const total = validRacers.length;
+        const running = validRacers.filter(r => r.status === 'running').length;
+        const finished = validRacers.filter(r => r.status === 'finished').length;
+        const registered = validRacers.filter(r => r.status === 'registered').length;
+        const pending = validRacers.filter(r => r.status === 'duplicate').length;
+        const dnf = validRacers.filter(r => r.status === 'dnf').length;
+        const dsq = validRacers.filter(r => r.status === 'dsq').length;
+
+        let pendingHtml = '';
+        if (pending > 0) {
+            pendingHtml = `
+                <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)';" onclick="window.showDataSubSection && window.showDataSubSection('admin-data-section-duplicates')">
+                    <span style="color: #ffaa00; font-size: 0.8rem;">FÜGGŐBEN:</span> <strong>${pending}</strong>
+                </div>
+            `;
+        }
+
+        let extraStatsHtml = '';
+        if (dnf > 0) {
+            extraStatsHtml += `<div class="stat-item"><span style="color: #FFA500; font-size: 0.8rem;">DNF:</span> <strong>${dnf}</strong></div>`;
+        }
+        if (dsq > 0) {
+            extraStatsHtml += `<div class="stat-item"><span style="color: #ff4444; font-size: 0.8rem;">DSQ:</span> <strong>${dsq}</strong></div>`;
+        }
 
         const statsHtml = `
-            <div style="display: flex; gap: 20px;">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
                 <div class="stat-item"><span style="color: #888; font-size: 0.8rem;">ÖSSZES:</span> <strong style="color: white;">${total}</strong></div>
                 <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(0, 145, 255, 0.1)';" onclick="window.toggleRunningListCards(true)">
                     <span style="color: var(--accent-primary); font-size: 0.8rem;">FUTÓ:</span> <strong>${running}</strong>
@@ -26,6 +47,8 @@ export function renderAdminStats(rm) {
                 <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(0, 145, 255, 0.1)';" onclick="window.toggleWaitingListCards(true)">
                     <span style="color: var(--text-secondary); font-size: 0.8rem;">VÁRAKOZIK:</span> <strong>${registered}</strong>
                 </div>
+                ${pendingHtml}
+                ${extraStatsHtml}
             </div>
         `;
 
@@ -35,20 +58,26 @@ export function renderAdminStats(rm) {
 
         const cpStatsContainer = document.getElementById('admin-checkpoint-stats');
         if (cpStatsContainer) {
-            const running22km = rm.data.racers.filter(r => r.status === 'running' && r.distance === '22km').length;
-            const megfordult = (rm.data.checkpoints || []).filter(
-                c => c.checkpoint_name === '22km_tav_11km_fordulo'
-            ).length;
+            const running22kmRacers = validRacers.filter(r => r.status === 'running' && r.distance === '22km');
+            const running22km = running22kmRacers.length;
             const cpData = rm.data.checkpoints || [];
-            const nem_fordult = rm.data.racers.filter(
-                r =>
-                    r.status === 'running' &&
-                    r.distance === '22km' &&
-                    !cpData.some(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo')
-            ).length;
+            const uniqueTurnedBibs = new Set(
+                cpData.filter(c => c.checkpoint_name === '22km_tav_11km_fordulo').map(c => c.racer_bib)
+            );
+
+            let megfordult;
+            let nem_fordult;
+
+            if (running22km > 0) {
+                megfordult = running22kmRacers.filter(r => uniqueTurnedBibs.has(r.bib)).length;
+                nem_fordult = running22km - megfordult;
+            } else {
+                megfordult = uniqueTurnedBibs.size;
+                nem_fordult = 0;
+            }
 
             cpStatsContainer.innerHTML = `
-                <div style="display: flex; gap: 20px;">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
                     <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(255, 153, 0, 0.1)';" onclick="window.toggleRunningListCards(true)">
                         <span style="color: var(--accent-primary); font-size: 0.8rem;">22KM FUTÓ LÉTSZÁM:</span> <strong style="color: white;">${running22km}</strong>
                     </div>
@@ -167,7 +196,7 @@ export function renderRunningListCards(rm) {
                                     return nameA.localeCompare(nameB);
                                 })
                                 .map(r => {
-                                    const now = Date.now() + (this.serverTimeOffset || 0);
+                                    const now = Date.now() + (rm.serverTimeOffset || 0);
                                     const timeDisplay = formatTime(now - (r.start_time || 0));
                                     return `
                                 <tr class="status-running">
@@ -317,7 +346,7 @@ export function renderRacersList(rm) {
 
         const catGroups = {};
         rm.data.racers.forEach(r => {
-            const effectiveCat = this.getEffectiveCategory(r.category);
+            const effectiveCat = rm.getEffectiveCategory(r.category);
             const groupKey = `${effectiveCat}_${r.distance}`;
             if (!catGroups[groupKey]) catGroups[groupKey] = [];
             catGroups[groupKey].push(r);
@@ -380,7 +409,7 @@ export function createResultsTable(rm, container, title, racers, showCategory = 
                 dataStartAttr = '',
                 rankDisplay = '-';
             if (r.status === 'running') {
-                const now = Date.now() + (this.serverTimeOffset || 0);
+                const now = Date.now() + (rm.serverTimeOffset || 0);
                 timeDisplay = formatTime(now - (r.start_time || 0));
                 dataStartAttr = `data-start="${r.start_time || 0}"`;
             } else if (r.status === 'finished') {
@@ -453,7 +482,7 @@ export function createResultsTable(rm, container, title, racers, showCategory = 
             } else {
                 namesDisplay = `${r.members ? r.members.map(m => escapeHtml(m.name)).join(', ') : escapeHtml(r.name || '-')}${diplomaBtnHtml}`;
             }
-            tr.innerHTML = `<td style="color:${rowColor}; font-weight:bold;">${rankDisplay}</td><td>#${(r.bib || 0).toString().padStart(3, '0')}</td><td>${namesDisplay}</td>${showCategory ? `<td style="font-size: 0.8rem; color: #888;">${this.categoryMap[r.category] || r.category}</td>` : ''}${cpHtml}<td class="time" style="color:${rowColor}; font-family: 'Space Mono', monospace; text-align:right;" ${dataStartAttr}>${timeDisplay}</td>`;
+            tr.innerHTML = `<td style="color:${rowColor}; font-weight:bold;">${rankDisplay}</td><td>#${(r.bib || 0).toString().padStart(3, '0')}</td><td>${namesDisplay}</td>${showCategory ? `<td style="font-size: 0.8rem; color: #888;">${(rm.categoryMap && rm.categoryMap[r.category]) || r.category}</td>` : ''}${cpHtml}<td class="time" style="color:${rowColor}; font-family: 'Space Mono', monospace; text-align:right;" ${dataStartAttr}>${timeDisplay}</td>`;
             tbody.appendChild(tr);
         });
         container.appendChild(catWrapper);

@@ -3,6 +3,9 @@ const globals = require('globals');
 const eslintConfigPrettier = require('eslint-config-prettier');
 
 module.exports = [
+    {
+        ignores: ['scratch/**', 'dist/**', 'build/**', 'node_modules/**'],
+    },
     js.configs.recommended,
     {
         languageOptions: {

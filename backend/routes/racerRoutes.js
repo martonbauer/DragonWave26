@@ -8,7 +8,7 @@ const fs = require('fs');
 const supabase = require('../../database');
 const { authenticateAdmin, isAdmin } = require('../middleware/auth');
 const { getNextBib } = require('../services/bib-service');
-const { checkAndStopEmptyBatchTimers } = require('../services/batch-service');
+const { checkAndStopEmptyBatchTimers, findActiveTimerForRacer } = require('../services/batch-service');
 const { validateRacerData, normalizeCategoryToSlug } = require('../utils/validation');
 const { normalizeOtprobaId } = require('../utils/stringHelper');
 const { findOtprobaDuplicate, findNameBirthDuplicate } = require('../services/duplicate-service');
@@ -325,6 +325,18 @@ router.put('/racer/:id', authenticateAdmin, async (req, res) => {
 
         if (status !== undefined) {
             updateData.status = members && isDuplicate ? 'duplicate' : status;
+            if (updateData.status === 'running') {
+                updateData.total_time = null;
+                updateData.finish_time = null;
+
+                const { data: activeTimers } = await supabase.from('categories').select('*');
+                const matchedTimer = findActiveTimerForRacer(racer, activeTimers);
+                if (matchedTimer && matchedTimer.start_time) {
+                    updateData.start_time = matchedTimer.start_time;
+                } else if (!racer.start_time || Math.abs(Date.now() - racer.start_time) > 24 * 3600 * 1000) {
+                    updateData.start_time = Date.now();
+                }
+            }
         } else if (members && isDuplicate) {
             updateData.status = 'duplicate';
         }

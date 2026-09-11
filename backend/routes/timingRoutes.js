@@ -6,7 +6,7 @@
 const express = require('express');
 const supabase = require('../../database');
 const { authenticateAdmin } = require('../middleware/auth');
-const { getGroupQuery, checkAndStopEmptyBatchTimers } = require('../services/batch-service');
+const { getGroupQuery, checkAndStopEmptyBatchTimers, findActiveTimerForRacer } = require('../services/batch-service');
 const {
     getUnassignedTimes,
     saveUnassignedTimes,
@@ -22,7 +22,7 @@ router.post('/start-category', authenticateAdmin, async (req, res) => {
     const startKey = groupId || `${categoryName}_${distance}`;
 
     try {
-        await supabase.from('categories').insert({ key: startKey, start_time: now });
+        await supabase.from('categories').upsert({ key: startKey, start_time: now });
         let query = supabase.from('racers').update({ status: 'running', start_time: now }).eq('status', 'registered');
         query = groupId ? getGroupQuery(query, groupId) : query.eq('category', categoryName).eq('distance', distance);
         const { data: updated } = await query.select();
@@ -37,7 +37,7 @@ router.post('/start-mass', authenticateAdmin, async (req, res) => {
     const now = Date.now();
     const startKey = 'MASS_START_ALL';
     try {
-        await supabase.from('categories').insert({ key: startKey, start_time: now });
+        await supabase.from('categories').upsert({ key: startKey, start_time: now });
         const { data } = await supabase
             .from('racers')
             .update({ status: 'running', start_time: now })
@@ -55,7 +55,7 @@ router.post('/start-distance', authenticateAdmin, async (req, res) => {
     const now = Date.now();
     const startKey = `DISTANCE_${distance}`;
     try {
-        await supabase.from('categories').insert({ key: startKey, start_time: now });
+        await supabase.from('categories').upsert({ key: startKey, start_time: now });
         const { data } = await supabase
             .from('racers')
             .update({ status: 'running', start_time: now })
@@ -165,12 +165,19 @@ router.post('/stop-racer', authenticateAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Már beérkezett! (Második nyomás kihagyva)' });
         }
 
-        if (racer.status !== 'running' || !racer.start_time) {
-            return res.status(400).json({ error: 'A versenyző nincs futamban! (Még nem indult el)' });
+        let startTime = racer.start_time;
+        if (racer.status !== 'running' || !startTime) {
+            const { data: activeTimers } = await supabase.from('categories').select('*');
+            const matchedTimer = findActiveTimerForRacer(racer, activeTimers);
+            if (matchedTimer && matchedTimer.start_time) {
+                startTime = matchedTimer.start_time;
+            } else {
+                return res.status(400).json({ error: 'A versenyző nincs futamban! (Még nem indult el)' });
+            }
         }
 
-        const total_time = now - racer.start_time;
-        await supabase.from('racers').update({ status: 'finished', finish_time: now, total_time }).eq('bib', bib);
+        const total_time = now - startTime;
+        await supabase.from('racers').update({ status: 'finished', start_time: startTime, finish_time: now, total_time }).eq('bib', bib);
         const { data: members } = await supabase.from('members').select('name, otproba_id').eq('racer_id', racer.id);
         let names = racer.name || '-';
         if (members && members.length > 0) {
@@ -201,12 +208,14 @@ router.post('/stop-bulk-racers', authenticateAdmin, async (req, res) => {
     }
 
     try {
-        const { data: racers } = await supabase.from('racers').select('id, bib, start_time, status').in('bib', bibs);
+        const { data: racers } = await supabase.from('racers').select('id, bib, start_time, status, category, distance').in('bib', bibs);
         const results = { successful: [], failed: [] };
 
         if (!racers || racers.length === 0) {
             return res.status(404).json({ error: 'Nincs találat a megadott rajtszámokra!' });
         }
+
+        const { data: activeTimers } = await supabase.from('categories').select('*');
 
         const promises = bibs.map(async (bibStr, index) => {
             const bibNum = parseInt(bibStr);
@@ -217,18 +226,24 @@ router.post('/stop-bulk-racers', authenticateAdmin, async (req, res) => {
                 results.failed.push(`#${r.bib}: Már beérkezett`);
                 return;
             }
-            if (r.status !== 'running') {
-                results.failed.push(`#${r.bib}: Nincs futamban`);
-                return;
+            let racerStartTime = r.start_time;
+            if (r.status !== 'running' || !racerStartTime) {
+                const matchedTimer = findActiveTimerForRacer(r, activeTimers);
+                if (matchedTimer && matchedTimer.start_time) {
+                    racerStartTime = matchedTimer.start_time;
+                } else {
+                    results.failed.push(`#${r.bib}: Nincs futamban`);
+                    return;
+                }
             }
 
             // +500 ms eltolás az egymást követő bírói beütések sorrendjének megtartásához
             const racerFinishTime = baseNow + index * 500;
-            const total_time = racerFinishTime - r.start_time;
+            const total_time = racerFinishTime - racerStartTime;
 
             const { error } = await supabase
                 .from('racers')
-                .update({ status: 'finished', finish_time: racerFinishTime, total_time })
+                .update({ status: 'finished', start_time: racerStartTime, finish_time: racerFinishTime, total_time })
                 .eq('id', r.id);
 
             if (error) results.failed.push(`#${r.bib}: DB hiba`);

@@ -90,7 +90,41 @@ async function checkAndStopEmptyBatchTimers() {
     }
 }
 
+/**
+ * Megkeresi a versenyzőhöz tartozó aktív rajtórát (ha van ilyen)
+ */
+function findActiveTimerForRacer(racer, activeTimers) {
+    if (!racer || !activeTimers || activeTimers.length === 0) return null;
+
+    // 1. Pontos kategória + távolság páros
+    const catKey = `${racer.category}_${racer.distance}`;
+    const directTimer = activeTimers.find(t => t.key === catKey);
+    if (directTimer) return directTimer;
+
+    // 2. Távolság rajt (pl. DISTANCE_22km)
+    const distTimer = activeTimers.find(t => t.key === `DISTANCE_${racer.distance}`);
+    if (distTimer) return distTimer;
+
+    // 3. Tömegrajt (mindenki)
+    const massTimer = activeTimers.find(t => t.key === 'MASS_START_ALL');
+    if (massTimer) return massTimer;
+
+    // 4. Előre definiált csoportok
+    for (const t of activeTimers) {
+        if (t.key === 'kajak_hosszu' && racer.distance === '22km' && CATEGORY_GROUPS.KAJAK && CATEGORY_GROUPS.KAJAK.includes(racer.category)) return t;
+        if (t.key === 'kajak_rovid' && racer.distance === '11km' && CATEGORY_GROUPS.KAJAK && CATEGORY_GROUPS.KAJAK.includes(racer.category)) return t;
+        if (t.key === 'kenu_hosszu' && racer.distance === '22km' && ([...(CATEGORY_GROUPS.KENU || []), 'sup_noi_1', 'sup_ferfi_1'].includes(racer.category))) return t;
+        if (t.key === 'kenu_rovid' && racer.distance === '11km' && ([...(CATEGORY_GROUPS.KENU || []), 'sup_ferfi_1_merev', 'sup_noi_1_merev', 'sup_ferfi_1_felfujhato', 'sup_noi_1_felfujhato'].includes(racer.category))) return t;
+        if (t.key === 'sup_4km' && racer.distance === '4km' && CATEGORY_GROUPS.SUP && CATEGORY_GROUPS.SUP.includes(racer.category)) return t;
+        if (t.key === 'sarkanyhajo_11km' && racer.distance === '11km' && CATEGORY_GROUPS.SARKANYHAJO && CATEGORY_GROUPS.SARKANYHAJO.includes(racer.category)) return t;
+    }
+
+    return null;
+}
+
 module.exports = {
     getGroupQuery,
     checkAndStopEmptyBatchTimers,
+    findActiveTimerForRacer,
 };
+

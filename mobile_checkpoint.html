@@ -528,12 +528,24 @@
                 if(response.ok) {
                     const data = await response.json();
                     if(data.racers) {
-                        const futo22k = data.racers.filter(r => r.status === 'running' && r.distance === '22km').length;
+                        const validRacers = (data.racers || []).filter(r => r.id !== 'SYSTEM_CATEGORY_MERGES' && r.status !== 'system');
+                        const running22kRacers = validRacers.filter(r => r.status === 'running' && r.distance === '22km');
+                        const running22k = running22kRacers.length;
                         const checkpoints = data.checkpoints || [];
-                        const fordult = checkpoints.filter(c => c.checkpoint_name === '22km_tav_11km_fordulo').length;
-                        const kell = data.racers.filter(r => r.status === 'running' && r.distance === '22km' && !checkpoints.some(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo')).length;
+                        const turnedBibs = new Set(checkpoints.filter(c => c.checkpoint_name === '22km_tav_11km_fordulo').map(c => c.racer_bib));
+
+                        let fordult = 0;
+                        let kell = 0;
+
+                        if (running22k > 0) {
+                            fordult = running22kRacers.filter(r => turnedBibs.has(r.bib)).length;
+                            kell = running22k - fordult;
+                        } else {
+                            fordult = turnedBibs.size;
+                            kell = 0;
+                        }
                         
-                        document.getElementById('stat-futo').textContent = futo22k;
+                        document.getElementById('stat-futo').textContent = running22k;
                         document.getElementById('stat-fordult').textContent = fordult;
                         document.getElementById('stat-kell').textContent = kell;
                     }
