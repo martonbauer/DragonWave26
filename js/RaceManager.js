@@ -1,5 +1,20 @@
 import { apiCall, API_URL, socketAdmin } from './api.js';
 import { showToast, formatTime } from './ui-utils.js';
+import {
+    renderAdminStats,
+    renderWaitingListCards,
+    renderRunningListCards,
+    renderFinishedListCards,
+    renderNotTurnedListCards,
+    renderRacersList,
+    createResultsTable,
+    renderLiveLog
+} from './renderers/live-cards-renderer.js';
+import {
+    updateEditCategoryOptions,
+    openEditModal,
+    closeEditModal
+} from './renderers/modal-renderer.js';
 
 export function parseTimeToMs(timeStr) {
     if (!timeStr || !timeStr.trim()) return null;
@@ -214,7 +229,11 @@ export class RaceManager {
     async loadData() {
         try {
             console.log(`Adatok lekérése: ${API_URL}/data`);
-            const response = await fetch(`${API_URL}/data`);
+            const headers = {};
+            if (this.adminPassword) {
+                headers['Authorization'] = `Bearer ${this.adminPassword}`;
+            }
+            const response = await fetch(`${API_URL}/data`, { headers });
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -593,190 +612,17 @@ export class RaceManager {
         }
     }
 
+
     updateEditCategoryOptions(distance, selectValue = null) {
-        const catSelect = document.getElementById('edit-category');
-        const catCustom = document.getElementById('edit-category-custom');
-        if (!catSelect) return;
-
-        catSelect.innerHTML = '<option value="" disabled selected>Válassz kategóriát...</option>';
-
-        const keys = this.distanceCategories[distance] || [];
-        keys.forEach(slug => {
-            const name = this.categoryMap[slug];
-            if (name) {
-                catSelect.appendChild(new Option(name, slug));
-            }
-        });
-
-        if (selectValue) {
-            const exists = Array.from(catSelect.options).some(opt => opt.value === selectValue);
-            if (!exists) {
-                const name = this.categoryMap[selectValue] || `${selectValue} (Egyedi)`;
-                catSelect.appendChild(new Option(name, selectValue));
-            }
-            catSelect.value = selectValue;
-        } else {
-            catSelect.value = '';
-        }
-
-        catSelect.appendChild(new Option('➕ Egyéb (kézi megadás)...', '__custom__'));
-
-        if (
-            selectValue === '__custom__' ||
-            (selectValue && !keys.includes(selectValue) && !this.categoryMap[selectValue])
-        ) {
-            catSelect.value = '__custom__';
-            if (catCustom) {
-                catCustom.style.display = 'block';
-                catCustom.value = selectValue === '__custom__' ? '' : selectValue;
-            }
-        } else {
-            if (catCustom) {
-                catCustom.style.display = 'none';
-                catCustom.value = '';
-            }
-        }
+        updateEditCategoryOptions(this, distance, selectValue);
     }
 
     openEditModal(id, memberId = null) {
-        if (!this.data || !this.data.racers) return;
-        const racer = this.data.racers.find(r => r.id === id);
-        if (!racer) return;
-
-        window.currentEditingRacer = JSON.parse(JSON.stringify(racer));
-        window.currentEditingMemberId = memberId;
-
-        const dataContainer = document.getElementById('edit-racer-data-container');
-        const titleEl = document.querySelector('#editRacerModal .card-title');
-
-        if (memberId) {
-            if (dataContainer) dataContainer.style.display = 'none';
-            if (titleEl) titleEl.innerHTML = '✏️ Versenyző Szerkesztése';
-        } else {
-            if (dataContainer) dataContainer.style.display = 'block';
-            if (titleEl) titleEl.innerHTML = '✏️ Egység / Versenyző Szerkesztése';
-        }
-
-        document.getElementById('edit-id').value = racer.id;
-        document.getElementById('edit-bib').value = racer.bib || '';
-        document.getElementById('edit-status').value = racer.status || 'registered';
-
-        const totalTimeEl = document.getElementById('edit-total_time');
-        if (totalTimeEl) {
-            totalTimeEl.value = racer.total_time ? formatTime(racer.total_time) : '';
-        }
-
-        const distanceVal = racer.distance || '11km';
-        const editDistanceEl = document.getElementById('edit-distance');
-        if (editDistanceEl) {
-            editDistanceEl.value = distanceVal;
-        }
-
-        this.updateEditCategoryOptions(distanceVal, racer.category);
-        document.getElementById('edit-email').value = racer.email || '';
-        document.getElementById('edit-phone').value = racer.phone || '';
-        document.getElementById('edit-is_series').checked = !!racer.is_series;
-        document.getElementById('edit-is_paid').value = racer.is_paid ? '1' : '0';
-
-        const editDragonTeamContainer = document.getElementById('edit-dragon-team-container');
-        const editDragonTeamSelect = document.getElementById('edit-dragon-team');
-
-        if (editDragonTeamContainer && editDragonTeamSelect) {
-            if (/s[aá]rk[aá]ny/i.test(racer.category || '')) {
-                editDragonTeamContainer.style.display = 'block';
-                editDragonTeamSelect.innerHTML = '<option value="">-- Jelenlegi állapot megtartása --</option>';
-
-                const teams = [];
-                this.data.racers.forEach(r => {
-                    if (/s[aá]rk[aá]ny/i.test(r.category || '')) {
-                        const tMember = (r.members || []).find(m => m.otproba_id === 'CSAPATNEV');
-                        if (tMember && tMember.name) {
-                            teams.push({ id: r.id, name: tMember.name, bib: r.bib });
-                        }
-                    }
-                });
-
-                teams
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .forEach(t => {
-                        if (t.id !== racer.id) {
-                            editDragonTeamSelect.appendChild(
-                                new Option(`${t.name} (#${t.bib || '-'})`, JSON.stringify(t))
-                            );
-                        }
-                    });
-            } else {
-                editDragonTeamContainer.style.display = 'none';
-                editDragonTeamSelect.innerHTML = '';
-            }
-        }
-
-        const container = document.getElementById('edit-members-container');
-        if (container) {
-            container.innerHTML = '';
-
-            let membersToShow;
-            const isTeam =
-                racer.id.startsWith('DRAGON_') ||
-                (racer.members && racer.members.some(m => m.otproba_id === 'CSAPATNEV'));
-
-            if (memberId) {
-                // Csak az adott tagot szerkesztjük
-                membersToShow = (racer.members || []).filter(m => m.id === memberId);
-            } else if (isTeam) {
-                // Csapatot szerkesztünk: csak a csapatnév jelenjen meg (vagy adjunk hozzá egy üreset, ha nincs)
-                const teamMember = (racer.members || []).find(m => m.otproba_id === 'CSAPATNEV');
-                if (teamMember) {
-                    membersToShow = [teamMember];
-                } else {
-                    membersToShow = [{ name: '', birth_date: '1900-01-01', otproba_id: 'CSAPATNEV' }];
-                }
-            } else {
-                // Sima versenyző összes tagja
-                membersToShow = racer.members || [];
-            }
-
-            membersToShow.forEach(m => {
-                const row = document.createElement('div');
-                row.className = 'member-edit-row';
-                let birth = m.birth_date || '';
-                if (birth && birth.includes('.')) {
-                    const parts = birth.split('.');
-                    if (parts.length === 3)
-                        birth = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                }
-
-                const isTeamName = m.otproba_id === 'CSAPATNEV';
-
-                row.innerHTML = `
-                    <div style="display: flex; flex-direction: column;">
-                        <label style="font-size: 0.7rem; color: ${isTeamName ? 'var(--accent-primary)' : 'var(--text-secondary)'}; margin-bottom: 2px;">${isTeamName ? 'Csapat Név' : 'Név'}</label>
-                        <input type="text" class="edit-m-name" value="${m.name || ''}" placeholder="Név">
-                    </div>
-                    <div style="display: flex; flex-direction: column; ${isTeamName ? 'display: none;' : ''}">
-                        <label style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 2px;">Szül. dátum</label>
-                        <input type="text" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="edit-m-birth" placeholder="ÉÉÉÉ.HH.NN." value="${birth}">
-                    </div>
-                    <div style="display: flex; flex-direction: column; ${isTeamName ? 'display: none;' : ''}">
-                        <label style="font-size: 0.7rem; color: var(--accent-primary); margin-bottom: 2px;">5Próba ID</label>
-                        <input type="text" class="edit-m-otproba" value="${isTeamName ? 'CSAPATNEV' : m.otproba_id || ''}" placeholder="Nincs">
-                    </div>
-                `;
-                container.appendChild(row);
-            });
-        }
-
-        const modal = document.getElementById('editRacerModal');
-        if (modal) {
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
+        openEditModal(this, id, memberId);
     }
 
     closeEditModal() {
-        const modal = document.getElementById('editRacerModal');
-        if (modal) modal.classList.remove('active');
-        document.body.style.overflow = '';
+        closeEditModal();
     }
 
     async saveRacer() {
@@ -1469,311 +1315,26 @@ export class RaceManager {
     }
 
     renderAdminStats() {
-        const statsContainers = document.querySelectorAll('.admin-stats');
-        if (statsContainers.length === 0) return;
-
-        const total = this.data.racers.length;
-        const running = this.data.racers.filter(r => r.status === 'running').length;
-        const finished = this.data.racers.filter(r => r.status === 'finished').length;
-        const registered = this.data.racers.filter(r => r.status === 'registered').length;
-
-        const statsHtml = `
-            <div style="display: flex; gap: 20px;">
-                <div class="stat-item"><span style="color: #888; font-size: 0.8rem;">ÖSSZES:</span> <strong style="color: white;">${total}</strong></div>
-                <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(0, 145, 255, 0.1)';" onclick="window.toggleRunningListCards(true)">
-                    <span style="color: var(--accent-primary); font-size: 0.8rem;">FUTÓ:</span> <strong>${running}</strong>
-                </div>
-                <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(0, 255, 136, 0.1)';" onclick="window.toggleFinishedListCards(true)">
-                    <span style="color: #00ff88; font-size: 0.8rem;">CÉLBA ÉRT:</span> <strong>${finished}</strong>
-                </div>
-                <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(0, 145, 255, 0.1)';" onclick="window.toggleWaitingListCards(true)">
-                    <span style="color: var(--text-secondary); font-size: 0.8rem;">VÁRAKOZIK:</span> <strong>${registered}</strong>
-                </div>
-            </div>
-        `;
-
-        statsContainers.forEach(container => {
-            container.innerHTML = statsHtml;
-        });
-
-        const cpStatsContainer = document.getElementById('admin-checkpoint-stats');
-        if (cpStatsContainer) {
-            const running22km = this.data.racers.filter(r => r.status === 'running' && r.distance === '22km').length;
-            const megfordult = (this.data.checkpoints || []).filter(
-                c => c.checkpoint_name === '22km_tav_11km_fordulo'
-            ).length;
-            const cpData = this.data.checkpoints || [];
-            const nem_fordult = this.data.racers.filter(
-                r =>
-                    r.status === 'running' &&
-                    r.distance === '22km' &&
-                    !cpData.some(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo')
-            ).length;
-
-            cpStatsContainer.innerHTML = `
-                <div style="display: flex; gap: 20px;">
-                    <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(255, 153, 0, 0.1)';" onclick="window.toggleRunningListCards(true)">
-                        <span style="color: var(--accent-primary); font-size: 0.8rem;">22KM FUTÓ LÉTSZÁM:</span> <strong style="color: white;">${running22km}</strong>
-                    </div>
-                    <div class="stat-item"><span style="color: #ff9900; font-size: 0.8rem;">MEGFORDULT (11km):</span> <strong style="color: white;">${megfordult}</strong></div>
-                    <div class="stat-item" style="cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'; this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.borderColor='transparent'; this.style.background='rgba(255, 153, 0, 0.1)';" onclick="window.toggleNotTurnedListCards(true)">
-                        <span style="color: #ff4444; font-size: 0.8rem;">MÉG NEM FORDULT:</span> <strong style="color: white;">${nem_fordult}</strong>
-                    </div>
-                </div>
-            `;
-        }
+        renderAdminStats(this);
     }
 
     renderWaitingListCards() {
-        const containers = [
-            {
-                content: document.getElementById('waiting-list-content-starts'),
-                card: document.getElementById('waiting-list-container-starts'),
-            },
-            {
-                content: document.getElementById('waiting-list-content-live'),
-                card: document.getElementById('waiting-list-container-live'),
-            },
-        ].filter(item => item.content && item.card && !item.card.classList.contains('hidden'));
-
-        if (containers.length === 0) return;
-
-        const registered = this.data.racers.filter(r => r.status === 'registered');
-
-        let html = '';
-        if (registered.length === 0) {
-            html =
-                '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs várakozó versenyző.</div>';
-        } else {
-            html = `
-                <div class="table-responsive">
-                    <table class="results-table" style="font-size: 0.85rem;">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Rajtszám</th>
-                                <th>Egység Tagjai</th>
-                                <th>Kategória</th>
-                                <th>Táv</th>
-                            </tr>
-                        </thead>
-                            ${registered
-                                .sort((a, b) => {
-                                    const bibDiff = (a.bib || 0) - (b.bib || 0);
-                                    if (bibDiff !== 0) return bibDiff;
-                                    const realA = (a.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
-                                    const realB = (b.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
-                                    const nameA = (realA[0] ? realA[0].name : a.name) || '';
-                                    const nameB = (realB[0] ? realB[0].name : b.name) || '';
-                                    return nameA.localeCompare(nameB);
-                                })
-                                .map(
-                                    r => `
-                                <tr>
-                                    <td><strong style="color: var(--accent-primary);">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}</td>
-                                    <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
-                                    <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
-                                </tr>
-                            `
-                                )
-                                .join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        containers.forEach(item => {
-            item.content.innerHTML = html;
-        });
+        renderWaitingListCards(this);
     }
 
     renderRunningListCards() {
-        const containers = [
-            {
-                content: document.getElementById('running-list-content-starts'),
-                card: document.getElementById('running-list-container-starts'),
-            },
-            {
-                content: document.getElementById('running-list-content-live'),
-                card: document.getElementById('running-list-container-live'),
-            },
-        ].filter(item => item.content && item.card && !item.card.classList.contains('hidden'));
-
-        if (containers.length === 0) return;
-
-        const runningRacers = this.data.racers.filter(r => r.status === 'running');
-
-        let html = '';
-        if (runningRacers.length === 0) {
-            html =
-                '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs futó versenyző.</div>';
-        } else {
-            html = `
-                <div class="table-responsive">
-                    <table class="results-table" style="font-size: 0.85rem;">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Rajtszám</th>
-                                <th>Egység Tagjai</th>
-                                <th>Kategória</th>
-                                <th>Táv</th>
-                                <th style="text-align: right;">Eltelt idő</th>
-                            </tr>
-                        </thead>
-                            ${runningRacers
-                                .sort((a, b) => {
-                                    const bibDiff = (a.bib || 0) - (b.bib || 0);
-                                    if (bibDiff !== 0) return bibDiff;
-                                    const realA = (a.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
-                                    const realB = (b.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
-                                    const nameA = (realA[0] ? realA[0].name : a.name) || '';
-                                    const nameB = (realB[0] ? realB[0].name : b.name) || '';
-                                    return nameA.localeCompare(nameB);
-                                })
-                                .map(r => {
-                                    const now = Date.now() + (this.serverTimeOffset || 0);
-                                    const timeDisplay = formatTime(now - (r.start_time || 0));
-                                    return `
-                                <tr class="status-running">
-                                    <td><strong style="color: var(--accent-primary);">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}</td>
-                                    <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
-                                    <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
-                                    <td style="text-align: right; font-weight: bold; color: #00ff88; font-family: 'Space Mono', monospace;" class="time" data-start="${r.start_time || 0}">${timeDisplay}</td>
-                                </tr>
-                            `;
-                                })
-                                .join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        containers.forEach(item => {
-            item.content.innerHTML = html;
-        });
+        renderRunningListCards(this);
     }
 
     renderFinishedListCards() {
-        const containers = [
-            {
-                content: document.getElementById('finished-list-content-starts'),
-                card: document.getElementById('finished-list-container-starts'),
-            },
-            {
-                content: document.getElementById('finished-list-content-live'),
-                card: document.getElementById('finished-list-container-live'),
-            },
-        ].filter(item => item.content && item.card && !item.card.classList.contains('hidden'));
-
-        if (containers.length === 0) return;
-
-        const finishedRacers = this.data.racers.filter(r => r.status === 'finished');
-
-        let html = '';
-        if (finishedRacers.length === 0) {
-            html =
-                '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs célba érkezett versenyző.</div>';
-        } else {
-            html = `
-                <div class="table-responsive">
-                    <table class="results-table" style="font-size: 0.85rem;">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Rajtszám</th>
-                                <th>Egység Tagjai</th>
-                                <th>Kategória</th>
-                                <th>Táv</th>
-                                <th style="text-align: right;">Eredmény</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${finishedRacers
-                                .sort((a, b) => (a.total_time || 0) - (b.total_time || 0))
-                                .map(r => {
-                                    const timeDisplay = formatTime(r.total_time || 0);
-                                    return `
-                                <tr class="status-finished">
-                                    <td><strong style="color: #00ff88;">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}</td>
-                                    <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
-                                    <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
-                                    <td style="text-align: right; font-weight: bold; color: #00ff88; font-family: 'Space Mono', monospace;">${timeDisplay}</td>
-                                </tr>
-                            `;
-                                })
-                                .join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        containers.forEach(item => {
-            item.content.innerHTML = html;
-        });
+        renderFinishedListCards(this);
     }
 
     renderNotTurnedListCards() {
-        const liveCard = document.getElementById('not-turned-list-container-live');
-        const liveContent = document.getElementById('not-turned-list-content-live');
-        if (!liveCard || liveCard.classList.contains('hidden') || !liveContent) return;
-
-        const checkpoints = this.data.checkpoints || [];
-        const notTurnedRacers = this.data.racers.filter(r => {
-            if (r.status !== 'running' || r.distance !== '22km') return false;
-            return !checkpoints.some(c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo');
-        });
-
-        let html;
-        if (notTurnedRacers.length === 0) {
-            html =
-                '<div style="text-align: center; padding: 20px; color: var(--text-secondary); opacity: 0.7;">Jelenleg nincs ilyen versenyző.</div>';
-        } else {
-            html = `
-                <div class="table-responsive">
-                    <table class="results-table" style="font-size: 0.85rem;">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Rajtszám</th>
-                                <th>Egység Tagjai</th>
-                                <th>Kategória</th>
-                                <th>Táv</th>
-                            </tr>
-                        </thead>
-                            ${notTurnedRacers
-                                .sort((a, b) => {
-                                    const bibDiff = (a.bib || 0) - (b.bib || 0);
-                                    if (bibDiff !== 0) return bibDiff;
-                                    const realA = (a.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
-                                    const realB = (b.members || []).filter(m => m.otproba_id !== 'CSAPATNEV');
-                                    const nameA = (realA[0] ? realA[0].name : a.name) || '';
-                                    const nameB = (realB[0] ? realB[0].name : b.name) || '';
-                                    return nameA.localeCompare(nameB);
-                                })
-                                .map(
-                                    r => `
-                                <tr>
-                                    <td><strong style="color: var(--accent-primary);">#${(r.bib || 0).toString().padStart(3, '0')}</strong></td>
-                                    <td>${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}</td>
-                                    <td style="font-size: 0.75rem; color: var(--text-secondary);">${this.formatCategoryName(r.category)}</td>
-                                    <td style="font-size: 0.75rem; color: #aaa;">${r.distance || '-'}</td>
-                                </tr>
-                            `
-                                )
-                                .join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-        liveContent.innerHTML = html;
+        renderNotTurnedListCards(this);
     }
 
     renderAdminControlButtons() {
-        // Implementation moved to separate admin-ui.js logic but called from here
         if (typeof window.renderAdminControlButtons === 'function') {
             window.renderAdminControlButtons();
         }
@@ -1795,203 +1356,15 @@ export class RaceManager {
     }
 
     renderRacersList() {
-        const container = document.getElementById('results-tables-container');
-        if (!container) return;
-        container.innerHTML = '';
-
-        if (!this.data.racers || this.data.racers.length === 0) {
-            container.innerHTML =
-                '<div style="text-align:center; color: var(--text-secondary); width:100%;">Nincsenek nevezett versenyzők</div>';
-            return;
-        }
-
-        const catGroups = {};
-        this.data.racers.forEach(r => {
-            const effectiveCat = this.getEffectiveCategory(r.category);
-            const groupKey = `${effectiveCat}_${r.distance}`;
-            if (!catGroups[groupKey]) catGroups[groupKey] = [];
-            catGroups[groupKey].push(r);
-        });
-
-        Object.keys(catGroups)
-            .sort()
-            .forEach(groupKey => {
-                const racers = catGroups[groupKey];
-                if (!racers.some(r => r.status === 'finished' || r.status === 'running')) return;
-                const sortedRacers = racers.sort((a, b) => {
-                    if (a.status === 'finished' && b.status !== 'finished') return -1;
-                    if (a.status !== 'finished' && b.status === 'finished') return 1;
-                    if (a.status === 'finished' && b.status === 'finished') return a.total_time - b.total_time;
-                    return a.bib - b.bib;
-                });
-                const distStr = sortedRacers[0].distance || '';
-                const cleanDist = distStr.replace(/km/i, '').trim();
-                const distDisplay = cleanDist ? `${cleanDist} km` : '';
-                const catTitle = distDisplay
-                    ? `${this.formatCategoryName(groupKey)} - ${distDisplay}`
-                    : this.formatCategoryName(groupKey);
-                this.createResultsTable(container, catTitle, sortedRacers, false);
-            });
-
-        [
-            { id: '22km', title: 'Hosszú táv összetett' },
-            { id: '11km', title: 'Rövid táv összetett' },
-            { id: '4km', title: 'SUP 4 km összetett' },
-        ].forEach(dist => {
-            const distRacers = this.data.racers.filter(
-                r => r.distance === dist.id && (r.status === 'finished' || r.status === 'running')
-            );
-            if (distRacers.length === 0) return;
-            const sortedDistRacers = distRacers.sort((a, b) => {
-                if (a.status === 'finished' && b.status !== 'finished') return -1;
-                if (a.status !== 'finished' && b.status === 'finished') return 1;
-                if (a.status === 'finished' && b.status === 'finished') return a.total_time - b.total_time;
-                return a.bib - b.bib;
-            });
-            const hr = document.createElement('hr');
-            hr.style =
-                'margin: 3rem 0 1rem 0; border: none; height: 1px; background: linear-gradient(to right, transparent, var(--accent-primary), transparent);';
-            container.appendChild(hr);
-            this.createResultsTable(container, dist.title, sortedDistRacers, true);
-        });
+        renderRacersList(this);
     }
 
     createResultsTable(container, title, racers, showCategory = false) {
-        const hasKöridő = racers.some(r => r.distance === '22km');
-        const catWrapper = document.createElement('div');
-        catWrapper.className = 'category-results-table';
-        catWrapper.style.marginBottom = '2rem';
-        catWrapper.innerHTML = `<h4 class="category-title">${title}</h4><div class="table-responsive"><table class="results-table"><thead><tr><th style="width: 80px;">Helyezés</th><th style="width: 80px;">Rajtszám</th><th>Név</th>${showCategory ? '<th>Kategória</th>' : ''}${hasKöridő ? '<th>Köridő</th>' : ''}<th style="text-align:right;">Időeredmény</th></tr></thead><tbody></tbody></table></div>`;
-        const tbody = catWrapper.querySelector('tbody');
-        let rank = 1;
-        racers.forEach(r => {
-            const tr = document.createElement('tr');
-            tr.className = `status-${r.status}`;
-            let timeDisplay = 'folyamatban...',
-                dataStartAttr = '',
-                rankDisplay = '-';
-            if (r.status === 'running') {
-                const now = Date.now() + (this.serverTimeOffset || 0);
-                timeDisplay = formatTime(now - (r.start_time || 0));
-                dataStartAttr = `data-start="${r.start_time || 0}"`;
-            } else if (r.status === 'finished') {
-                timeDisplay = formatTime(r.total_time || 0);
-                rankDisplay = `${rank++}.`;
-            }
-
-            let cpHtml = '';
-            if (hasKöridő) {
-                let lapTimeStr = r.status === 'finished' ? 'nincs adat' : '-';
-                if (this.data.checkpoints) {
-                    const cp = this.data.checkpoints.find(
-                        c => c.racer_bib === r.bib && c.checkpoint_name === '22km_tav_11km_fordulo'
-                    );
-                    if (cp) {
-                        lapTimeStr = formatTime(cp.timestamp - (r.start_time || 0));
-                    }
-                }
-                cpHtml = `<td style="font-family: 'Space Mono', monospace; font-size: 0.85rem; color: #ff9900;">${lapTimeStr}</td>`;
-            }
-
-            const rowColor =
-                r.status === 'finished' ? '#00ff88' : r.status === 'running' ? 'var(--accent-primary)' : 'inherit';
-            const isDragon = /s[aá]rk[aá]ny/i.test(r.category || '');
-            let diplomaBtnHtml = '';
-            if (r.status === 'finished' && !isDragon) {
-                diplomaBtnHtml = `<button onclick="window.generateDiploma('${r.bib}')" class="btn-primary" style="display:inline-flex; align-items:center; gap:5px; margin-left:12px; padding: 3px 8px; font-size: 0.7rem; background: #007bff; border: none; border-radius: 4px; cursor: pointer; color: white; vertical-align: middle; font-family: inherit;">🎓 Oklevél</button>`;
-            }
-
-            let namesDisplay;
-            if (isDragon && r.members && r.members.length > 0) {
-                const teamMember = r.members.find(m => m.otproba_id === 'CSAPATNEV');
-                const teamName = teamMember ? teamMember.name : r.name || `Sárkányhajó csapat #${r.bib}`;
-                const athleteMembers = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
-
-                if (athleteMembers.length > 0) {
-                    const athleteListHtml = athleteMembers
-                        .map(m => {
-                            let btnHtml = '';
-                            if (r.status === 'finished') {
-                                btnHtml = `<button onclick="window.generateDiploma('${r.bib}', '${m.name.replace(/'/g, "\\'")}')" class="btn-primary" style="display:inline-flex; align-items:center; gap:3px; padding: 2px 6px; font-size: 0.65rem; background: #007bff; border: none; border-radius: 4px; cursor: pointer; color: white; font-family: inherit; margin-left:8px; vertical-align: middle;">🎓 Letöltés</button>`;
-                            }
-                            return `<li style="margin-bottom: 6px;">${m.name}${btnHtml}</li>`;
-                        })
-                        .join('');
-                    namesDisplay = `
-                        <div class="team-dropdown-wrapper" style="display:inline-block; vertical-align:middle; width:100%; max-width:550px; text-align:left;">
-                            <details class="team-details" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: all 0.3s; width:100%; box-sizing:border-box;" onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.background='rgba(255,255,255,0.03)'">
-                                <summary style="font-weight:bold; color:white; outline:none; display:flex; align-items:center; justify-content:space-between; user-select:none; gap:10px;">
-                                    <span>🐉 ${teamName} <span style="font-size:0.85em; color:var(--text-secondary); font-weight:normal; margin-left: 8px;">(${athleteMembers.length} tag)</span></span>
-                                    <span class="dropdown-chevron" style="color:var(--accent-primary); font-size:0.8em;">▼</span>
-                                </summary>
-                                <ul style="margin: 10px 0 0 0; padding-left: 20px; text-align: left; list-style-type: decimal; color: var(--text-secondary); font-size: 0.9em; line-height: 1.5; columns: 2; -webkit-columns: 2; -moz-columns: 2;">
-                                    ${athleteListHtml}
-                                </ul>
-                            </details>
-                        </div>
-                    `;
-                } else {
-                    namesDisplay = `<strong>🐉 ${teamName}</strong>`;
-                }
-            } else {
-                namesDisplay = `${r.members ? r.members.map(m => m.name).join(', ') : r.name || '-'}${diplomaBtnHtml}`;
-            }
-            tr.innerHTML = `<td style="color:${rowColor}; font-weight:bold;">${rankDisplay}</td><td>#${(r.bib || 0).toString().padStart(3, '0')}</td><td>${namesDisplay}</td>${showCategory ? `<td style="font-size: 0.8rem; color: #888;">${this.categoryMap[r.category] || r.category}</td>` : ''}${cpHtml}<td class="time" style="color:${rowColor}; font-family: 'Space Mono', monospace; text-align:right;" ${dataStartAttr}>${timeDisplay}</td>`;
-            tbody.appendChild(tr);
-        });
-        container.appendChild(catWrapper);
+        createResultsTable(this, container, title, racers, showCategory);
     }
 
     renderLiveLog() {
-        const logContainer = document.getElementById('admin-event-log-content');
-        if (!logContainer) return;
-
-        const events = [];
-
-        // Checkpoints feldolgozása
-        if (this.data.checkpoints) {
-            this.data.checkpoints.forEach(cp => {
-                events.push({
-                    type: 'checkpoint',
-                    time: cp.timestamp,
-                    bib: cp.racer_bib,
-                    msg: `📍 KÖR rögzítve: #${cp.racer_bib} (${cp.checkpoint_name.replace('22km_tav_11km_fordulo', 'Forduló')})`,
-                });
-            });
-        }
-
-        // Finishers feldolgozása
-        if (this.data.racers) {
-            this.data.racers
-                .filter(r => r.status === 'finished')
-                .forEach(r => {
-                    const finishTime = (r.start_time || 0) + (r.total_time || 0);
-                    events.push({
-                        type: 'finish',
-                        time: finishTime,
-                        bib: r.bib,
-                        msg: `🎯 BEÉRKEZETT: #${r.bib} - Idő: ${formatTime(r.total_time)}`,
-                    });
-                });
-        }
-
-        events.sort((a, b) => b.time - a.time);
-        const recentEvents = events.slice(0, 15);
-
-        if (recentEvents.length === 0) {
-            logContainer.innerHTML = '<div class="empty-text">Nincs rögzített esemény</div>';
-            return;
-        }
-
-        logContainer.innerHTML = recentEvents
-            .map(
-                e => `
-            <div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: ${e.type === 'checkpoint' ? '#ff9900' : '#00ffcc'}">
-                <span style="color: #888; font-size: 0.75rem;">[${new Date(e.time).toLocaleTimeString('hu-HU')}]</span> ${e.msg}
-            </div>
-        `
-            )
-            .join('');
+        renderLiveLog(this);
     }
 
     async loadUnassignedTimes() {

@@ -23,3 +23,9 @@ debug_filters_output.txt
 # Letöltött, nagy tömörített mappák
 *.zip
 drive-download-20260301T055408Z-1-001.zip
+
+# Átmeneti és runtime adatmappák
+scratch/
+history/
+backend/data/
+extracted_*.txt

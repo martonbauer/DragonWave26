@@ -106,6 +106,17 @@
                     </select>
                 </div>
 
+                <!-- AI Csapatlista-beolvasó szekció -->
+                <div class="ai-parser-section" style="margin-bottom: 25px; padding: 15px; background: rgba(0, 163, 255, 0.08); border: 1px dashed var(--accent-primary); border-radius: 8px;">
+                    <h4 style="margin-top:0; color:var(--accent-primary); font-size: 0.95rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">🤖 AI Csapatlista-beolvasó</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; margin-top: 0;">Töltsd fel a legénységi listát vagy névsort képként (PNG, JPG) vagy PDF-ként az automatikus kitöltéshez.</p>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="file" id="ai-roster-upload" accept="image/*,application/pdf" style="display: none;" onchange="window.handleAiRosterUpload(event)">
+                        <button type="button" class="btn-primary" style="margin-top:0; padding: 8px 15px; font-size: 0.85rem;" onclick="document.getElementById('ai-roster-upload').click()">Listakép feltöltése</button>
+                        <span id="ai-upload-status" style="font-size: 0.8rem; color: var(--text-secondary);">Nincs fájl kiválasztva</span>
+                    </div>
+                </div>
+
                 <!-- 4. Egység tagjai -->
                 <div id="members-container">
                     <!-- Dinamikusan generált mezők helye -->

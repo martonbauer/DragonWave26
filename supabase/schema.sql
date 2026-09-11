@@ -42,10 +42,15 @@ ALTER TABLE racers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
--- Public Access Policies
-CREATE POLICY "Public Access" ON racers FOR ALL USING (true);
-CREATE POLICY "Public Access" ON members FOR ALL USING (true);
-CREATE POLICY "Public Access" ON categories FOR ALL USING (true);
+-- Public Access Policies (Csak olvasás engedélyezett a publikus anon kulcsnak)
+CREATE POLICY "Public Read Access" ON racers FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON members FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON categories FOR SELECT USING (true);
+
+-- Service role teljes hozzáférés (backend szerveroldali műveletekhez)
+CREATE POLICY "Service Role Full Access" ON racers FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access" ON members FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access" ON categories FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- Checkpoints Table
 CREATE TABLE IF NOT EXISTS checkpoints (
@@ -57,4 +62,11 @@ CREATE TABLE IF NOT EXISTS checkpoints (
 );
 
 ALTER TABLE checkpoints ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Access" ON checkpoints FOR ALL USING (true);
+CREATE POLICY "Public Read Access" ON checkpoints FOR SELECT USING (true);
+CREATE POLICY "Service Role Full Access" ON checkpoints FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Performance Indexes (Lemez I/O és lekérdezés optimalizálás)
+CREATE INDEX IF NOT EXISTS idx_members_racer_id ON members(racer_id);
+CREATE INDEX IF NOT EXISTS idx_checkpoints_racer_bib ON checkpoints(racer_bib);
+CREATE INDEX IF NOT EXISTS idx_racers_status ON racers(status);
+CREATE INDEX IF NOT EXISTS idx_racers_category ON racers(category);

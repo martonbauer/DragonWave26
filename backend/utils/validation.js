@@ -71,15 +71,35 @@ const SLUG_MAP = [
 /**
  * Kategória név normalizálása slug formátumra
  */
-function normalizeCategoryToSlug(categoryName) {
+function normalizeCategoryToSlug(categoryName, distance = '') {
     if (!categoryName) return '';
     if (typeof ALL_VALID_SLUGS !== 'undefined' && ALL_VALID_SLUGS.has(categoryName)) {
         return categoryName;
     }
     const n = categoryName.toLowerCase();
-    const match = SLUG_MAP.find(e => e.keys.every(k => n.includes(k)));
+    const cleanDist = (distance || '').replace(/\s+/g, '').toLowerCase();
+
+    let match = null;
+    if (cleanDist) {
+        // Először megpróbálunk olyat találni, aminek a kulcsai között szerepel a távolság (pl. '11km')
+        match = SLUG_MAP.find(e => {
+            const hasDistKey = e.keys.includes(cleanDist);
+            if (hasDistKey) {
+                const otherKeys = e.keys.filter(k => k !== cleanDist);
+                return otherKeys.every(k => n.includes(k));
+            }
+            return false;
+        });
+    }
+
+    // Ha nincs távolság-specifikus találat, vagy nem volt megadva távolság, jön az általános egyezés
+    if (!match) {
+        match = SLUG_MAP.find(e => e.keys.every(k => n.includes(k)));
+    }
+
     return match ? match.slug : categoryName;
 }
+
 
 /**
  * Kategória csoportok (a lekérdezésekhez)

@@ -24,6 +24,7 @@ import {
     renderResultsCategoryDetail,
 } from './js/admin-ui.js';
 import { API_URL, APP_VERSION } from './js/api.js';
+import { setupAdminEventListeners } from './js/events/admin-events.js';
 
 // --- Globális ablak-szintű függvények a HTML eseménykezelőkhöz ---
 window.showToast = showToast;
@@ -50,8 +51,9 @@ window.loginAdmin = async () => {
         const result = await response.json();
         if (response.ok && result.success) {
             console.log('Login successful');
-            window.raceManager.adminPassword = password;
-            sessionStorage.setItem('dragonAdminPassword', password);
+            const token = result.token || password;
+            window.raceManager.adminPassword = token;
+            sessionStorage.setItem('dragonAdminPassword', token);
 
             const loginPanel = document.getElementById('admin-login-panel');
             const dashboardPanel = document.getElementById('admin-dashboard-panel');
@@ -73,6 +75,7 @@ window.loginAdmin = async () => {
         showToast('Hiba a belépés során!', 'error');
     }
 };
+
 
 window.logoutAdmin = () => {
     sessionStorage.removeItem('dragonAdminPassword');
@@ -584,6 +587,9 @@ window.uploadCsv = async () => {
             const win1250Decoder = new TextDecoder('windows-1250');
             csvData = win1250Decoder.decode(buffer);
         }
+        if (csvData) {
+            csvData = csvData.replace(/^\uFEFF/, '');
+        }
         try {
             const response = await fetch(`${API_URL}/upload-csv`, {
                 method: 'POST',
@@ -755,13 +761,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') window.recordCheckpoint();
         });
 
-    // Automatikus session belépés ha a jelszó már tárolva van
+    // Inicializáljuk a modern eseménykezelőket (EventListener)
+    setupAdminEventListeners();
+
+    // Automatikus session belépés ha a jelszó/token már tárolva van
     const savedPassword = sessionStorage.getItem('dragonAdminPassword');
     if (savedPassword) {
-        document.getElementById('admin-pass').value = savedPassword;
-        window.loginAdmin();
+        if (savedPassword.includes('.')) {
+            // Ha már van aláírt token, akkor közvetlenül beléphetünk
+            window.raceManager.adminPassword = savedPassword;
+            const loginPanel = document.getElementById('admin-login-panel');
+            const dashboardPanel = document.getElementById('admin-dashboard-panel');
+            if (loginPanel) loginPanel.classList.add('hidden');
+            if (dashboardPanel) dashboardPanel.classList.remove('hidden');
+            window.showAdminLanding();
+            if (typeof window.renderAdminTable === 'function') window.renderAdminTable();
+            window.raceManager.renderUI();
+        } else {
+            document.getElementById('admin-pass').value = savedPassword;
+            window.loginAdmin();
+        }
     }
 });
+
 
 // --- Adatbázis Mentés és Archiválás Funkciók (Database Backup & Restore) ---
 window.exportDatabaseBackup = async () => {
@@ -1066,3 +1088,110 @@ window.removeCategoryMerge = async source => {
         showToast('Hiba az összevonás felbontásakor: ' + err.message, 'error');
     }
 };
+
+// --- AI Csapatlista-beolvasó Kliensoldali Logika ---
+window.handleAiRosterUpload = async (event) => {
+    const fileInput = event.target;
+    if (!fileInput || fileInput.files.length === 0) return;
+    
+    const file = fileInput.files[0];
+    const statusSpan = document.getElementById('ai-upload-status');
+    if (statusSpan) {
+        statusSpan.textContent = 'Beolvasás... 🤖';
+        statusSpan.style.color = 'var(--accent-primary)';
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const dataUrl = e.target.result;
+        const parts = dataUrl.split(',');
+        const mimeType = parts[0].match(/:(.*?);/)[1];
+        const base64Data = parts[1];
+
+        try {
+            const token = sessionStorage.getItem('dragonAdminPassword') || '';
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch('/api/ai/parse-roster', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ base64Data, mimeType })
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Hiba az AI szerver hívásakor.');
+            }
+
+            if (result.success && result.members && result.members.length > 0) {
+                if (statusSpan) {
+                    statusSpan.textContent = result.simulated ? 'Demó beolvasás sikeres! ✅' : 'Beolvasás sikeres! ✅';
+                    statusSpan.style.color = '#28a745';
+                }
+                if (result.simulated && typeof showToast === 'function') {
+                    showToast('Demó beolvasás (valódi beolvasáshoz add meg a GEMINI_API_KEY-t a .env-ben)', 'info');
+                } else if (typeof showToast === 'function') {
+                    showToast(`AI sikeresen beolvasott ${result.members.length} versenyzőt!`, 'success');
+                }
+
+                // Kitöltjük az űrlap mezőit
+                const memberEntries = document.querySelectorAll('.member-entry:not(.team-name-entry)');
+                if (memberEntries.length === 0) {
+                    throw new Error('Előbb válassz kategóriát, hogy legyen hová beírni az adatokat!');
+                }
+                
+                result.members.forEach((member, index) => {
+                    if (index < memberEntries.length) {
+                        const entry = memberEntries[index];
+                        const nameInp = entry.querySelector('.member-name');
+                        const birthInp = entry.querySelector('.member-birth');
+                        const otprobaInp = entry.querySelector('.member-otproba');
+
+                        if (nameInp && member.name) nameInp.value = member.name;
+                        
+                        if (birthInp && member.birth_date) {
+                            let birthVal = member.birth_date;
+                            if (birthVal.includes('-')) {
+                                const parts = birthVal.split('-');
+                                if (parts.length === 3) birthVal = `${parts[0]}.${parts[1]}.${parts[2]}.`;
+                            }
+                            birthInp.value = birthVal;
+                        }
+
+                        if (otprobaInp) {
+                            if (member.otproba_id && member.otproba_id.toLowerCase() !== 'nincs') {
+                                otprobaInp.value = member.otproba_id;
+                                otprobaInp.disabled = false;
+                                const checkbox = entry.parentNode.querySelector('input[type="checkbox"]');
+                                if (checkbox) checkbox.checked = false;
+                            } else {
+                                otprobaInp.value = '';
+                                otprobaInp.disabled = true;
+                                const checkbox = entry.parentNode.querySelector('input[type="checkbox"]');
+                                if (checkbox) checkbox.checked = true;
+                            }
+                        }
+                    }
+                });
+            } else {
+                throw new Error('Az AI nem talált versenyzőt a képen.');
+            }
+        } catch (err) {
+            console.error('AI Roster Upload Error:', err);
+            if (statusSpan) {
+                statusSpan.textContent = 'Hiba a beolvasáskor ❌';
+                statusSpan.style.color = '#dc3545';
+            }
+            if (typeof showToast === 'function') {
+                showToast(err.message || 'Hiba az AI feltöltés során!', 'error');
+            }
+        } finally {
+            fileInput.value = '';
+        }
+    };
+    reader.readAsDataURL(file);
+};
+

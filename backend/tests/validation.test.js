@@ -43,6 +43,14 @@ describe('validation.js tests', () => {
             expect(normalizeCategoryToSlug('Sarkanyhajo')).toBe('sarkanyhajo_otproba');
         });
 
+        it('should normalize distance-sensitive categories correctly based on the distance parameter', () => {
+            expect(normalizeCategoryToSlug('SUP női merev', '11km')).toBe('sup_noi_1_merev');
+            expect(normalizeCategoryToSlug('SUP női merev', '4km')).toBe('sup_noi_1_merev_40_felett');
+            expect(normalizeCategoryToSlug('SUP női merev')).toBe('sup_noi_1_merev_40_felett');
+            expect(normalizeCategoryToSlug('SUP férfi felfújható', '11km')).toBe('sup_ferfi_1_felfujhato');
+            expect(normalizeCategoryToSlug('SUP férfi felfújható', '4km')).toBe('sup_ferfi_1_felfujhato_40_felett');
+        });
+
         it('should return original string if not matched', () => {
             expect(normalizeCategoryToSlug('Ismeretlen Kategória')).toBe('Ismeretlen Kategória');
         });

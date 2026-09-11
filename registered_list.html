@@ -215,6 +215,16 @@
     </div>
 
     <script>
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         const API_URL = (window.location.hostname === 'localhost' || window.location.protocol === 'file:')
             ? 'http://localhost:3001/api'
             : '/api';
@@ -363,11 +373,12 @@
                         const isDragon = /s[aá]rk[aá]ny/i.test(r.category || '');
                         if (isDragon && r.members && r.members.length > 0) {
                             const teamMember = r.members.find(m => m.otproba_id === 'CSAPATNEV');
-                            const teamName = teamMember ? teamMember.name : (r.name || `Sárkányhajó csapat #${r.bib}`);
+                            const rawTeamName = teamMember ? teamMember.name : (r.name || `Sárkányhajó csapat #${r.bib}`);
+                            const teamName = escapeHtml(rawTeamName);
                             const athleteMembers = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
                             
                             if (athleteMembers.length > 0) {
-                                const athleteListHtml = athleteMembers.map(m => `<li>${m.name}</li>`).join('');
+                                const athleteListHtml = athleteMembers.map(m => `<li>${escapeHtml(m.name)}</li>`).join('');
                                 names = `
                                     <div class="team-dropdown-wrapper" style="display:inline-block; vertical-align:middle; width:100%; max-width:550px; text-align:left;">
                                         <details class="team-details" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: all 0.3s; width:100%; box-sizing:border-box;" onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.background='rgba(255,255,255,0.03)'">
@@ -389,12 +400,13 @@
                                 const tMem = r.members.find(m => m.otproba_id === 'CSAPATNEV');
                                 const rMems = r.members.filter(m => m.otproba_id !== 'CSAPATNEV');
                                 if (tMem) {
-                                    names = rMems.length > 0 ? `<strong>${tMem.name}</strong> <span style="font-size:0.85em; color:var(--text-secondary);">(${rMems.map(m => m.name).join(', ')})</span>` : `<strong>${tMem.name}</strong>`;
+                                    const safeTeam = escapeHtml(tMem.name);
+                                    names = rMems.length > 0 ? `<strong>${safeTeam}</strong> <span style="font-size:0.85em; color:var(--text-secondary);">(${rMems.map(m => escapeHtml(m.name)).join(', ')})</span>` : `<strong>${safeTeam}</strong>`;
                                 } else {
-                                    names = rMems.map(m => m.name).join(', ');
+                                    names = rMems.map(m => escapeHtml(m.name)).join(', ');
                                 }
                             } else {
-                                names = r.name || '-';
+                                names = escapeHtml(r.name || '-');
                             }
                         }
 

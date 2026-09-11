@@ -4,6 +4,24 @@
  */
 
 /**
+ * HTML karakterek biztonságos entitáskódolása (XSS védelem)
+ * @param {string|any} str - A biztonságossá teendő szöveg
+ * @returns {string}
+ */
+export function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+if (typeof window !== 'undefined') {
+    window.escapeHtml = escapeHtml;
+}
+
+/**
  * Toast üzenet megjelenítése
  * @param {string} message - Az üzenet szövege
  * @param {string} [type='info'] - Az üzenet típusa ('success', 'error', 'info')
@@ -209,7 +227,7 @@ export function executeConfirmedAction() {
  * Versenyző taglistájának HTML formázása (CSAPATNEV kezelése)
  */
 export function formatMemberListHtml(racer) {
-    if (!racer.members || racer.members.length === 0) return racer.name || '-';
+    if (!racer.members || racer.members.length === 0) return escapeHtml(racer.name || '-');
     const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
     const rm = racer.members
         .filter(m => m.otproba_id !== 'CSAPATNEV')
@@ -218,14 +236,14 @@ export function formatMemberListHtml(racer) {
 
     if (t) {
         html += `<details style="cursor: pointer; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; width: 100%;">
-                    <summary style="font-weight:bold; color:var(--accent-primary); outline: none; margin-bottom: 5px;">${t.name} <span style="font-size: 0.8em;">▼</span></summary>
+                    <summary style="font-weight:bold; color:var(--accent-primary); outline: none; margin-bottom: 5px;">${escapeHtml(t.name)} <span style="font-size: 0.8em;">▼</span></summary>
                     <div style="margin-top: 10px; padding: 10px; border-left: 2px solid var(--accent-secondary); display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; background: rgba(0,0,0,0.1); border-radius: 6px;">`;
         html += rm
             .map(
                 m =>
                     `<div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
-                        <strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--accent-primary);" title="Versenyző/Csapat szerkesztése">${m.name || '?'}</strong>
-                        <span style="font-size:0.7rem; color:#aaa;">(${m.birth_date || '?'})</span>
+                        <strong onclick="window.raceManager.openEditModal('${escapeHtml(racer.id)}')" style="cursor: pointer; color: var(--accent-primary);" title="Versenyző/Csapat szerkesztése">${escapeHtml(m.name || '?')}</strong>
+                        <span style="font-size:0.7rem; color:#aaa;">(${escapeHtml(m.birth_date || '?')})</span>
                     </div>`
             )
             .join('');
@@ -235,13 +253,13 @@ export function formatMemberListHtml(racer) {
             .map(
                 m =>
                     `<div style="margin-bottom:4px; display: flex; align-items: center; gap: 6px;">
-                        <strong onclick="window.raceManager.openEditModal('${racer.id}')" style="cursor: pointer; color: var(--text-primary);" title="Versenyző szerkesztése">${m.name || '?'}</strong> 
-                        <span style="font-size:0.7rem; color:#888;">(${m.birth_date || '?'})</span>
+                        <strong onclick="window.raceManager.openEditModal('${escapeHtml(racer.id)}')" style="cursor: pointer; color: var(--text-primary);" title="Versenyző szerkesztése">${escapeHtml(m.name || '?')}</strong> 
+                        <span style="font-size:0.7rem; color:#888;">(${escapeHtml(m.birth_date || '?')})</span>
                     </div>`
             )
             .join('');
     }
-    return html || racer.name || '-';
+    return html || escapeHtml(racer.name || '-');
 }
 
 /**
@@ -265,7 +283,7 @@ export function formatRacerName(racer) {
  * Ötpróba ID-k HTML formázása (CSAPATNEV kihagyása)
  */
 export function formatOtprobaListHtml(racer) {
-    if (!racer.members || racer.members.length === 0) return racer.otproba_id || '-';
+    if (!racer.members || racer.members.length === 0) return escapeHtml(racer.otproba_id || '-');
     const t = racer.members.find(m => m.otproba_id === 'CSAPATNEV');
     const rm = racer.members
         .filter(m => m.otproba_id !== 'CSAPATNEV')
@@ -274,5 +292,5 @@ export function formatOtprobaListHtml(racer) {
     if (t) {
         return `<span style="color:#888; font-size: 0.8rem;">(Lásd a neveknél)</span>`;
     }
-    return rm.map(m => `<div style="margin-bottom:2px;">${m.otproba_id || '-'}</div>`).join('') || '-';
+    return rm.map(m => `<div style="margin-bottom:2px;">${escapeHtml(m.otproba_id || '-')}</div>`).join('') || '-';
 }

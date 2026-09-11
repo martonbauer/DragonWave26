@@ -7,17 +7,42 @@ const requestCounts = new Map();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 perc
 const MAX_REQUESTS = 200; // 200 kérés ablakonként
 
+// Időzített takarítás (10 percenként) a memóriaszivárgás megelőzésére
+const cleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, val] of requestCounts.entries()) {
+        if (now > val.resetTime) {
+            requestCounts.delete(key);
+        }
+    }
+}, 10 * 60 * 1000);
+if (cleanupTimer.unref) cleanupTimer.unref();
+
+function getClientIp(req) {
+    const socketAddress = req.socket && req.socket.remoteAddress;
+    const xff = req.headers['x-forwarded-for'];
+    if (xff) {
+        const client = xff.split(',')[0].trim();
+        if (client) return client;
+    }
+    return req.ip || socketAddress || 'unknown';
+}
+
 /**
  * Kéréskorlátozó middleware
  */
 function rateLimiter(req, res, next) {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const now = Date.now();
+    const socketAddress = req.socket && req.socket.remoteAddress;
+    const isDirectLocalhost =
+        socketAddress === '::1' || socketAddress === '127.0.0.1' || socketAddress === '::ffff:127.0.0.1';
 
-    // Fehérlista localhost feletti fejlesztéshez
-    if (ip === '::1' || ip === '127.0.0.1' || ip.includes('localhost')) {
+    // Fehérlista közvetlen helyi gépről történő teszteléshez
+    if (isDirectLocalhost && !req.headers['x-forwarded-for']) {
         return next();
     }
+
+    const ip = getClientIp(req);
+    const now = Date.now();
 
     if (!requestCounts.has(ip)) {
         requestCounts.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });

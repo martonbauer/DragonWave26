@@ -475,7 +475,7 @@
         const passwordInput = document.getElementById('password-input');
         const bibInput = document.getElementById('bib-input');
         
-        let adminPassword = localStorage.getItem('dragonwave_admin_pwd') || '';
+        let adminToken = localStorage.getItem('dragonwave_admin_token') || localStorage.getItem('dragonwave_admin_pwd') || '';
         const API_BASE = (window.location.hostname === 'localhost' || window.location.protocol === 'file:')
             ? 'http://localhost:3001/api' : '/api';
 
@@ -484,7 +484,7 @@
             if(localStorage.getItem('dragonwave_sun_mode') === 'true') {
                 document.body.classList.add('sun-mode');
             }
-            if (adminPassword) showApp();
+            if (adminToken) showApp();
             else showLogin();
         }
 
@@ -510,9 +510,11 @@
         }
         
         async function fetchStats() {
-            if(!adminPassword) return;
+            if(!adminToken) return;
             try {
-                const response = await fetch(`${API_BASE}/data`);
+                const response = await fetch(`${API_BASE}/data`, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
                 if(response.ok) {
                     const data = await response.json();
                     if(data.racers) {
@@ -551,8 +553,9 @@
                 });
                 const data = await response.json();
                 if (response.ok && data.success) {
-                    adminPassword = pwd;
-                    localStorage.setItem('dragonwave_admin_pwd', pwd);
+                    adminToken = data.token || pwd;
+                    localStorage.setItem('dragonwave_admin_token', adminToken);
+                    localStorage.removeItem('dragonwave_admin_pwd');
                     showToast('Sikeres belépés!', 'success');
                     showApp();
                 } else showToast(data.error || 'Hibás jelszó!', 'error');
@@ -566,7 +569,8 @@
         loginBtn.addEventListener('click', handleLogin);
         passwordInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleLogin());
         logoutBtn.addEventListener('click', () => {
-            adminPassword = '';
+            adminToken = '';
+            localStorage.removeItem('dragonwave_admin_token');
             localStorage.removeItem('dragonwave_admin_pwd');
             showLogin();
         });
@@ -595,7 +599,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${adminPassword}`
+                        'Authorization': `Bearer ${adminToken}`
                     },
                     body: JSON.stringify({ bibs, timestamp: recordTimestamp })
                 });
@@ -643,7 +647,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${adminPassword}`
+                        'Authorization': `Bearer ${adminToken}`
                     },
                     body: JSON.stringify({ timestamp: recordTimestamp })
                 });
@@ -671,7 +675,7 @@
         }
 
         async function syncOfflineFinishes() {
-            if (!adminPassword) return;
+            if (!adminToken) return;
             
             // 1. Tömeges rögzítések szinkronizálása
             let bulkQueue = JSON.parse(localStorage.getItem('dragonwave_offline_finishes') || '[]');
@@ -684,7 +688,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${adminPassword}`
+                            'Authorization': `Bearer ${adminToken}`
                         },
                         body: JSON.stringify({ bibs: item.bibs, timestamp: item.timestamp })
                     });
@@ -713,7 +717,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${adminPassword}`
+                            'Authorization': `Bearer ${adminToken}`
                         },
                         body: JSON.stringify({ timestamp: item.timestamp })
                     });

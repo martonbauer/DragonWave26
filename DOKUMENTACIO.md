@@ -73,19 +73,23 @@ A rendszer a modern versenyigazgatás és felhasználói élmény követelménye
 
 ## 6. Adatbázis Modell (Supabase / Schema)
 
-A rendszer robusztus performanciáját a jól strukturált PosgreSQL adatbázis adja. Fő entitások:
+A rendszer robusztus performanciáját a jól strukturált PostgreSQL adatbázis adja. Fő entitások és relációk:
 
-- `registrations`: Az alapvető versenyzői adatokat, kapcsolattartási információkat és kategória-besorolást tartja nyilván. Tartalmazza a Barion tranzakció státuszát és a versenyfizetési azonosítót is.
-- `race_timing`: Egy-egy a `registrations` entitással. A valós idejű óraidőket és állapotokat reprezentálja: `status` (pending, racing, finished, dns), `start_time` (rajt pillanata ms pontossággal), `checkpoint_time` (féltáv részidő), és `end_time` (hivatalos célidő).
-- `checkpoints` (auditor tábla): Naplózó tábla a különböző földrajzi mérőpontokon áthaladó hajók kronológiai időpecsétjeinek rögzítésére tranzakció-biztos módon, komplex RLS biztosítási háziszabályokkal a háttérben.
+- `racers`: Az elsődleges versenyzői / egység entitás. Tárolja az egyedi azonosítót (`id`), rajtszámot (`bib`), versenyszámot és távot (`category`, `distance`), a futamstátuszt (`status`: registered, running, finished, dnf, dsq), az időbélyegeket milliszekundumban (`start_time`, `finish_time`, `total_time`), valamint az elérhetőségi adatokat (`email`, `phone`).
+- `members`: A versenyzői egységhez tartozó csapattagok entitása (1:N kapcsolat a `racers` táblával `racer_id` külső kulcson keresztül, ON DELETE CASCADE törlési szabállyal). Tartalmazza a tag nevét (`name`), születési dátumát (`birth_date`), valamint az opcionális 5Próba azonosítóját (`otproba_id`). Sárkányhajó és több fős egységek esetén a `CSAPATNEV` típusú speciális tagjelölővel biztosítja a rugalmas csapatnév-kezelést.
+- `categories`: A futamok és kategóriák indítási időbélyegeit (`start_time`) nyilvántartó tábla, amely alapján a rendszer a valós idejű óraidőket kalkulálja és szinkronizálja.
+- `checkpoints`: Az ellenőrzőpontokon (pl. 22 km-es táv 11 km-es fordulója) áthaladó hajók időbélyegeit naplózó tábla (`racer_bib`, `checkpoint_name`, `timestamp`).
 
 ## 7. Biztonság és Készültség
 
 A DragonWave 2026 maximálisan figyelembe veszi a robusztusságot és az adatbiztonságot:
 
-- **JWT (JSON Web Tokens) Autentikáció**: Az Admin rendszert kriptográfiai szempontból védett stateless authentikáció és authorizáció kezeli. Csak igazolt `token` birtokában hívhatók az API-k (módosítás, törlés, fizetési adatok lekérdezése).
-- **Aszinkron Fájl Ingest & Biztonság**: Az admin API oldalon kezelt fájlműveletek (pl. PDF parse műveletek, Batch fájlok) aszinkron módon futnak, kiküszöbölve a CPU kiszolgáló event loopjának leállását. Eszköz a DDoS és blokkolt szálak kivédésére nagy terheltségnél.
-- **Payload Strict Limits**: Maximált REST API payload nagyság és validált sémák biztosítják, hogy ne lehessen óriási adatcsomagokkal (pl. JSON bombák) lefagyasztani az egyedi szolgáltatási rétegeket felhő alapú DDOS környezetben.
+- **JWT (HMAC-SHA256 Signed Tokens) Autentikáció**: Az Admin rendszert kriptográfiai szempontból védett, időbélyeggel és érvényességi idővel (`exp`) ellátott aláírt munkamenet token kezeli. Csak igazolt `Bearer` token birtokában hívhatók a módosító, törlő és indító API végpontok.
+- **GDPR és Személyes Adatvédelem**: A publikus API végpontok (`/api/data`) szigorúan csak a sporteredményekhez szükséges adatokat szolgáltatják ki. A versenyzők privát elérhetőségei (e-mail cím, telefonszám), a kiskorúak pontos születési adatai és az Ötpróba azonosítók kizárólag hitelesített adminisztrátori munkamenet esetén érhetők el.
+- **XSS (Cross-Site Scripting) Védelem**: A felhasználói bemenetekből származó adatok (versenyzői nevek, csapatnevek) a megjelenítés során entitáskódoláson (`escapeHtml`) esnek át, megakadályozva a kártékony beágyazott kódok lefutását.
+- **Row Level Security (RLS)**: Az adatbázis tábláin engedélyezve van az RLS. A publikus anonim hozzáférés kizárólag olvasási (`SELECT`) műveletekre korlátozott, az illetéktelen adatmanipulációt az adatbázis szintjén meggátolva.
+- **Aszinkron Fájl Ingest & Nem Blokkoló I/O**: Az analitikai és látogatottsági naplózás aszinkron és memóriában korlátozott háttérszálon fut, biztosítva a Node.js Event Loop zavartalan, késleltetésmentes működését a verseny ideje alatt.
+- **Payload Strict Limits & Rate Limiting**: Beépített kéréskorlátozó (Rate Limiter) és maximált REST API payload méretek védik a szervert az illetéktelen túlterheléstől (DoS).
 
 ## 8. Nyílt Jövőkép és Továbbfejleszthetőség
 
